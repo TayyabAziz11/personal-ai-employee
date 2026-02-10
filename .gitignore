@@ -1,0 +1,53 @@
+# Personal AI Employee - .gitignore
+# Privacy-first: Do not commit task content or logs
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Logs and system state (privacy)
+Logs/*.log
+system_log.md
+
+# Task content folders (privacy - do not commit real tasks)
+Inbox/*
+!Inbox/.gitkeep
+Needs_Action/*
+!Needs_Action/.gitkeep
+Done/*
+!Done/.gitkeep
+Plans/*
+!Plans/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets (never commit)
+*.env
+.env.*
+secrets/
+credentials/
+*.key
+*.pem
+*.cert
+
+# Backup files
+*.bak
+*.backup
+*~
