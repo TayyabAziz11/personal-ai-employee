@@ -652,3 +652,98 @@
 
 ---
 
+
+### 16:15 UTC - sil_m3_implementation_complete
+**Milestone:** M3 - Gmail Watcher Implementation (Perception-Only)
+**Tasks:** SIL-M3-T01, SIL-M3-T02, SIL-M3-T03, SIL-M3-T04, SIL-M3-T05
+**Duration:** ~30 minutes
+
+**Outcome:** ✓ OK - Gmail watcher (perception-only) fully implemented and tested
+
+**Files Created:**
+- gmail_watcher_skill.py (737 lines, comprehensive implementation)
+- templates/mock_emails.json (mock email fixture for testing)
+- Docs/gmail_oauth_setup.md (comprehensive OAuth2 setup guide)
+- requirements.txt (Gmail API dependencies)
+- Logs/gmail_watcher.log (created by first run)
+- Logs/gmail_checkpoint.json (created by first run, gitignored)
+
+**Files Modified:**
+- .gitignore (added Gmail OAuth2 secrets: credentials.json, token.json, gmail_checkpoint.json)
+- Company_Handbook.md (added Section 3 Silver Tier watcher documentation)
+
+**Features Implemented:**
+1. ✅ OAuth2 authentication with Gmail API (read-only)
+2. ✅ Email fetching with configurable queries
+3. ✅ Intake wrapper creation (privacy-safe with PII redaction)
+4. ✅ Checkpointing (avoids duplicate processing)
+5. ✅ PII redaction (emails: a***@domain.com, phones: [PHONE-REDACTED])
+6. ✅ Privacy-first (no full email bodies by default, 500 char excerpt max)
+7. ✅ Mock mode for testing (uses templates/mock_emails.json)
+8. ✅ Comprehensive logging (Logs/gmail_watcher.log + system_log.md)
+9. ✅ CLI flags (--dry-run, --once, --mock, --max-results, --query, --checkpoint flags, --reset-checkpoint)
+10. ✅ Resilient error handling (handles empty inbox, API failures, token expiration)
+
+**CLI Flags Supported:**
+- --dry-run (preview mode, no files written)
+- --once (default, process once and exit)
+- --mock (use mock fixture, no Gmail API)
+- --max-results N (default: 10)
+- --query "search" (default: "is:unread newer_than:7d")
+- --since-checkpoint (default ON, skip processed emails)
+- --no-checkpoint (ignore checkpoint)
+- --reset-checkpoint (manual reset)
+- --include-body (PRIVACY WARNING, OFF by default)
+
+**Testing (Mock Mode):**
+- ✅ Tested with: python3 gmail_watcher_skill.py --mock --once
+- ✅ Created 3 intake wrappers from mock emails
+- ✅ Intake wrapper format verified:
+  - YAML frontmatter with all required fields
+  - PII-redacted sender (a***@example.com)
+  - Subject, received date
+  - Summary section
+  - Redacted excerpt (500 char max)
+  - Suggested next step (emphasizing plan approval)
+  - IMPORTANT note about perception-only
+  - Metadata (email ID, processed timestamp, version)
+
+**Privacy & Security:**
+- ✅ PII redaction: emails (a***@domain.com), phones ([PHONE-REDACTED])
+- ✅ NO full email bodies stored by default (--include-body OFF)
+- ✅ Secrets gitignored (credentials.json, token.json, checkpoint)
+- ✅ OAuth2 read-only scope (cannot send/delete emails)
+- ✅ Checkpointing prevents duplicates (last 1000 IDs kept)
+
+**Perception-Only Guarantee (CRITICAL):**
+- ✅ Watcher NEVER sends emails
+- ✅ Watcher NEVER calls MCP to act
+- ✅ Watcher NEVER completes tasks
+- ✅ Only creates intake wrappers in Needs_Action/
+- ✅ All email actions require: Plan → Approval → MCP execution
+
+**Documentation Created:**
+- ✅ Docs/gmail_oauth_setup.md (comprehensive OAuth2 guide)
+  - Step-by-step Google Cloud Console setup
+  - OAuth consent screen configuration
+  - First-time authorization flow
+  - Troubleshooting section
+  - Security best practices
+- ✅ Company_Handbook.md Section 3 (Silver Tier watcher)
+  - Perception-only emphasis
+  - All CLI flags documented
+  - Privacy & security details
+  - OAuth2 setup reference
+  - Mock mode testing instructions
+
+**Silver Tier Progress:** M3 complete (30% of Silver Tier implementation)
+- ✅ M1: Vault Structure Setup (3 tasks) - COMPLETE
+- ✅ M2: Documentation Updates (2 tasks) - COMPLETE
+- ✅ M3: Gmail Watcher Implementation (5 tasks) - COMPLETE
+- ⏳ M4: Plan-First Workflow (3 tasks) - NEXT
+- ⏳ M5-M10: Pending
+
+**Next Milestone:** M4 - Plan-First Workflow (plan template, brain_create_plan implementation, testing)
+
+---
+

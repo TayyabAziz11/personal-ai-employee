@@ -390,6 +390,134 @@ python watcher_skill.py --loop --interval 30
 
 ---
 
+### Silver Tier: Gmail Watcher (gmail_watcher_skill) - PERCEPTION ONLY
+
+**Type:** OAuth2-based Gmail API monitoring
+**Implementation:** `gmail_watcher_skill.py` (vault root)
+**Target:** Gmail inbox via OAuth2
+**Trigger:** Manual or scheduled (M7)
+
+**CRITICAL:** This is a **perception-only** watcher. It NEVER sends emails, NEVER calls MCP to act, NEVER completes tasks. It only creates intake wrappers in `Needs_Action/`.
+
+**Features:**
+- OAuth2 authentication with Gmail API (read-only)
+- Email fetching with configurable Gmail search queries
+- Intake wrapper creation with PII redaction
+- Checkpointing to avoid duplicate processing
+- Privacy-safe by default (no full email bodies stored)
+- Mock mode for testing without Gmail API
+
+**How to Run:**
+
+1. **Setup (First Time):**
+   ```bash
+   # Install Gmail API dependencies
+   pip install -r requirements.txt
+
+   # Follow OAuth2 setup guide
+   # See: Docs/gmail_oauth_setup.md
+   ```
+
+2. **Test with Mock Data (No OAuth Required):**
+   ```bash
+   python3 gmail_watcher_skill.py --mock --once
+   ```
+   Uses fake emails from `templates/mock_emails.json` for safe testing.
+
+3. **Dry-Run Mode (Preview):**
+   ```bash
+   python3 gmail_watcher_skill.py --dry-run
+   ```
+   Shows what emails would be processed without creating intake wrappers.
+
+4. **Single Run (Default):**
+   ```bash
+   python3 gmail_watcher_skill.py --once
+   ```
+   Fetches emails from Gmail, creates intake wrappers, exits.
+
+**CLI Flags:**
+
+- `--dry-run` - Preview what would be processed (no files written)
+- `--once` - Process once and exit (default)
+- `--mock` - Use mock email fixture (no Gmail API)
+- `--max-results N` - Max emails to fetch (default: 10)
+- `--query "search"` - Gmail search query (default: "is:unread newer_than:7d")
+- `--since-checkpoint` - Use checkpoint to skip already processed (default: ON)
+- `--no-checkpoint` - Ignore checkpoint, process all emails
+- `--reset-checkpoint` - Reset checkpoint and exit
+- `--include-body` - Include full email body (⚠️ PRIVACY WARNING - OFF by default)
+
+**Inputs:**
+- Gmail inbox (via OAuth2 read-only access)
+- Query filter (configurable)
+- Checkpoint file (`Logs/gmail_checkpoint.json`)
+
+**Outputs:**
+- Intake wrappers in `Needs_Action/` with format: `inbox__gmail__<YYYYMMDD-HHMM>__<short_id>.md`
+- Each wrapper includes:
+  - YAML frontmatter (id, source, received_at, from, subject, status, plan_required)
+  - Email summary
+  - Redacted excerpt (max 500 chars, PII removed)
+  - Suggested next steps (emphasizing plan approval requirement)
+
+**Privacy & Security:**
+- ✓ PII redaction (emails: a***@domain.com, phones: [PHONE-REDACTED])
+- ✓ Truncated excerpts (500 char max, no full bodies by default)
+- ✓ OAuth2 credentials NOT committed (in .gitignore)
+- ✓ Checkpointing prevents duplicate processing
+- ✓ Append-only logging (`Logs/gmail_watcher.log`)
+- ✓ Read-only Gmail API scope (cannot send/delete)
+
+**Checkpointing:**
+- Stores processed email IDs in `Logs/gmail_checkpoint.json`
+- Prevents re-processing same emails
+- Keeps last 1000 IDs (auto-cleanup to prevent file bloat)
+- Can be reset with: `python3 gmail_watcher_skill.py --reset-checkpoint`
+
+**Logging:**
+- **gmail_watcher.log:** Detailed run logs (timestamp, mode, query, counts, errors, duration)
+- **system_log.md:** Summary entries for significant runs
+- Format: `[timestamp] Mode | Query | Found: X | Processed: Y | Skipped: Z | Errors: N | Duration: Xs`
+
+**Example Usage:**
+
+```bash
+# First time: Setup OAuth2 (browser will open)
+python3 gmail_watcher_skill.py --once
+
+# Daily monitoring (manual)
+python3 gmail_watcher_skill.py --once
+
+# Custom query (important unread emails only)
+python3 gmail_watcher_skill.py --query "is:unread is:important" --max-results 20
+
+# Test with mock data (no Gmail API needed)
+python3 gmail_watcher_skill.py --mock --dry-run
+```
+
+**Scheduled Task (M7):**
+- Runs every 30 minutes via Windows Task Scheduler
+- Uses `--once --quiet --no-banner` for automation
+- Logs to `Logs/gmail_watcher.log` and `Logs/scheduler.log`
+
+**Important Notes:**
+1. **Perception-Only:** This watcher ONLY creates intake wrappers. It NEVER sends emails.
+2. **All Email Actions Require Plan Approval:** To reply/forward/send emails:
+   - Create plan with `brain_create_plan` (Skill 16)
+   - Request approval with `brain_request_approval` (Skill 17)
+   - User moves plan to `Approved/` (HITL)
+   - Execute with `brain_execute_with_mcp` (Skill 18) after dry-run
+3. **Privacy-First:** By default, NO full email bodies are stored. Only safe excerpts (500 char max) with PII redaction.
+
+**Status:** ✓ Implemented (M3 Complete - Python script with OAuth2, checkpointing, PII redaction)
+
+**OAuth2 Setup Guide:** See `Docs/gmail_oauth_setup.md`
+
+**Mock Mode Testing:** See `templates/mock_emails.json` for sample fixture
+
+---
+
 ## 4. CLAUDE BRAIN: TASK PROCESSING + EXECUTION
 
 **Purpose:** End-to-end task processing from intake through execution to completion, with built-in approval gates and safety checks.

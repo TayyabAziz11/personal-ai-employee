@@ -48,6 +48,12 @@ credentials/
 *.pem
 *.cert
 
+# Gmail OAuth2 secrets (M3 - Silver Tier)
+credentials.json
+token.json
+*.secret*
+Logs/gmail_checkpoint.json
+
 # Backup files
 *.bak
 *.backup
