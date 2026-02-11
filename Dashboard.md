@@ -1,6 +1,6 @@
-# 🎯 Personal AI Employee — Bronze Dashboard
+# 🎯 Personal AI Employee — Silver Dashboard
 
-**Bronze Tier (Foundation + Execution)**
+**Silver Tier (MCP-First with HITL Approval)**
 
 *Dual-interface system: VS Code (execution) + Obsidian (review/presentation)*
 *View in Obsidian Reading Mode for optimal panel-based UI*
@@ -11,9 +11,10 @@
 >
 > | Property | Value |
 > |----------|-------|
-> | **Last Updated** | 2026-02-10 11:13 UTC |
+> | **Last Updated** | 2026-02-11 16:30 UTC |
 > | **Watcher Last Run** | 2026-02-10 11:03 UTC |
-> | **Employee Mode** | Bronze Tier (Foundation + Execution) |
+> | **Employee Mode** | Silver Tier (MCP + HITL) |
+> | **Silver Progress** | M1+M2 Complete (20%) |
 > | **Repository** | [GitHub](https://github.com/TayyabAziz11/personal-ai-employee) |
 
 ---
@@ -56,6 +57,110 @@
 
 ---
 
+> [!warning] 📋 Pending Approvals (Silver)
+>
+> **Count:** 0 items awaiting approval
+>
+> Plans requiring user approval are placed in `Pending_Approval/` folder.
+>
+> **Instructions:**
+> - **To Approve:** Move plan file to `Approved/` folder
+> - **To Reject:** Move plan file to `Rejected/` folder
+>
+> **Latest:** None (system ready for first approval workflow)
+
+---
+
+> [!info] 📑 Plans in Progress (Silver)
+>
+> **Active Plans:** 0
+> **Approved Plans:** 0
+> **Executed Plans:** 0
+>
+> | Status | Count | Location |
+> |--------|-------|----------|
+> | Draft | 0 | Plans/ |
+> | Pending Approval | 0 | Pending_Approval/ |
+> | Approved | 0 | Approved/ |
+> | Executed | 0 | Plans/completed/ |
+> | Failed | 0 | Plans/failed/ |
+> | Rejected | 0 | Rejected/ |
+>
+> **Latest Activity:** No plans created yet (awaiting M3+ implementation)
+
+---
+
+> [!done] 🔌 Last External Action (Silver)
+>
+> **Status:** No external actions yet
+>
+> External actions (email, calendar, file ops) require:
+> 1. ✅ Approved plan in `Approved/` folder
+> 2. ✅ Dry-run execution and approval
+> 3. ✅ Real execution via MCP
+> 4. ✅ Complete audit logging
+>
+> **MCP Actions Logged:** 0
+> **Last MCP Call:** None (MCP not yet configured)
+>
+> *All external actions will be logged to `Logs/mcp_actions.log`*
+
+---
+
+> [!success] 👁️ Watcher Status (Silver)
+>
+> | Watcher | Status | Last Run | Interval |
+> |---------|--------|----------|----------|
+> | **Filesystem** | ✅ Active | 2026-02-10 11:03 UTC | Manual/15min |
+> | **Gmail (OAuth2)** | ⏳ Not Implemented | N/A | 30min (M3) |
+>
+> **Filesystem Watcher:**
+> - ✅ Operational (Bronze Tier functional)
+> - Monitors: `Inbox/` folder
+> - Creates: Intake wrappers in `Needs_Action/`
+> - Logs: `Logs/watcher.log`
+>
+> **Gmail Watcher:**
+> - ⏳ Awaiting M3 implementation (OAuth2 setup + gmail_watcher.py)
+> - Will monitor: Gmail inbox via OAuth2
+> - Will create: Email intake wrappers in `Needs_Action/`
+> - Will log: `Logs/gmail_watcher.log`
+
+---
+
+> [!check] 🏥 Silver Tier Health Check
+>
+> **Vault Structure:**
+> - ✅ **M1 Complete** - Approval folders created (Pending_Approval/, Approved/, Rejected/, Scheduled/)
+> - ✅ **M1 Complete** - Log files initialized (gmail_watcher.log, mcp_actions.log, scheduler.log)
+> - ✅ **M2 Complete** - Skills pack created (.claude/skills/ with 10 docs)
+> - ✅ **M2 Complete** - Company Handbook updated (Section 2.2 Silver skills)
+> - ✅ **M2 Complete** - Dashboard updated (Silver sections added)
+>
+> **Silver Capabilities:**
+> - ✅ **Plan-First Workflow** - Documented (awaiting M4 implementation)
+> - ✅ **HITL Approval** - Infrastructure ready (Pending_Approval/, Approved/, Rejected/)
+> - ⏳ **Gmail Watcher** - Awaiting M3 (OAuth2 + gmail_watcher.py)
+> - ⏳ **MCP Integration** - Awaiting M6 (MCP server setup)
+> - ⏳ **Scheduled Tasks** - Awaiting M7 (Windows Task Scheduler)
+> - ⏳ **Daily Summaries** - Awaiting M8 (brain_generate_summary.py)
+>
+> **Implementation Progress:**
+> - ✅ M1: Vault Structure (100%)
+> - ✅ M2: Documentation (100%)
+> - ⏳ M3: Gmail Watcher (0%)
+> - ⏳ M4: Plan Workflow (0%)
+> - ⏳ M5: Approval Pipeline (0%)
+> - ⏳ M6: MCP Integration (0%)
+> - ⏳ M7: Scheduling (0%)
+> - ⏳ M8: Summaries (0%)
+> - ⏳ M9: Testing (0%)
+> - ⏳ M10: Demo (0%)
+>
+> **Overall Silver Progress:** 20% (M1+M2 complete, M3-M10 pending)
+
+---
+
 > [!done] ⭐ Last Completed Task
 >
 > **Task:** Draft Instagram Caption: Café Eid Post
@@ -70,7 +175,7 @@
 
 ---
 
-> [!check] 🏥 Bronze Tier Health Check
+> [!check] 🏥 Bronze Tier Health Check (Foundation)
 >
 > **Operational Verification:**
 >
@@ -81,11 +186,17 @@
 > - ✅ **Audit Trail Active** - system_log.md recording all operations
 > - ✅ **VS Code + Obsidian Sync** - Dashboard renders consistently in both
 >
-> **Recent Operations:**
-> 1. ✅ Watcher UX upgraded to premium CLI (10:59 UTC)
-> 2. ✅ Test task processed (11:03 UTC)
-> 3. ✅ Instagram caption task completed end-to-end (11:13 UTC)
-> 4. ✅ GitHub repository published (11:25 UTC)
+> **Recent Operations (Bronze):**
+> 1. ✅ Watcher UX upgraded to premium CLI (2026-02-10 10:59 UTC)
+> 2. ✅ Test task processed (2026-02-10 11:03 UTC)
+> 3. ✅ Instagram caption task completed end-to-end (2026-02-10 11:13 UTC)
+> 4. ✅ GitHub repository published (2026-02-10 11:25 UTC)
+>
+> **Recent Operations (Silver):**
+> 1. ✅ M1 vault structure setup (2026-02-11 15:45 UTC)
+> 2. ✅ M2 Silver skills pack created (.claude/skills/) (2026-02-11 16:00 UTC)
+> 3. ✅ M2 Company Handbook updated (Section 2.2) (2026-02-11 16:30 UTC)
+> 4. ✅ M2 Dashboard updated (Silver sections) (2026-02-11 16:30 UTC)
 
 ---
 
@@ -148,43 +259,72 @@
 
 ---
 
-> [!quote] 📂 Vault Structure
+> [!quote] 📂 Vault Structure (Bronze + Silver)
 >
 > ```
 > personal-ai-employee/
-> ├── 📊 Dashboard.md           ← You are here
-> ├── 📖 Company_Handbook.md    (15 skills, 5 operating loops)
-> ├── 🐍 watcher_skill.py       (Premium CLI UX v2.0)
-> ├── 📝 system_log.md          (Audit trail)
+> ├── 📊 Dashboard.md           ← You are here (Silver UI)
+> ├── 📖 Company_Handbook.md    (24 skills: 15 Bronze + 9 Silver)
+> ├── 🐍 watcher_skill.py       (Bronze: Premium CLI UX v2.0)
+> ├── 📝 system_log.md          (Append-only audit trail)
 > │
-> ├── 📥 Inbox/                 (1 item)
-> ├── 🎯 Needs_Action/          (0 items - clear)
-> ├── ✅ Done/                  (4 items)
-> ├── 📑 Plans/                 (Planning documents)
-> └── 📋 Logs/                  (watcher.log)
+> ├── 📥 Inbox/                 (1 item) [Bronze]
+> ├── 🎯 Needs_Action/          (0 items) [Bronze + Silver email intake]
+> ├── ✅ Done/                  (4 items) [Bronze]
+> │
+> ├── 📑 Plans/                 [Silver: Plan files]
+> │   ├── PLAN_TEMPLATE.md     (M4: Not yet created)
+> │   ├── completed/           (Executed plans)
+> │   ├── failed/              (Failed plans)
+> │   └── Briefings/           (Daily/weekly summaries - M8)
+> │
+> ├── ⏳ Pending_Approval/      [Silver: HITL approval] (0 plans)
+> ├── ✅ Approved/              [Silver: Ready for execution] (0 plans)
+> ├── ❌ Rejected/              [Silver: User rejected] (0 plans)
+> ├── 📅 Scheduled/             [Silver: Task definitions] (M7)
+> │
+> ├── .claude/                  [Silver: Skills pack]
+> │   └── skills/              (10 Silver skill docs + README)
+> │
+> └── 📋 Logs/
+>     ├── watcher.log          (Bronze: Filesystem watcher)
+>     ├── gmail_watcher.log    (Silver: Gmail OAuth2 - M3)
+>     ├── mcp_actions.log      (Silver: MCP audit trail - M6)
+>     └── scheduler.log        (Silver: Scheduled tasks - M7)
 > ```
 
 ---
 
 > [!info] 🎓 System Information
 >
-> **Version:** Bronze Tier v2.0 (Foundation + Execution)
+> **Version:** Silver Tier v1.0 (MCP-First + HITL Approval)
 >
 > **Technology:**
 > - Claude Code CLI (Sonnet 4.5)
-> - Python 3 (standard library only)
+> - Python 3 (Gmail API, MCP clients)
 > - Markdown vault (version-controlled)
+> - MCP (Model Context Protocol) for external actions
+> - OAuth2 for Gmail authentication
 >
-> **Capabilities:**
-> - Filesystem watcher with premium CLI
-> - Intelligent task triage
-> - End-to-end execution
-> - Approval gates for external actions
-> - Full audit trails
+> **Bronze Capabilities (Foundation):**
+> - ✅ Filesystem watcher with premium CLI
+> - ✅ Intelligent task triage
+> - ✅ End-to-end execution
+> - ✅ Approval gates for external actions
+> - ✅ Full audit trails
+>
+> **Silver Capabilities (MCP + HITL):**
+> - ⏳ Gmail OAuth2 watcher (M3)
+> - ⏳ Plan-first workflow (M4)
+> - ⏳ Human-in-the-loop approval (M5)
+> - ⏳ MCP email integration (M6)
+> - ⏳ Windows Task Scheduler (M7)
+> - ⏳ Daily summaries (M8)
 >
 > **Documentation:**
 > - [README.md](README.md) - Quick start guide
-> - [Company_Handbook.md](Company_Handbook.md) - Complete system documentation
+> - [Company_Handbook.md](Company_Handbook.md) - 24 skills (15 Bronze + 9 Silver)
+> - [.claude/skills/](./claude/skills/README.md) - Silver skills pack (10 docs)
 > - [GitHub Repository](https://github.com/TayyabAziz11/personal-ai-employee)
 
 ---
@@ -222,5 +362,5 @@
 
 ---
 
-*This dashboard is the single source of truth for Bronze Tier system state.*
-*Last synchronized: 2026-02-10 11:13 UTC*
+*This dashboard is the single source of truth for Silver Tier system state (Bronze foundation + MCP/HITL).*
+*Last synchronized: 2026-02-11 16:30 UTC*

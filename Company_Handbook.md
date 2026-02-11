@@ -245,6 +245,71 @@ Draft → Pending_Approval → Approved → Executed → Archived
                     Rejected → Archived
 ```
 
+### Human-in-the-Loop (HITL) Approval Workflow
+
+**Core Principle:** No external action without approved plan + approved file.
+
+**Workflow Steps:**
+1. **Plan Creation (brain_create_plan):**
+   - Agent detects need for external action (email, calendar, file ops)
+   - Generates plan file in `Plans/` with Status: Draft
+   - Plan includes: Objective, MCP tools, risk level, rollback strategy
+
+2. **Approval Request (brain_request_approval):**
+   - Plan status updated to: Pending_Approval
+   - Plan file moved from `Plans/` → `Pending_Approval/`
+   - Console displays approval request with plan details
+   - **User action required:** Review plan file
+
+3. **User Decision (Manual File Move):**
+   - **To Approve:** User moves plan file to `Approved/` folder
+   - **To Reject:** User moves plan file to `Rejected/` folder
+   - No command-line approval (file-based only for audit trail)
+
+4. **Approval Monitoring (brain_monitor_approvals):**
+   - Runs every 15 minutes (scheduled) or on-demand
+   - Checks `Approved/` folder for plans
+   - Triggers execution for approved plans
+
+5. **Dry-Run Phase (brain_execute_with_mcp --dry-run):**
+   - Executes MCP calls with `--dry-run` flag
+   - Displays preview of what will happen
+   - **CRITICAL:** No actual external actions taken
+   - Requests user confirmation: "Results look good? (yes/no)"
+
+6. **Execution Phase (brain_execute_with_mcp --execute):**
+   - Only runs if dry-run approved
+   - Executes real MCP calls
+   - Logs all operations to `Logs/mcp_actions.log`
+   - If any step fails: STOP immediately (no retry without new approval)
+
+7. **Archival (brain_archive_plan):**
+   - Executed plans → `Plans/completed/`
+   - Failed plans → `Plans/failed/`
+   - Rejected plans → kept in `Rejected/` (already archived)
+
+### MCP Governance + Dry-Run + Failure Handling
+
+**Dry-Run Requirements:**
+- **MANDATORY** for all MCP calls before real execution
+- Must display preview/results to user for inspection
+- User must explicitly approve dry-run results ("yes/no")
+- If dry-run fails or shows wrong results: plan moves back to `Pending_Approval/`
+
+**Failure Handling Rules:**
+1. **STOP Immediately:** On any MCP failure, halt execution (no further operations)
+2. **Create Escalation Log:** `Logs/mcp_failures/{timestamp}_failure.log`
+3. **Update Plan Status:** Status → Failed, move to `Plans/failed/`
+4. **Notify User:** Display failure details in console
+5. **No Simulated Success:** NEVER claim execution succeeded if MCP call failed
+6. **No Auto-Retry:** Retries require new plan and new approval
+
+**Logging Requirements:**
+- **All MCP Calls:** Logged to `Logs/mcp_actions.log` (dry-run + execute modes)
+- **Format:** `[timestamp] Tool | Operation | Parameters | Mode | Result | Duration`
+- **System Log:** Significant actions logged to `system_log.md`
+- **Append-Only:** Never overwrite logs (audit trail integrity)
+
 **For complete Silver Tier documentation, see:** `.claude/skills/README.md`
 
 ---

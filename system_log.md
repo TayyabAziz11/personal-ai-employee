@@ -572,3 +572,83 @@
 
 ---
 
+
+### 16:35 UTC - sil_m2_t01_handbook_updates
+**Task:** SIL-M2-T01 - Company Handbook Silver Tier Updates
+**Skill:** Documentation (M2)
+**Files Touched:**
+- Modified: Company_Handbook.md (Section 2.2 expanded)
+
+**Outcome:** ✓ OK - Company Handbook updated with comprehensive Silver documentation
+- Silver Skills Reference Table: 10 skills (Meta + S16-S24) with doc paths
+- MCP Governance: Expanded with dry-run requirements and failure handling
+- HITL Workflow: 7-step approval process documented (Draft → Pending → Approved → Dry-Run → Execute → Archive)
+- State Transitions: Plan lifecycle diagram added
+- Failure Handling Rules: STOP on failure, escalation logs, no simulated success
+- Logging Requirements: MCP actions log format and append-only audit trail
+- Dry-Run Requirements: Mandatory preview, user confirmation, plan rollback on rejection
+
+**Content Added:**
+- Human-in-the-Loop (HITL) Approval Workflow section
+- MCP Governance + Dry-Run + Failure Handling section
+- All Silver skills (16-24) referenced with links to .claude/skills/
+- No external action without approved plan + approved file (core principle)
+
+---
+
+### 16:40 UTC - sil_m2_t02_dashboard_updates
+**Task:** SIL-M2-T02 - Dashboard Silver Tier UI Updates
+**Skill:** Documentation (M2)
+**Files Touched:**
+- Modified: Dashboard.md (5 new Silver sections added)
+
+**Outcome:** ✓ OK - Dashboard updated with Silver Tier UI (Obsidian callouts)
+- Title Updated: "Bronze Dashboard" → "Silver Dashboard"
+- System Meta: Updated to Silver Tier with M1+M2 progress (20%)
+
+**Silver Sections Added (5 Obsidian Callouts):**
+1. [!warning] Pending Approvals (Silver) - Count + approval instructions
+2. [!info] Plans in Progress (Silver) - Status table with 6 plan states
+3. [!done] Last External Action (Silver) - MCP actions tracker (none yet)
+4. [!success] Watcher Status (Silver) - Filesystem (active) + Gmail (M3 pending)
+5. [!check] Silver Tier Health Check - M1-M10 progress + capabilities status
+
+**Updated Sections:**
+- Vault Structure: Added Silver folders (Pending_Approval/, Approved/, Rejected/, Scheduled/, .claude/)
+- System Information: Added Silver capabilities (Gmail watcher, plan-first, HITL, MCP, scheduling, summaries)
+- Health Check: Split Bronze/Silver operations, added M1-M10 implementation progress
+- Last Synchronized: 2026-02-11 16:30 UTC
+
+**Dashboard State:**
+- Pending Approvals: 0
+- Plans in Progress: 0
+- Last External Action: None (MCP not configured yet)
+- Watcher Status: Filesystem (✅ Active), Gmail (⏳ M3 pending)
+- Silver Progress: 20% (M1+M2 complete, M3-M10 pending)
+
+---
+
+### 16:45 UTC - milestone_m2_complete
+**Milestone:** M2 - Documentation Updates
+**Tasks Completed:** SIL-M2-T01, SIL-M2-T02
+**Duration:** ~45 minutes
+
+**Outcome:** ✓ OK - Milestone 2 (Documentation Updates) COMPLETE
+- ✅ Company_Handbook.md: Section 2.2 expanded with full Silver documentation
+- ✅ Dashboard.md: 5 new Silver sections added (Obsidian callout UI)
+- ✅ HITL Workflow: 7-step approval process documented
+- ✅ MCP Governance: Comprehensive rules (dry-run, failure handling, logging)
+- ✅ Skills Reference: All 10 Silver skills linked to .claude/skills/
+- ✅ UI Enhancement: Dashboard renders as panels in Obsidian Reading Mode
+- ✅ Bronze Foundation: Preserved (no breaking changes)
+
+**Silver Tier Progress:** M2 complete (20% of Silver Tier implementation)
+- ✅ M1: Vault Structure Setup (3 tasks) - COMPLETE
+- ✅ M2: Documentation Updates (2 tasks) - COMPLETE
+- ⏳ M3: Gmail Watcher Implementation (5 tasks) - NEXT
+- ⏳ M4-M10: Pending
+
+**Next Milestone:** M3 - Gmail Watcher Implementation (OAuth2 setup, gmail_watcher.py)
+
+---
+
