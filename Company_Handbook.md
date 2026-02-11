@@ -195,6 +195,60 @@ python watcher_skill.py --vault /path/to/vault
 
 ---
 
+## 2.2 SILVER TIER AGENT SKILLS (MCP-First)
+
+**Silver Skills Pack Location:** `.claude/skills/`
+
+The Silver Tier extends Bronze foundation with human-in-the-loop (HITL) approval workflow and MCP integration for external actions.
+
+### Silver Skills Overview
+
+All Silver skills follow the mandatory approval workflow:
+**Perception → Reasoning → Plan → Approval → Action → Logging**
+
+### Silver Skills Reference Table
+
+| Skill # | Skill Name | Doc Path | Purpose |
+|---------|------------|----------|---------|
+| **Meta** | silver_operating_loop | [.claude/skills/silver_operating_loop.md](.claude/skills/silver_operating_loop.md) | Complete Silver Tier workflow |
+| **S16** | brain_create_plan | [.claude/skills/brain_create_plan.md](.claude/skills/brain_create_plan.md) | Generate plan files for external actions |
+| **S17** | brain_request_approval | [.claude/skills/brain_request_approval.md](.claude/skills/brain_request_approval.md) | Move plans to Pending_Approval/ with notification |
+| **S18** | brain_execute_with_mcp | [.claude/skills/brain_execute_with_mcp.md](.claude/skills/brain_execute_with_mcp.md) | Execute approved plans via MCP (dry-run first) |
+| **S19** | brain_log_action | [.claude/skills/brain_log_action.md](.claude/skills/brain_log_action.md) | Log MCP actions to audit trail |
+| **S20** | brain_handle_mcp_failure | [.claude/skills/brain_handle_mcp_failure.md](.claude/skills/brain_handle_mcp_failure.md) | Handle MCP failures with escalation |
+| **S21** | brain_generate_summary | [.claude/skills/brain_generate_summary.md](.claude/skills/brain_generate_summary.md) | Generate daily/weekly summaries |
+| **S22** | brain_monitor_approvals | [.claude/skills/brain_monitor_approvals.md](.claude/skills/brain_monitor_approvals.md) | Check Approved/ folder for ready plans |
+| **S23** | brain_archive_plan | [.claude/skills/brain_archive_plan.md](.claude/skills/brain_archive_plan.md) | Archive executed/rejected plans |
+| **S24** | watcher_gmail | [.claude/skills/watcher_gmail.md](.claude/skills/watcher_gmail.md) | Gmail OAuth2 watcher (perception-only) |
+
+### MCP Governance (CRITICAL)
+
+For ANY external action (email, calendar, file ops):
+
+✅ **MUST:**
+- Have approved plan in Approved/ folder
+- Support dry-run mode (preview before execution)
+- Log to Logs/mcp_actions.log AND system_log.md
+- STOP immediately on MCP failure (no retries without approval)
+
+❌ **MUST NOT:**
+- Execute MCP calls without approved plan
+- Skip dry-run phase
+- Continue execution after MCP failure
+- Modify plan after approval
+
+### Silver State Transitions
+
+```
+Draft → Pending_Approval → Approved → Executed → Archived
+                        ↓
+                    Rejected → Archived
+```
+
+**For complete Silver Tier documentation, see:** `.claude/skills/README.md`
+
+---
+
 ## 3. WATCHER SYSTEM
 
 ### Bronze Tier: Filesystem Watcher (watcher_skill)
