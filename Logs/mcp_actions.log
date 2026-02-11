@@ -1,0 +1,5 @@
+# MCP Actions Log
+# Created: 2026-02-11 15:45:00 UTC
+# Purpose: Logs all MCP tool invocations (dry-run and execute modes)
+# Format: [timestamp] Tool | Operation | Parameters | Mode | Result | Duration
+
