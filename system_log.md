@@ -907,3 +907,100 @@ Draft → Pending_Approval → Approved → Executed → Archived
 
 ---
 
+
+[2026-02-12 03:47:15 UTC] APPROVAL REQUESTED
+- Plan: Schedule Team Meeting for Silver Tier Demo
+- Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+- Approval File: ACTION_20260212-0336__manual_test_schedule_meeting.md
+- Risk Level: Low
+- Status: Draft → Pending_Approval
+- Skill: brain_request_approval (M5)
+- Outcome: OK
+
+
+[2026-02-12 03:47:47 UTC] PLAN STATUS CHANGE
+- Plan ID: 20260212-0336__manual_test_schedule_meeting
+- Plan File: PLAN_20260212-0336__manual_test_schedule_meeting.md
+- Approval File: ACTION_20260212-0336__manual_test_schedule_meeting.md
+- Status: Pending_Approval → Approved
+- Skill: brain_monitor_approvals (M5)
+- Outcome: OK
+
+
+[2026-02-12 03:48:21 UTC] APPROVAL REQUESTED
+- Plan: Email from example.com
+- Plan ID: PLAN_20260212-0336__inbox_gmail_20260211-1612_mock001a
+- Approval File: ACTION_20260212-0336__inbox_gmail_20260211-1612_mock001a.md
+- Risk Level: Medium
+- Status: Draft → Pending_Approval
+- Skill: brain_request_approval (M5)
+- Outcome: OK
+
+
+[2026-02-12 03:48:28 UTC] PLAN STATUS CHANGE
+- Plan ID: 20260212-0336__inbox_gmail_20260211-1612_mock001a
+- Plan File: PLAN_20260212-0336__inbox_gmail_20260211-1612_mock001a.md
+- Approval File: ACTION_20260212-0336__inbox_gmail_20260211-1612_mock001a.md
+- Status: Pending_Approval → Rejected
+- Skill: brain_monitor_approvals (M5)
+- Outcome: OK
+
+
+---
+
+## M5: HUMAN-IN-THE-LOOP APPROVAL PIPELINE - COMPLETE
+
+**Completed:** 2026-02-12 03:50 UTC
+**Milestone:** M5 (3 tasks)
+**Branch:** silver-tier
+**Scope:** File-based approval gating and monitoring
+
+### Tasks Completed
+
+**SIL-M5-T01: Implement brain_request_approval Skill** ✅
+- Created: `brain_request_approval_skill.py` (399 lines)
+- Features: Read plan, create ACTION_*.md, update status, display console output, logging
+- YAML frontmatter: action_type, related_plan, plan_id, requested_at, risk_level, status
+- Outcome: OK
+
+**SIL-M5-T02: Implement brain_monitor_approvals Skill** ✅
+- Created: `brain_monitor_approvals_skill.py` (441 lines)
+- Features: Monitor Approved/Rejected folders, update plan status, move to processed/
+- NO MCP execution (only status updates)
+- Outcome: OK
+
+**SIL-M5-T03: Test Approval Workflow** ✅
+- Test 1: Approval request creation verified
+- Test 2: Approval processing verified (status → Approved)
+- Test 3: Rejection processing verified (status → Rejected)
+- All tests passed ✅
+
+### Files Created/Modified
+
+**Created:**
+- `brain_request_approval_skill.py` (399 lines)
+- `brain_monitor_approvals_skill.py` (441 lines)
+- `Approved/processed/`, `Rejected/processed/` (directories)
+
+**Modified:**
+- `Dashboard.md` (+15 lines) - Approval pipeline status, workflow, recent approved/rejected
+- `system_log.md` (this entry + 4 status change entries)
+- 2 test plan files (status updated to Approved/Rejected)
+
+### Approval Workflow
+
+```
+1. brain_create_plan → Draft plan in Plans/
+2. brain_request_approval → ACTION_*.md in Pending_Approval/
+3. User moves file → Approved/ or Rejected/
+4. brain_monitor_approvals → Update plan status, move to processed/
+```
+
+**State Machine:** Draft → Pending_Approval → Approved/Rejected (NO execution in M5)
+
+**Silver Progress:** M5 complete (50%)
+
+**Outcome:** M5 COMPLETE ✅
+
+---
+

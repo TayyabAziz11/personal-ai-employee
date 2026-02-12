@@ -11,10 +11,10 @@
 >
 > | Property | Value |
 > |----------|-------|
-> | **Last Updated** | 2026-02-11 21:30 UTC |
+> | **Last Updated** | 2026-02-12 03:50 UTC |
 > | **Watcher Last Run** | 2026-02-11 16:12 UTC |
 > | **Employee Mode** | Silver Tier (MCP + HITL) |
-> | **Silver Progress** | M1+M2+M3+M4 Complete (40%) |
+> | **Silver Progress** | M1+M2+M3+M4+M5 Complete (50%) |
 > | **Repository** | [GitHub](https://github.com/TayyabAziz11/personal-ai-employee) |
 
 ---
@@ -59,15 +59,20 @@
 
 > [!warning] 📋 Pending Approvals (Silver)
 >
+> **Approval Pipeline Status:** ✅ **Operational** (M5 Complete)
+>
 > **Count:** 0 items awaiting approval
 >
-> Plans requiring user approval are placed in `Pending_Approval/` folder.
+> **Approval Workflow:**
+> 1. Create plan with `python brain_create_plan_skill.py`
+> 2. Request approval with `python brain_request_approval_skill.py --plan <file>`
+> 3. ACTION_*.md file created in `Pending_Approval/`
+> 4. **User Decision:** Move ACTION file to `Approved/` or `Rejected/`
+> 5. Run `python brain_monitor_approvals_skill.py` to process decision
+> 6. Plan status updated automatically (Approved/Rejected)
 >
-> **Instructions:**
-> - **To Approve:** Move plan file to `Approved/` folder
-> - **To Reject:** Move plan file to `Rejected/` folder
->
-> **Latest:** None (system ready for first approval workflow)
+> **Recently Approved:** 1 plan (Schedule Team Meeting for Silver Tier Demo)
+> **Recently Rejected:** 1 plan (Email from example.com)
 
 ---
 
@@ -148,8 +153,8 @@
 > **Silver Capabilities:**
 > - ✅ **Gmail Watcher** - Operational (OAuth2, perception-only, PII redaction, checkpointing, mock mode)
 > - ✅ **Plan-First Workflow** - Operational (plan template + brain_create_plan skill implemented)
-> - ✅ **HITL Approval** - Infrastructure ready (Pending_Approval/, Approved/, Rejected/)
-> - ⏳ **Approval Pipeline** - Awaiting M5 (brain_request_approval, brain_monitor_approvals)
+> - ✅ **HITL Approval Pipeline** - Operational (brain_request_approval + brain_monitor_approvals implemented)
+> - ✅ **File-Based Approval** - Operational (Pending_Approval/, Approved/, Rejected/ with processed/ subfolders)
 > - ⏳ **MCP Integration** - Awaiting M6 (MCP server setup + brain_execute_with_mcp)
 > - ⏳ **Scheduled Tasks** - Awaiting M7 (Windows Task Scheduler)
 > - ⏳ **Daily Summaries** - Awaiting M8 (brain_generate_summary.py)
@@ -159,14 +164,14 @@
 > - ✅ M2: Documentation (100%)
 > - ✅ M3: Gmail Watcher (100%)
 > - ✅ M4: Plan Workflow (100%)
-> - ⏳ M5: Approval Pipeline (0%)
+> - ✅ M5: Approval Pipeline (100%)
 > - ⏳ M6: MCP Integration (0%)
 > - ⏳ M7: Scheduling (0%)
 > - ⏳ M8: Summaries (0%)
 > - ⏳ M9: Testing (0%)
 > - ⏳ M10: Demo (0%)
 >
-> **Overall Silver Progress:** 40% (M1+M2+M3+M4 complete, M5-M10 pending)
+> **Overall Silver Progress:** 50% (M1+M2+M3+M4+M5 complete, M6-M10 pending)
 
 ---
 
@@ -206,6 +211,7 @@
 > 2. ✅ M2 Silver skills pack created (.claude/skills/) (2026-02-11 16:00 UTC)
 > 3. ✅ M3 Gmail watcher implemented with OAuth2 + PII redaction (2026-02-11 16:12 UTC)
 > 4. ✅ M4 Plan-first workflow operational (templates + brain_create_plan) (2026-02-11 21:30 UTC)
+> 5. ✅ M5 File-based approval pipeline operational (brain_request_approval + brain_monitor_approvals) (2026-02-12 03:50 UTC)
 
 ---
 

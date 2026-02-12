@@ -709,9 +709,9 @@ Test-Path "Plans/PLAN_*.md"  # Returns True
 
 ### Tasks
 
-- [ ] SIL-M5-T01 [M5] Implement brain_request_approval skill guide in Skills/
-- [ ] SIL-M5-T02 [M5] Implement brain_monitor_approvals skill guide in Skills/
-- [ ] SIL-M5-T03 [M5] Test approval workflow: Draft → Pending → Approved/Rejected
+- [X] SIL-M5-T01 [M5] Implement brain_request_approval skill guide in Skills/
+- [X] SIL-M5-T02 [M5] Implement brain_monitor_approvals skill guide in Skills/
+- [X] SIL-M5-T03 [M5] Test approval workflow: Draft → Pending → Approved/Rejected
 
 **Task Details:**
 
