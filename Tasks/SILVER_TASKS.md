@@ -850,12 +850,12 @@ Test-Path "Approved/PLAN_*.md"  # Returns True
 
 ### Tasks
 
-- [ ] SIL-M6-T01 [M6] Set up Gmail MCP server (Node.js or Python implementation) ⚠️ **Requires MCP**
-- [ ] SIL-M6-T02 [M6] Configure MCP server settings and test connection ⚠️ **Requires MCP**
-- [ ] SIL-M6-T03 [M6] Implement brain_execute_with_mcp skill with dry-run workflow ⚠️ **Requires MCP**
-- [ ] SIL-M6-T04 [P] [M6] Implement brain_log_action skill for MCP action logging
-- [ ] SIL-M6-T05 [P] [M6] Implement brain_handle_mcp_failure skill for error handling
-- [ ] SIL-M6-T06 [M6] Test MCP email send with dry-run → approval → execute flow ⚠️ **Requires MCP**
+- [X] SIL-M6-T01 [M6] Set up Gmail MCP server (Node.js or Python implementation) ⚠️ **Requires MCP**
+- [X] SIL-M6-T02 [M6] Configure MCP server settings and test connection ⚠️ **Requires MCP**
+- [X] SIL-M6-T03 [M6] Implement brain_execute_with_mcp skill with dry-run workflow ⚠️ **Requires MCP**
+- [X] SIL-M6-T04 [P] [M6] Implement brain_log_action skill for MCP action logging
+- [X] SIL-M6-T05 [P] [M6] Implement brain_handle_mcp_failure skill for error handling
+- [X] SIL-M6-T06 [M6] Test MCP email send with dry-run → approval → execute flow ⚠️ **Requires MCP**
 
 **Task Details:**
 

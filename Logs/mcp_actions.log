@@ -3,3 +3,102 @@
 # Purpose: Logs all MCP tool invocations (dry-run and execute modes)
 # Format: [timestamp] Tool | Operation | Parameters | Mode | Result | Duration
 
+
+[2026-02-12 03:57:55 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: gmail
+Operation: send_email
+Parameters: {}
+Mode: dry-run
+Success: True
+Result: DRY-RUN: Would send email to unknown
+Duration: 100ms
+---
+
+[2026-02-12 03:57:55 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: context7
+Operation: query-docs
+Parameters: {}
+Mode: dry-run
+Success: False
+Result: Unsupported operation: context7.query-docs
+Duration: 100ms
+---
+
+[2026-02-12 04:00:31 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: gmail
+Operation: send_email
+Parameters: {}
+Mode: dry-run
+Success: True
+Result: DRY-RUN: Would send email to unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:00:31 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: context7
+Operation: query-docs
+Parameters: {}
+Mode: dry-run
+Success: True
+Result: Context7 docs queried: unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:00:41 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: gmail
+Operation: send_email
+Parameters: {}
+Mode: execute
+Success: True
+Result: SIMULATED: Email sent to unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:00:41 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: context7
+Operation: query-docs
+Parameters: {}
+Mode: execute
+Success: True
+Result: Context7 docs queried: unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:00:56 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: gmail
+Operation: send_email
+Parameters: {}
+Mode: execute
+Success: True
+Result: SIMULATED: Email sent to unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:00:56 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__manual_test_schedule_meeting
+Tool: context7
+Operation: query-docs
+Parameters: {}
+Mode: execute
+Success: True
+Result: Context7 docs queried: unknown
+Duration: 100ms
+---
+
+[2026-02-12 04:01:27 UTC] MCP Call
+Plan ID: PLAN_20260212-0336__inbox_gmail_20260211-1612_mock001a
+Tool: gmail
+Operation: send_email
+Parameters: {}
+Mode: dry-run
+Success: False
+Result: SIMULATED FAILURE: MCP server timeout (test mode)
+Duration: 100ms
+---
