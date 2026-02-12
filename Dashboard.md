@@ -11,10 +11,10 @@
 >
 > | Property | Value |
 > |----------|-------|
-> | **Last Updated** | 2026-02-11 16:30 UTC |
-> | **Watcher Last Run** | 2026-02-10 11:03 UTC |
+> | **Last Updated** | 2026-02-11 21:30 UTC |
+> | **Watcher Last Run** | 2026-02-11 16:12 UTC |
 > | **Employee Mode** | Silver Tier (MCP + HITL) |
-> | **Silver Progress** | M1+M2 Complete (20%) |
+> | **Silver Progress** | M1+M2+M3+M4 Complete (40%) |
 > | **Repository** | [GitHub](https://github.com/TayyabAziz11/personal-ai-employee) |
 
 ---
@@ -73,6 +73,8 @@
 
 > [!info] 📑 Plans in Progress (Silver)
 >
+> **Plan Workflow Status:** ✅ **Operational** (M4 Complete)
+>
 > **Active Plans:** 0
 > **Approved Plans:** 0
 > **Executed Plans:** 0
@@ -86,7 +88,9 @@
 > | Failed | 0 | Plans/failed/ |
 > | Rejected | 0 | Rejected/ |
 >
-> **Latest Activity:** No plans created yet (awaiting M3+ implementation)
+> **Plan Creation Tool:** `python brain_create_plan_skill.py --task <file> --objective "<goal>"`
+>
+> **Latest Activity:** M4 completed - Plan-first workflow operational with template and brain_create_plan skill
 
 ---
 
@@ -112,7 +116,7 @@
 > | Watcher | Status | Last Run | Interval |
 > |---------|--------|----------|----------|
 > | **Filesystem** | ✅ Active | 2026-02-10 11:03 UTC | Manual/15min |
-> | **Gmail (OAuth2)** | ⏳ Not Implemented | N/A | 30min (M3) |
+> | **Gmail (OAuth2)** | ✅ Implemented | 2026-02-11 16:12 UTC | Manual/30min |
 >
 > **Filesystem Watcher:**
 > - ✅ Operational (Bronze Tier functional)
@@ -121,10 +125,12 @@
 > - Logs: `Logs/watcher.log`
 >
 > **Gmail Watcher:**
-> - ⏳ Awaiting M3 implementation (OAuth2 setup + gmail_watcher.py)
-> - Will monitor: Gmail inbox via OAuth2
-> - Will create: Email intake wrappers in `Needs_Action/`
-> - Will log: `Logs/gmail_watcher.log`
+> - ✅ Operational (M3 complete - OAuth2 + PII redaction + checkpointing + mock mode)
+> - Monitors: Gmail inbox via OAuth2 (read-only scope)
+> - Creates: Email intake wrappers in `Needs_Action/`
+> - Privacy: PII redaction, 500 char excerpt max, no full bodies by default
+> - Logs: `Logs/gmail_watcher.log`
+> - Tool: `python gmail_watcher_skill.py --once` or `--mock` for testing
 
 ---
 
@@ -136,20 +142,23 @@
 > - ✅ **M2 Complete** - Skills pack created (.claude/skills/ with 10 docs)
 > - ✅ **M2 Complete** - Company Handbook updated (Section 2.2 Silver skills)
 > - ✅ **M2 Complete** - Dashboard updated (Silver sections added)
+> - ✅ **M3 Complete** - Gmail watcher implemented (gmail_watcher_skill.py, OAuth2, PII redaction)
+> - ✅ **M4 Complete** - Plan-first workflow operational (templates/plan_template.md, brain_create_plan_skill.py)
 >
 > **Silver Capabilities:**
-> - ✅ **Plan-First Workflow** - Documented (awaiting M4 implementation)
+> - ✅ **Gmail Watcher** - Operational (OAuth2, perception-only, PII redaction, checkpointing, mock mode)
+> - ✅ **Plan-First Workflow** - Operational (plan template + brain_create_plan skill implemented)
 > - ✅ **HITL Approval** - Infrastructure ready (Pending_Approval/, Approved/, Rejected/)
-> - ⏳ **Gmail Watcher** - Awaiting M3 (OAuth2 + gmail_watcher.py)
-> - ⏳ **MCP Integration** - Awaiting M6 (MCP server setup)
+> - ⏳ **Approval Pipeline** - Awaiting M5 (brain_request_approval, brain_monitor_approvals)
+> - ⏳ **MCP Integration** - Awaiting M6 (MCP server setup + brain_execute_with_mcp)
 > - ⏳ **Scheduled Tasks** - Awaiting M7 (Windows Task Scheduler)
 > - ⏳ **Daily Summaries** - Awaiting M8 (brain_generate_summary.py)
 >
 > **Implementation Progress:**
 > - ✅ M1: Vault Structure (100%)
 > - ✅ M2: Documentation (100%)
-> - ⏳ M3: Gmail Watcher (0%)
-> - ⏳ M4: Plan Workflow (0%)
+> - ✅ M3: Gmail Watcher (100%)
+> - ✅ M4: Plan Workflow (100%)
 > - ⏳ M5: Approval Pipeline (0%)
 > - ⏳ M6: MCP Integration (0%)
 > - ⏳ M7: Scheduling (0%)
@@ -157,7 +166,7 @@
 > - ⏳ M9: Testing (0%)
 > - ⏳ M10: Demo (0%)
 >
-> **Overall Silver Progress:** 20% (M1+M2 complete, M3-M10 pending)
+> **Overall Silver Progress:** 40% (M1+M2+M3+M4 complete, M5-M10 pending)
 
 ---
 
@@ -195,8 +204,8 @@
 > **Recent Operations (Silver):**
 > 1. ✅ M1 vault structure setup (2026-02-11 15:45 UTC)
 > 2. ✅ M2 Silver skills pack created (.claude/skills/) (2026-02-11 16:00 UTC)
-> 3. ✅ M2 Company Handbook updated (Section 2.2) (2026-02-11 16:30 UTC)
-> 4. ✅ M2 Dashboard updated (Silver sections) (2026-02-11 16:30 UTC)
+> 3. ✅ M3 Gmail watcher implemented with OAuth2 + PII redaction (2026-02-11 16:12 UTC)
+> 4. ✅ M4 Plan-first workflow operational (templates + brain_create_plan) (2026-02-11 21:30 UTC)
 
 ---
 
@@ -273,10 +282,12 @@
 > ├── ✅ Done/                  (4 items) [Bronze]
 > │
 > ├── 📑 Plans/                 [Silver: Plan files]
-> │   ├── PLAN_TEMPLATE.md     (M4: Not yet created)
 > │   ├── completed/           (Executed plans)
 > │   ├── failed/              (Failed plans)
 > │   └── Briefings/           (Daily/weekly summaries - M8)
+> │
+> ├── 🛠️ templates/             [Silver: Plan templates]
+> │   └── plan_template.md     (M4: ✅ Created - 12 mandatory sections)
 > │
 > ├── ⏳ Pending_Approval/      [Silver: HITL approval] (0 plans)
 > ├── ✅ Approved/              [Silver: Ready for execution] (0 plans)

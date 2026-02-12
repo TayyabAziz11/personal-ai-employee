@@ -312,6 +312,123 @@ Draft → Pending_Approval → Approved → Executed → Archived
 
 **For complete Silver Tier documentation, see:** `.claude/skills/README.md`
 
+### Operational Details: brain_create_plan (Skill 16)
+
+**Purpose:** Generate structured plan files for any action requiring external execution or approval.
+
+**Implementation:** `brain_create_plan_skill.py` (vault root)
+
+**Inputs:**
+- Task file from `Needs_Action/` folder
+- Objective (one-sentence goal)
+- Risk level (Low/Medium/High)
+
+**Outputs:**
+- Plan file in `Plans/` folder
+- Format: `PLAN_<YYYYMMDD-HHMM>__<task_slug>.md`
+- Status: Draft (ready for review)
+- Log entry in `system_log.md`
+
+**When to Use:**
+Plans MUST be created for:
+1. External communication (emails, GitHub, social media)
+2. MCP tool invocations with side effects (POST/PUT/DELETE)
+3. File operations outside `Done/` (destructive/risky)
+4. Scheduled tasks (automation requires documentation)
+5. Multi-step tasks (>3 actions with dependencies)
+
+Plans NOT required for:
+- Reading files (perception)
+- Creating drafts in `Needs_Action/` (no external effect)
+- Running watchers in `--dry-run` mode
+- Appending to `system_log.md` (logging)
+- Updating `Dashboard.md` counts
+
+**How to Run:**
+
+1. **Check if Plan Required (Optional):**
+   ```bash
+   python brain_create_plan_skill.py --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md --check-only
+   ```
+   Returns YES/NO based on task analysis.
+
+2. **Create Plan from Task:**
+   ```bash
+   python brain_create_plan_skill.py \
+       --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md \
+       --objective "Reply to Q1 hackathon update email" \
+       --risk-level Medium \
+       --status Draft
+   ```
+
+3. **Create Plan Ready for Approval:**
+   ```bash
+   python brain_create_plan_skill.py \
+       --task Needs_Action/test_task.md \
+       --objective "Send test email" \
+       --risk-level High \
+       --status Pending_Approval
+   ```
+
+**CLI Flags:**
+- `--task` (required): Path to task file
+- `--objective` (required): One-sentence goal
+- `--risk-level`: Low/Medium/High (default: Medium)
+- `--status`: Draft/Pending_Approval (default: Draft)
+- `--check-only`: Only check if plan required, don't create
+
+**Plan Template Structure:**
+All plans use `templates/plan_template.md` with 12 mandatory sections:
+1. Objective
+2. Success Criteria
+3. Inputs/Context
+4. Files to Touch
+5. MCP Tools Required
+6. Approval Gates
+7. Risk Assessment
+8. Execution Steps
+9. Rollback Strategy
+10. Dry-Run Results
+11. Execution Log
+12. Definition of Done
+
+**State Machine:**
+```
+Draft → Pending_Approval → Approved → Executed → Archived
+                        ↓
+                    Rejected → Archived
+```
+
+**Next Steps After Creation:**
+1. Review plan file in `Plans/`
+2. Fill in any remaining placeholders (MCP tools, execution steps)
+3. Update Status to `Pending_Approval` if ready
+4. Move to `Pending_Approval/` folder for user review (requires M5)
+
+**Test Procedure:**
+```bash
+# Verify plan template exists
+ls templates/plan_template.md
+
+# Create test plan from mock email
+python brain_create_plan_skill.py \
+    --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md \
+    --objective "Reply to project update email" \
+    --risk-level Low \
+    --status Draft
+
+# Verify plan created
+ls Plans/PLAN_*.md
+```
+
+**Definition of Done:**
+- [ ] Plan file created in `Plans/` with unique ID
+- [ ] All 12 template sections present
+- [ ] Status set correctly (Draft or Pending_Approval)
+- [ ] Task file reference included
+- [ ] system_log.md updated with creation entry
+- [ ] Logging Requirements: Appends to system_log.md
+
 ---
 
 ## 3. WATCHER SYSTEM
