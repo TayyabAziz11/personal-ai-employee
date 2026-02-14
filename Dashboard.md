@@ -11,10 +11,10 @@
 >
 > | Property | Value |
 > |----------|-------|
-> | **Last Updated** | 2026-02-14 00:00 UTC |
+> | **Last Updated** | 2026-02-14 14:10 UTC |
 > | **Watcher Last Run** | 2026-02-11 16:12 UTC |
 > | **Employee Mode** | Silver Tier (MCP + HITL) |
-> | **Silver Progress** | M1+M2+M3+M4+M5+M6+M7 Complete (70%) |
+> | **Silver Progress** | M1-M8 Complete (80%) |
 > | **Repository** | [GitHub](https://github.com/TayyabAziz11/personal-ai-employee) |
 
 ---
@@ -124,6 +124,28 @@
 
 ---
 
+> [!note] 📅 Daily Summaries (Silver)
+>
+> **M8 Status:** ✅ **Operational**
+>
+> **Latest Summary:** [2026-02-14](Daily_Summaries/2026-02-14.md)
+> **Location:** `Daily_Summaries/`
+>
+> **Summary Includes:**
+> - Activity metrics (plans, executions, failures)
+> - Vault state snapshot
+> - MCP operations breakdown
+> - Timeline of key events
+> - Silver health status
+>
+> **Generation:**
+> - Manual: `python brain_generate_daily_summary_skill.py`
+> - Scheduled: Daily at 8 PM UTC (via scheduler)
+>
+> *View all summaries in `Daily_Summaries/` folder*
+
+---
+
 > [!tip] 🕒 Scheduled Tasks (Silver)
 >
 > **Automation Status:** ✅ **Operational** (M7 Complete)
@@ -199,7 +221,7 @@
 > - ✅ **File-Based Approval** - Operational (Pending_Approval/, Approved/, Rejected/ with processed/ subfolders)
 > - ✅ **MCP Email Execution** - Operational (brain_execute_with_mcp with dry-run and failure handling)
 > - ✅ **Scheduled Tasks** - Operational (Windows Task Scheduler with scheduler_runner.py wrapper)
-> - ⏳ **Daily Summaries** - Awaiting M8 (brain_generate_summary.py)
+> - ✅ **Daily Summaries** - Operational (brain_generate_daily_summary_skill.py - M8)
 >
 > **Implementation Progress:**
 > - ✅ M1: Vault Structure (100%)
@@ -209,11 +231,11 @@
 > - ✅ M5: Approval Pipeline (100%)
 > - ✅ M6: MCP Integration (100%)
 > - ✅ M7: Scheduling (100%)
-> - ⏳ M8: Summaries (0%)
+> - ✅ M8: Summaries (100%)
 > - ⏳ M9: Testing (0%)
 > - ⏳ M10: Demo (0%)
 >
-> **Overall Silver Progress:** 70% (M1+M2+M3+M4+M5+M6+M7 complete, M8-M10 pending)
+> **Overall Silver Progress:** 80% (M1-M8 complete, M9-M10 pending)
 
 ---
 
@@ -256,6 +278,7 @@
 > 5. ✅ M5 File-based approval pipeline operational (brain_request_approval + brain_monitor_approvals) (2026-02-12 03:50 UTC)
 > 6. ✅ M6 MCP email execution operational (brain_execute_with_mcp with dry-run + failure handling) (2026-02-12 04:05 UTC)
 > 7. ✅ M7 Scheduled task automation operational (Windows Task Scheduler + scheduler_runner.py wrapper) (2026-02-14 00:00 UTC)
+> 8. ✅ M8 Daily summary generation operational (brain_generate_daily_summary_skill.py + Gmail API helper) (2026-02-14 14:10 UTC)
 
 ---
 
