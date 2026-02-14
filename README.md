@@ -93,6 +93,114 @@ python watcher_skill.py --verbose --dry-run
 
 ---
 
+## ⏰ Windows Task Scheduler Automation (Silver Tier)
+
+The Silver Tier includes scheduled automation for autonomous operation. Tasks run at regular intervals without manual intervention.
+
+### Scheduled Tasks
+
+| Task | Frequency | Purpose |
+|------|-----------|---------|
+| **Filesystem Watcher** | Every 5 minutes | Monitor Needs_Action/ for new tasks |
+| **Gmail Watcher** | Every 10 minutes | Check inbox for new messages |
+| **Approval Monitor** | Every 3 minutes | Process approval/rejection decisions |
+| **Daily Summary** | Daily at 8 PM UTC | Generate system activity report |
+
+### Setup Instructions (GUI Method)
+
+1. **Open Task Scheduler**
+   - Press `Win + R`
+   - Type `taskschd.msc`
+   - Press Enter
+
+2. **Import Task XML Files**
+   - Click "Action" → "Import Task..."
+   - Navigate to: `Personal AI Employee/Scheduled/`
+   - Import each XML file:
+     - `filesystem_watcher_task.xml`
+     - `gmail_watcher_task.xml`
+     - `approval_monitor_task.xml`
+     - `daily_summary_task.xml`
+
+3. **Verify Task Settings**
+   - Check "Triggers" tab: Verify schedule intervals
+   - Check "Actions" tab: Ensure Python path is correct
+   - Check "Conditions" tab: Disable "Start only if on AC power" if needed
+   - Click "OK" to save
+
+4. **Test Scheduled Tasks**
+   - Right-click task → "Run"
+   - Check `Logs/scheduler.log` for execution results
+
+### Setup Instructions (PowerShell Method)
+
+```powershell
+# Navigate to project directory
+cd "E:\Certified Cloud Native Generative and Agentic AI Engineer\Q4 part 2\Q4 part 2\Hackathon-0\Personal AI Employee"
+
+# Import all scheduled tasks
+schtasks /Create /TN "PersonalAIEmployee\FilesystemWatcher" /XML "Scheduled\filesystem_watcher_task.xml" /F
+schtasks /Create /TN "PersonalAIEmployee\GmailWatcher" /XML "Scheduled\gmail_watcher_task.xml" /F
+schtasks /Create /TN "PersonalAIEmployee\ApprovalMonitor" /XML "Scheduled\approval_monitor_task.xml" /F
+schtasks /Create /TN "PersonalAIEmployee\DailySummary" /XML "Scheduled\daily_summary_task.xml" /F
+
+# Verify tasks are registered
+schtasks /Query /TN "PersonalAIEmployee\FilesystemWatcher"
+schtasks /Query /TN "PersonalAIEmployee\GmailWatcher"
+schtasks /Query /TN "PersonalAIEmployee\ApprovalMonitor"
+schtasks /Query /TN "PersonalAIEmployee\DailySummary"
+
+# Test run (optional)
+schtasks /Run /TN "PersonalAIEmployee\FilesystemWatcher"
+```
+
+### Monitoring Scheduled Tasks
+
+**View Scheduler Logs:**
+```bash
+# View last 50 entries
+tail -n 50 Logs/scheduler.log
+
+# Monitor in real-time
+tail -f Logs/scheduler.log
+```
+
+**Task Manager:**
+```powershell
+# List all PersonalAIEmployee tasks
+schtasks /Query /FO LIST /TN "PersonalAIEmployee\*"
+
+# Disable a task
+schtasks /Change /TN "PersonalAIEmployee\GmailWatcher" /DISABLE
+
+# Enable a task
+schtasks /Change /TN "PersonalAIEmployee\GmailWatcher" /ENABLE
+
+# Delete a task
+schtasks /Delete /TN "PersonalAIEmployee\GmailWatcher" /F
+```
+
+### Troubleshooting
+
+**Task Not Running:**
+1. Check Task Scheduler History tab
+2. Verify Python is in system PATH
+3. Check working directory path in XML
+4. Review `Logs/scheduler.log` for errors
+
+**Permission Issues:**
+1. Right-click task → Properties
+2. Click "Change User or Group..."
+3. Ensure user has appropriate permissions
+4. Try "Run whether user is logged on or not"
+
+**Crash Loops:**
+- The `scheduler_runner.py` wrapper prevents crash loops
+- All exceptions are logged to `Logs/scheduler.log`
+- Tasks timeout after 5-10 minutes (defined in XML)
+
+---
+
 ## 📋 Watcher CLI Flags
 
 | Flag | Description |
