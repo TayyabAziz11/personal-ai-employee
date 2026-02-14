@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Personal AI Employee - brain_execute_with_mcp Skill
-Silver Tier - M6: MCP Email Execution Layer
+Silver Tier - M6.2: MCP Email Execution Layer (Full Gmail MCP Support)
 
 Purpose: Execute approved plans using MCP Gmail integration.
 Tier: Silver
@@ -10,6 +10,7 @@ Skill ID: 18
 CRITICAL: This is the Action stage of the pipeline.
 NO execution without approved plan.
 MUST support --dry-run (default ON).
+Supports: send_email, draft_email, reply_email (approval-gated actions)
 """
 
 import os
@@ -56,7 +57,108 @@ class MCPExecutor:
             'failed_dir': base_dir / 'Plans' / 'failed',
             'mcp_log': base_dir / 'Logs' / 'mcp_actions.log',
             'system_log': base_dir / 'system_log.md',
+            'tools_snapshot': base_dir / 'Logs' / 'mcp_tools_snapshot.json',
         }
+
+    def list_mcp_tools(self) -> Dict:
+        """
+        List available MCP tools from Gmail server.
+
+        Returns:
+            Dict with tools list and status
+        """
+        # Check if MCP Gmail server is available
+        # In real implementation, this would query the MCP server
+        # For now, we return simulation mode info
+
+        tools_info = {
+            'server': 'gmail',
+            'status': 'simulation',
+            'message': 'MCP Gmail server not configured - using simulation mode',
+            'tools': [
+                {
+                    'name': 'send_email',
+                    'description': 'Send an email via Gmail (ACTION - requires approval)',
+                    'category': 'action'
+                },
+                {
+                    'name': 'create_draft',
+                    'description': 'Create a draft email (ACTION - requires approval)',
+                    'category': 'action'
+                },
+                {
+                    'name': 'reply_email',
+                    'description': 'Reply to an email (ACTION - requires approval)',
+                    'category': 'action'
+                },
+                {
+                    'name': 'list_messages',
+                    'description': 'List Gmail messages (QUERY - no approval needed)',
+                    'category': 'query'
+                },
+                {
+                    'name': 'search_messages',
+                    'description': 'Search messages (QUERY - no approval needed)',
+                    'category': 'query'
+                },
+                {
+                    'name': 'get_message',
+                    'description': 'Get message content (QUERY - no approval needed)',
+                    'category': 'query'
+                },
+                {
+                    'name': 'list_labels',
+                    'description': 'List Gmail labels (QUERY - no approval needed)',
+                    'category': 'query'
+                }
+            ],
+            'cached_at': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+        }
+
+        # Save snapshot to file (redacted)
+        snapshot_path = self.config.get('tools_snapshot', Path('Logs/mcp_tools_snapshot.json'))
+        if isinstance(snapshot_path, str):
+            snapshot_path = Path(snapshot_path)
+        snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(snapshot_path, 'w', encoding='utf-8') as f:
+            json.dump(tools_info, f, indent=2)
+
+        return tools_info
+
+    def _redact_pii(self, text: str) -> str:
+        """
+        Redact PII from text (emails, phones).
+
+        Args:
+            text: Text to redact
+
+        Returns:
+            Redacted text
+        """
+        if not text:
+            return text
+
+        # Redact email addresses
+        text = re.sub(
+            r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            '<REDACTED_EMAIL>',
+            text
+        )
+
+        # Redact phone numbers
+        text = re.sub(
+            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+            '<REDACTED_PHONE>',
+            text
+        )
+        text = re.sub(
+            r'\+\d{1,3}[-.]?\d{1,4}[-.]?\d{1,4}[-.]?\d{1,9}',
+            '<REDACTED_PHONE>',
+            text
+        )
+
+        return text
 
     def read_plan(self, plan_path: Path) -> Dict:
         """
@@ -464,25 +566,34 @@ class MCPExecutor:
         result: Dict,
         dry_run: bool
     ):
-        """Log MCP call to mcp_actions.log."""
+        """Log MCP call to mcp_actions.log (JSON format)."""
         timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
 
-        log_entry = f"""
-[{timestamp}] MCP Call
-Plan ID: {plan_id}
-Tool: {tool}
-Operation: {operation}
-Parameters: {json.dumps(parameters, indent=2)}
-Mode: {'dry-run' if dry_run else 'execute'}
-Success: {result['success']}
-Result: {result.get('message', result.get('error', 'Unknown'))}
-Duration: {result.get('duration_ms', 0)}ms
----
-"""
+        # Redact PII from parameters
+        redacted_params = {
+            k: self._redact_pii(str(v)) if isinstance(v, str) else v
+            for k, v in parameters.items()
+        }
 
-        # Append to mcp_actions.log
+        # Create JSON log entry
+        log_entry = {
+            'timestamp': timestamp,
+            'plan_id': plan_id,
+            'tool': tool,
+            'operation': operation,
+            'parameters': redacted_params,
+            'mode': 'dry-run' if dry_run else 'execute',
+            'success': result.get('success', False),
+            'duration_ms': result.get('duration_ms', 0),
+            'response_summary': self._redact_pii(result.get('message', result.get('error', 'Unknown')))
+        }
+
+        if not result.get('success'):
+            log_entry['error'] = result.get('error', 'Unknown error')
+
+        # Append JSON line to log
         with open(self.mcp_log, 'a', encoding='utf-8') as f:
-            f.write(log_entry)
+            f.write(json.dumps(log_entry) + '\n')
 
     def _log_to_system_log(
         self,
@@ -495,14 +606,17 @@ Duration: {result.get('duration_ms', 0)}ms
         """Log execution to system_log.md."""
         timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
 
+        # Redact error message
+        error_redacted = self._redact_pii(error) if error else None
+
         log_entry = f"""
 [{timestamp}] PLAN EXECUTION
 - Plan ID: {plan_id}
 - Status: {status}
 - Mode: {mode}
 - Success: {success}
-{'- Error: ' + error if error else ''}
-- Skill: brain_execute_with_mcp (M6)
+{'- Error: ' + error_redacted if error_redacted else ''}
+- Skill: brain_execute_with_mcp (M6.2)
 - Outcome: {'OK' if success else 'FAILED'}
 
 """
@@ -520,6 +634,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # List available MCP tools
+  python brain_execute_with_mcp_skill.py --list-tools
+
   # Dry-run mode (default - preview only, no real actions)
   python brain_execute_with_mcp_skill.py --plan Plans/PLAN_*.md
 
@@ -535,8 +652,12 @@ Examples:
     )
 
     parser.add_argument(
+        '--list-tools',
+        action='store_true',
+        help='List available MCP Gmail tools and exit'
+    )
+    parser.add_argument(
         '--plan',
-        required=True,
         help='Path to approved plan file'
     )
 
@@ -569,6 +690,33 @@ Examples:
 
     # Initialize executor
     executor = MCPExecutor()
+
+    # Handle --list-tools
+    if args.list_tools:
+        tools_info = executor.list_mcp_tools()
+        print()
+        print("=" * 70)
+        print("  MCP GMAIL TOOLS")
+        print("=" * 70)
+        print(f"Server: {tools_info['server']}")
+        print(f"Status: {tools_info['status']}")
+        print(f"Message: {tools_info['message']}")
+        print()
+        print("Available Tools:")
+        for tool in tools_info['tools']:
+            category_icon = "🔒" if tool['category'] == 'action' else "📖"
+            print(f"  {category_icon} {tool['name']}")
+            print(f"      {tool['description']}")
+        print()
+        print(f"Cached to: {executor.config.get('tools_snapshot', 'Logs/mcp_tools_snapshot.json')}")
+        print(f"Cached at: {tools_info['cached_at']}")
+        print("=" * 70)
+        print()
+        sys.exit(0)
+
+    # Plan argument required for execution
+    if not args.plan:
+        parser.error("--plan is required unless using --list-tools")
 
     # Determine mode
     dry_run = not args.execute
