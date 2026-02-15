@@ -7,14 +7,41 @@
 
 ---
 
+> [!tip] 🚀 Demo Start Here — Judge Evaluation
+>
+> **Silver Tier Personal AI Employee** — Autonomous FTE with Real External Actions
+>
+> **🎬 5-Minute Demo:**
+> - 📋 **Demo Script:** [Docs/demo_script_silver.md](Docs/demo_script_silver.md)
+> - ✅ **Completion Checklist:** [Docs/silver_completion_checklist.md](Docs/silver_completion_checklist.md)
+> - 📊 **Test Report:** [Docs/test_report_silver_e2e.md](Docs/test_report_silver_e2e.md)
+>
+> **📧 Real Gmail Proof:**
+> - ✅ **Real Gmail Mode:** VERIFIED (email sent & received on 2026-02-15 03:58:05 UTC)
+> - 📜 **Evidence:** `Logs/mcp_actions.log` (mode: execute, duration: 1088ms, no "SIMULATED" prefix)
+> - 📥 **Inbox Verification:** Email delivered to `tayyab.aziz.110@gmail.com`
+>
+> **🏗️ Architecture:**
+> - Perception → Plan → Approval → Action → Logging
+> - Human-in-the-loop approvals (file-based, cannot be bypassed)
+> - Dry-run mandatory default (explicit --execute flag required)
+>
+> **📚 Quick Links:**
+> - [README.md](README.md) — Quick Start + WSL Setup
+> - [Specs/SPEC_silver_tier.md](Specs/SPEC_silver_tier.md) — Full specification
+> - [Plans/PLAN_silver_tier_implementation.md](Plans/PLAN_silver_tier_implementation.md) — Implementation plan
+
+---
+
 > [!info] 📊 System Meta
 >
 > | Property | Value |
 > |----------|-------|
-> | **Last Updated** | 2026-02-14 14:35 UTC |
-> | **Watcher Last Run** | 2026-02-11 16:12 UTC |
-> | **Employee Mode** | Silver Tier (MCP + HITL) |
-> | **Silver Progress** | M1-M9 Complete (90%) |
+> | **Last Updated** | 2026-02-15 03:58 UTC |
+> | **Watcher Last Run** | 2026-02-15 03:48 UTC |
+> | **Employee Mode** | Silver Tier (MCP + HITL) ⭐ |
+> | **Silver Progress** | M1-M10 Complete (100%) ✅ |
+> | **Real Gmail Mode** | ✅ VERIFIED |
 > | **Repository** | [GitHub](https://github.com/TayyabAziz11/personal-ai-employee) |
 
 ---

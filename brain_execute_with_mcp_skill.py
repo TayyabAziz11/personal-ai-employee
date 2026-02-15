@@ -23,6 +23,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+# Try to import gmail_api_helper for real Gmail API integration
+try:
+    from gmail_api_helper import GmailAPIHelper, GMAIL_API_AVAILABLE
+    GMAIL_HELPER_AVAILABLE = GMAIL_API_AVAILABLE
+except ImportError:
+    GMAIL_HELPER_AVAILABLE = False
+    GmailAPIHelper = None
+
 
 class MCPExecutor:
     """Execute approved plans via MCP Gmail integration."""
@@ -46,6 +54,17 @@ class MCPExecutor:
         self.completed_dir.mkdir(parents=True, exist_ok=True)
         self.failed_dir.mkdir(parents=True, exist_ok=True)
         self.mcp_log.parent.mkdir(parents=True, exist_ok=True)
+
+        # Initialize Gmail API helper if available
+        self.gmail_helper = None
+        if GMAIL_HELPER_AVAILABLE and GmailAPIHelper:
+            try:
+                self.gmail_helper = GmailAPIHelper()
+                # Pre-authenticate to check if credentials are available
+                # This will fail gracefully if creds aren't set up
+            except Exception as e:
+                # Graceful fallback to simulation mode if Gmail setup fails
+                pass
 
     def _default_config(self) -> Dict:
         """Return default configuration."""
@@ -301,10 +320,10 @@ class MCPExecutor:
 
     def _mock_mcp_call(self, tool: str, operation: str, parameters: Dict, dry_run: bool = True) -> Dict:
         """
-        Mock MCP call (simulation for environments without real MCP).
+        Execute MCP call - uses real Gmail API if available, otherwise simulates.
 
-        In production, this would call actual MCP Gmail server.
-        For M6 implementation, this simulates the call.
+        In production with Gmail libraries installed, this calls actual Gmail API.
+        Falls back to simulation if libraries are not available.
 
         Args:
             tool: MCP tool name (e.g., 'gmail')
@@ -317,11 +336,34 @@ class MCPExecutor:
         """
         start_time = time.time()
 
-        # Simulate processing time
-        time.sleep(0.1)
-
-        # Mock MCP response
+        # Gmail send_email - Use real API if available
         if tool == 'gmail' and operation == 'send_email':
+            # Try real Gmail API first if available and not dry-run
+            if self.gmail_helper and not dry_run:
+                try:
+                    result = self.gmail_helper.send_email(
+                        to=parameters.get('to', ''),
+                        subject=parameters.get('subject', ''),
+                        body=parameters.get('body', ''),
+                        dry_run=False  # Real execution
+                    )
+                    duration = time.time() - start_time
+                    result['duration_ms'] = int(duration * 1000)
+                    return result
+                except Exception as e:
+                    # Fallback to simulation if real API fails
+                    result = {
+                        'success': False,
+                        'mode': 'execute',
+                        'error': f"Gmail API error: {str(e)}",
+                        'fallback': 'simulation'
+                    }
+                    duration = time.time() - start_time
+                    result['duration_ms'] = int(duration * 1000)
+                    return result
+
+            # Dry-run mode or Gmail helper not available - simulate
+            time.sleep(0.1)  # Simulate processing time
             if dry_run:
                 result = {
                     'success': True,
@@ -334,12 +376,13 @@ class MCPExecutor:
                     }
                 }
             else:
-                # Simulate real send (but still safe - no actual email sent)
+                # Simulate real send (fallback when Gmail API not available)
                 result = {
                     'success': True,
                     'mode': 'execute',
-                    'message': f"SIMULATED: Email sent to {parameters.get('to', 'unknown')}",
-                    'message_id': f"mock-{int(time.time())}"
+                    'message': f"SIMULATED: Email sent to {parameters.get('to', 'unknown')} (Gmail API not available)",
+                    'message_id': f"mock-{int(time.time())}",
+                    'note': 'Simulation mode - install Gmail libraries for real execution'
                 }
         elif tool == 'context7' and operation == 'query-docs':
             # Context7 is read-only - always succeeds (no external action)

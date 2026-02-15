@@ -1,15 +1,24 @@
 # Personal AI Employee — Hackathon 0
 
-> **Bronze Tier (Foundation + Execution)**
-> A markdown-based AI employee system powered by Claude Code CLI
+> **Silver Tier (Foundation + MCP + Human-in-the-Loop Approvals)**
+> A markdown-based AI employee system powered by Claude Code CLI with real external action capabilities
 
 ---
 
 ## 🎯 Overview
 
-The Personal AI Employee is a Bronze Tier system that manages tasks end-to-end through a structured markdown vault. It combines filesystem monitoring, intelligent task triage, and end-to-end execution with built-in approval gates.
+The Personal AI Employee is a **Silver Tier** system that manages tasks end-to-end through a structured markdown vault with **real external action capabilities** via Gmail API.
 
-**Bronze Tier** is an **operational mode**, not a folder. It represents the foundation capability level: safe, deterministic, and non-destructive.
+**Key Features:**
+- 📥 **Dual Perception:** Filesystem watcher + Gmail watcher (OAuth2 authenticated)
+- 📋 **Plan-First Workflow:** All external actions require structured plans
+- ✋ **Human-in-the-Loop Approvals:** File-based approval gates (cannot be bypassed)
+- 📧 **Real Gmail Integration:** Send emails via Gmail API (with dry-run default)
+- ⏰ **Scheduled Automation:** 4 Windows Task Scheduler tasks
+- 📊 **Daily Summaries:** Automated activity reports
+- 🔒 **Complete Audit Trail:** JSON logs + PII redaction
+
+**Silver Tier** = **Bronze Foundation** + **MCP External Actions** + **Approval Pipeline**
 
 ---
 
@@ -48,7 +57,215 @@ personal-ai-employee/
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Silver Tier Quick Start
+
+### Prerequisites (WSL2 Setup)
+
+This system runs on **WSL2 (Ubuntu on Windows)**. Follow these steps if you haven't set up WSL2 yet:
+
+**1. Install WSL2:**
+```powershell
+# Open PowerShell as Administrator
+wsl --install
+# Restart computer when prompted
+```
+
+**2. Install Ubuntu from Microsoft Store:**
+```
+Open Microsoft Store → Search "Ubuntu" → Install
+```
+
+**3. Create Python Virtual Environment:**
+```bash
+# Navigate to project directory (WSL path)
+cd "/mnt/e/Certified Cloud Native Generative and Agentic AI Engineer/Q4 part 2/Q4 part 2/Hackathon-0/Personal AI Employee"
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Verify activation (should show venv in prompt)
+which python  # Should point to venv/bin/python
+```
+
+**4. Install Python Dependencies:**
+```bash
+# Install Gmail API libraries
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+# Verify installation
+python3 -c "from googleapiclient.discovery import build; print('✓ Gmail API libraries installed')"
+```
+
+### Gmail API Credentials Setup
+
+**IMPORTANT:** Gmail API is required for real external actions. Without credentials, the system runs in **simulation mode**.
+
+**1. Create `.secrets/` directory:**
+```bash
+mkdir -p .secrets
+```
+
+**2. Obtain Gmail API credentials:**
+
+Follow the guide in `Docs/mcp_gmail_setup.md` for detailed instructions:
+- Create Google Cloud project
+- Enable Gmail API
+- Create OAuth2 credentials
+- Download `credentials.json` file
+
+**3. Place credentials in `.secrets/`:**
+```bash
+# Copy downloaded credentials.json to .secrets/
+cp ~/Downloads/credentials.json .secrets/gmail_credentials.json
+```
+
+**4. Authenticate (first-time only):**
+```bash
+# Run authentication helper
+python3 gmail_api_helper.py --check-auth
+
+# Follow OAuth2 flow in browser
+# Token will be saved to .secrets/gmail_token.json
+```
+
+**5. Verify authentication:**
+```bash
+# Check if credentials are valid
+python3 gmail_api_helper.py --check-auth
+
+# Should output:
+# ✓ Gmail API authenticated successfully
+# Email: your-email@gmail.com
+# Token expires: YYYY-MM-DD HH:MM:SS UTC
+```
+
+### Silver Tier Workflow
+
+**1. Perception (Watchers):**
+
+```bash
+# Gmail watcher (check for new emails)
+python3 gmail_watcher_skill.py --dry-run --once
+
+# Filesystem watcher (check Needs_Action/ folder)
+python3 filesystem_watcher_skill.py --once
+```
+
+**2. Create a Plan:**
+
+```bash
+# Create plan from a task file
+python3 brain_create_plan_skill.py \
+  --task Needs_Action/your_task_file.md \
+  --objective "Send email to confirm meeting" \
+  --risk-level Low \
+  --status Draft
+```
+
+**3. Request Approval:**
+
+```bash
+# Create approval request (creates ACTION file in Pending_Approval/)
+python3 brain_request_approval_skill.py \
+  --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
+```
+
+**4. Process Approval (Human-in-the-Loop):**
+
+```bash
+# MANUALLY move ACTION file from Pending_Approval/ to Approved/ or Rejected/
+
+# Then process approval decision
+python3 brain_monitor_approvals_skill.py
+```
+
+**5. Execute with Dry-Run (Preview):**
+
+```bash
+# Dry-run is DEFAULT (no --dry-run flag needed)
+python3 brain_execute_with_mcp_skill.py \
+  --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
+
+# Shows email preview without sending
+```
+
+**6. Execute for Real:**
+
+```bash
+# REQUIRES explicit --execute flag
+python3 brain_execute_with_mcp_skill.py \
+  --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md \
+  --execute
+
+# Sends actual email via Gmail API
+```
+
+**7. View Logs:**
+
+```bash
+# MCP action logs (JSON format)
+tail -n 10 Logs/mcp_actions.log
+
+# System log (Markdown format)
+tail -n 20 system_log.md
+
+# Daily summary
+cat Daily_Summaries/$(date +%Y-%m-%d).md
+```
+
+### Troubleshooting: Simulation vs Real Mode
+
+**How to tell if you're in simulation mode:**
+
+1. **Check terminal output:**
+   - ❌ **Simulation:** `SIMULATED: Email sent to...`
+   - ✅ **Real:** `Email sent to...` (no "SIMULATED" prefix)
+
+2. **Check MCP action log:**
+   ```bash
+   tail -n 1 Logs/mcp_actions.log | python3 -m json.tool
+   ```
+   - ❌ **Simulation:** `"mode": "execute"`, but `"response_summary": "SIMULATED: ..."`
+   - ✅ **Real:** `"mode": "execute"`, `"response_summary": "Email sent to..."`, `"duration_ms": 1000+` (real API calls take longer)
+
+3. **Check Gmail inbox:**
+   - ✅ **Real:** Email actually appears in recipient's inbox
+
+**If stuck in simulation mode:**
+
+1. **Verify Gmail libraries installed:**
+   ```bash
+   python3 -c "from googleapiclient.discovery import build; print('OK')"
+   # If ImportError → run: pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+   ```
+
+2. **Verify credentials exist:**
+   ```bash
+   ls -la .secrets/
+   # Should show: gmail_credentials.json and gmail_token.json
+   ```
+
+3. **Re-authenticate:**
+   ```bash
+   # Remove old token
+   rm .secrets/gmail_token.json
+
+   # Re-authenticate
+   python3 gmail_api_helper.py --check-auth
+   ```
+
+4. **Check plan status:**
+   ```bash
+   # Plan must be status: Approved (not Draft or Pending_Approval)
+   grep "Status:" Plans/PLAN_*.md
+   ```
+
+---
+
+## 🚀 Quick Start (Legacy - Bronze Tier)
 
 ### 1. Run the Filesystem Watcher
 
@@ -367,8 +584,14 @@ personal-ai-employee/
 ## 🚧 Roadmap
 
 - ✅ **Bronze Tier** - Foundation + Execution (COMPLETE)
-- ⏳ **Silver Tier** - Automation + Intelligence (PLANNED)
-- ⏳ **Gold Tier** - Autonomous + Adaptive (PLANNED)
+- ✅ **Silver Tier** - MCP + Human-in-the-Loop Approvals (COMPLETE) ⭐
+  - Gmail watcher with OAuth2
+  - Plan-first workflow with 12-section template
+  - File-based approval pipeline
+  - Real Gmail API integration (verified)
+  - Windows Task Scheduler automation
+  - Daily summaries with metrics
+- ⏳ **Gold Tier** - Multi-Agent + Adaptive (PLANNED)
 
 ---
 
