@@ -1308,3 +1308,13 @@ Total calls logged: 5
 **[2026-02-15T16:42:00.917166+00:00]** MCP Registry Refresh: 4 reachable, 0 unreachable, 4 snapshots saved
 
 **[2026-02-15T16:49:38.224235+00:00]** ⚠️ MCP Failure - whatsapp: connection_timeout - Connection timeout after 30s
+
+**[2026-02-15T17:05:27.702913+00:00]** WhatsApp watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-15T17:05:34.706201+00:00]** WhatsApp watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.09s
+
+**[2026-02-15T17:05:44.431049+00:00]** LinkedIn watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.08s
+
+**[2026-02-15T17:05:44.648361+00:00]** Twitter watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.11s
+
+**[2026-02-15T17:06:03.859981+00:00]** WhatsApp watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.01s

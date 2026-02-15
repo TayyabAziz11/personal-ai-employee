@@ -703,3 +703,16 @@
 
 **Last Updated**: 2026-02-15 16:42 UTC
 
+
+## Social Channel Status
+
+| Channel | Status | Last Check | Message Count | Latest Intake |
+|---------|--------|------------|---------------|---------------|
+| WhatsApp | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__whatsapp__20260215-1705__15552345678.md |
+| LinkedIn | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__linkedin__20260215-1705__alexchen.md |
+| Twitter | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__twitter__20260215-1705__techexpert_ai.md |
+
+**Last Updated**: 2026-02-15 17:05 UTC
+
+**Note**: All watchers currently running in mock mode with test fixtures. Switch to real mode after configuring MCP servers.
+
