@@ -1318,3 +1318,11 @@ Total calls logged: 5
 **[2026-02-15T17:05:44.648361+00:00]** Twitter watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.11s
 
 **[2026-02-15T17:06:03.859981+00:00]** WhatsApp watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.01s
+
+**[2026-02-15T17:20:24.517296+00:00]** MCP Registry Refresh: 4 reachable, 0 unreachable, 4 snapshots saved
+
+**[2026-02-15T17:25:20.615990+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-15T17:25:29.066651+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-15T17:27:50.151903+00:00]** Social executor dry-run complete (plan parsing pending G-M4)
