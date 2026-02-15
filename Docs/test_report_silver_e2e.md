@@ -672,7 +672,7 @@ ls -la .secrets/
 ```bash
 python3 gmail_api_helper.py --check-auth
 # ✓ Gmail API authenticated successfully
-# Email: tayyab.aziz.110@gmail.com
+# Email: <REDACTED_EMAIL>
 # Token expires: 2026-02-15 04:38:03 UTC
 ```
 
@@ -687,7 +687,7 @@ python3 gmail_api_helper.py --check-auth
 **Content:**
 - Test Type: M10 Hackathon Verification
 - Objective: Prove real Gmail API integration is operational
-- Recipient: tayyab.aziz.110@gmail.com (own email for safety)
+- Recipient: <REDACTED_EMAIL> (own email for safety)
 - Subject: "Silver Tier Real Send Test - Hackathon Verification"
 - Body: Automated test email confirming operational status
 
@@ -775,8 +775,8 @@ Plan: Task: Silver Tier Real Gmail Send Test
 Risk Level: Low
 
 Step 1/1: gmail.send_email
-  ✓ DRY-RUN: Would send email to tayyab.aziz.110@gmail.com
-    To: tayyab.aziz.110@gmail.com
+  ✓ DRY-RUN: Would send email to <REDACTED_EMAIL>
+    To: <REDACTED_EMAIL>
     Subject: Silver Tier Real Send Test
     Body: This is an automated test email from the Personal AI Employee Silver Tier...
 
@@ -822,7 +822,7 @@ Plan: Task: Silver Tier Real Gmail Send Test
 Risk Level: Low
 
 Step 1/1: gmail.send_email
-  ✓ Email sent to tayyab.aziz.110@gmail.com
+  ✓ Email sent to <REDACTED_EMAIL>
 
 ✓ Plan executed successfully
   Status: Executed

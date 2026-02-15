@@ -14,7 +14,9 @@ env/
 
 # Logs and system state (privacy)
 Logs/*.log
-system_log.md
+Logs/*snapshot*.json
+Logs/gmail_checkpoint.json
+# system_log.md is tracked but with PII redacted
 
 # Task content folders (privacy - do not commit real tasks)
 Inbox/*
@@ -25,6 +27,9 @@ Done/*
 !Done/.gitkeep
 Plans/*
 !Plans/.gitkeep
+!Plans/README.md
+!Plans/PLAN_*_implementation.md
+!Plans/PLAN_test_*.md
 
 # IDE
 .vscode/
@@ -59,3 +64,19 @@ Logs/gmail_checkpoint.json
 *.bak
 *.backup
 *~
+
+# Approval workflow processed folders (contain user decisions)
+Approved/processed/
+Rejected/processed/
+
+# Generated output files
+output.txt
+*.pdf
+
+# Daily summaries (keep only the tracked ones with PII redacted)
+Daily_Summaries/*.md
+!Daily_Summaries/2026-02-14.md
+
+# Completed/failed plans (user-specific)
+Plans/completed/
+Plans/failed/

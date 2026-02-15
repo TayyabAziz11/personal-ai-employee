@@ -131,7 +131,7 @@ This checklist maps directly to Silver Tier requirements from `Specs/SPEC_silver
 **Evidence:**
 - Files: `brain_execute_with_mcp_skill.py`, `gmail_api_helper.py`, `brain_email_query_with_mcp_skill.py`
 - Logs: `Logs/mcp_actions.log` (JSON format)
-- Real proof: Email sent to `tayyab.aziz.110@gmail.com` on 2026-02-15 03:58:05 UTC
+- Real proof: Email sent to `<REDACTED_EMAIL>` on 2026-02-15 03:58:05 UTC
 - Tests: M9 Test #5 (MCP Dry-Run - PASS), M10 Real Gmail Test (PASS)
 
 ---
@@ -311,7 +311,7 @@ This checklist maps directly to Silver Tier requirements from `Specs/SPEC_silver
 ### Real Gmail Mode Proof (M10)
 - [X] **Gmail auth check:** ✅ PASS (OAuth2 successful)
 - [X] **Dry-run test:** ✅ PASS (email preview shown)
-- [X] **Real execute test:** ✅ PASS (email sent to `tayyab.aziz.110@gmail.com`)
+- [X] **Real execute test:** ✅ PASS (email sent to `<REDACTED_EMAIL>`)
 - [X] **Email received:** ✅ VERIFIED (inbox search successful, timestamp: 2026-02-15 03:58:05 UTC)
 - [X] **Log evidence:** ✅ VERIFIED (JSON log shows `"mode": "execute"`, duration 1088ms)
 

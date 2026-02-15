@@ -165,7 +165,7 @@ python3 brain_execute_with_mcp_skill.py \
 - ✅ System log records execution
 
 **Show:**
-- Terminal output: `✓ Email sent to tayyab.aziz.110@gmail.com`
+- Terminal output: `✓ Email sent to <REDACTED_EMAIL>`
 - `Logs/mcp_actions.log`:
   ```json
   {
