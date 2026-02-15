@@ -690,3 +690,16 @@
 
 *This dashboard is the single source of truth for Silver Tier system state (Bronze foundation + MCP/HITL).*
 *Last synchronized: 2026-02-11 16:30 UTC*
+
+
+## MCP Registry Status
+
+| Server | Status | Last Refresh | Tool Count |
+|--------|--------|--------------|------------|
+| whatsapp | ✅ reachable | 2026-02-15 16:42 UTC | 2 |
+| linkedin | ✅ reachable | 2026-02-15 16:42 UTC | 2 |
+| twitter | ✅ reachable | 2026-02-15 16:42 UTC | 2 |
+| odoo | ✅ reachable | 2026-02-15 16:42 UTC | 2 |
+
+**Last Updated**: 2026-02-15 16:42 UTC
+

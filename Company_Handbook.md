@@ -431,6 +431,208 @@ ls Plans/PLAN_*.md
 
 ---
 
+## 2.3 GOLD TIER AGENT SKILLS (Multi-Channel + Accounting + Reliability)
+
+**Gold Skills Pack Location:** `.claude/skills/` + vault root
+
+The Gold Tier extends Silver with multi-channel social integration (WhatsApp, LinkedIn, Twitter), Odoo accounting integration, MCP registry management, and autonomous orchestration.
+
+### Gold Tier Architecture
+
+**Core Principle:** Perception → Plan → Approval → Action → Logging (unchanged from Silver)
+
+**New Capabilities:**
+- Multi-channel social media monitoring + actions (WhatsApp, LinkedIn, Twitter/X)
+- Odoo Community accounting integration (invoices, payments, AR aging)
+- Weekly CEO briefing generation (cross-domain synthesis)
+- MCP registry management (tool discovery + graceful degradation)
+- Ralph Wiggum loop (bounded autonomous multi-step orchestration)
+
+### Gold Skills Reference Table (G-M2: MCP Registry + Reliability Core)
+
+| Skill # | Skill Name | Implementation | Purpose |
+|---------|------------|----------------|---------|
+| **G-M2-H1** | mcp_helpers | `mcp_helpers.py` | PII redaction, rate limiting, disk space checks |
+| **G-M2-T04** | brain_mcp_registry_refresh | `brain_mcp_registry_refresh_skill.py` | MCP tool discovery + snapshot caching |
+| **G-M2-T06** | brain_handle_mcp_failure | `brain_handle_mcp_failure_skill.py` | Graceful degradation + remediation tasks |
+
+### Operational Details: mcp_helpers (G-M2-H1)
+
+**Purpose:** Utility library for MCP operations (privacy, reliability, safety)
+
+**Implementation:** `mcp_helpers.py` (vault root)
+
+**Functions:**
+1. **redact_pii(text):**
+   - Redacts email addresses → `[EMAIL_REDACTED]`
+   - Redacts phone numbers → `[PHONE_REDACTED]`
+   - Used in all social intake wrappers and logs
+   - Regex-based, handles multiple PII instances
+
+2. **rate_limit_and_backoff(max_retries=4):**
+   - Decorator for HTTP 429 handling
+   - Exponential backoff: 1s, 2s, 4s, 8s
+   - Logs retry attempts
+   - Raises exception after max retries
+
+3. **check_disk_space(min_free_mb=100):**
+   - Verifies sufficient disk space before file operations
+   - Uses shutil.disk_usage() for cross-platform compatibility
+   - Returns True if space sufficient, False otherwise
+
+**Test Coverage:** `tests/test_mcp_helpers.py`
+
+---
+
+### Operational Details: brain_mcp_registry_refresh (G-M2-T04)
+
+**Purpose:** Discover and cache MCP server tool lists for reliability and offline reference
+
+**Implementation:** `brain_mcp_registry_refresh_skill.py` (vault root)
+
+**CLI Flags:**
+- `--dry-run` — Simulate refresh without writing files
+- `--once` — Run once and exit (default behavior)
+- `--list-servers` — List configured MCP servers and exit
+- `--server <name>` — Refresh specific server only
+- `--mock` — Use mock data for testing (default: True until servers configured)
+
+**Configured MCP Servers:**
+1. whatsapp (WhatsApp integration)
+2. linkedin (LinkedIn integration)
+3. twitter (Twitter/X integration)
+4. odoo (Odoo accounting integration)
+
+**Outputs:**
+- `Logs/mcp_tools_snapshot_<server>.json` — Tool registry snapshot per server
+- `Logs/mcp_registry.log` — Refresh operation log
+- `system_log.md` — Summary entry appended
+- `Dashboard.md` — MCP Registry Status section updated
+
+**Snapshot Format:** See `Docs/mcp_tools_snapshot_example.json`
+
+**Graceful Degradation:**
+- If server unreachable → log error + continue to next server
+- Dashboard shows "Unreachable" status for failed servers
+- Operations continue (no total failure if one server down)
+
+**Scheduled Execution:** Daily at 2:00 AM UTC via `Scheduled/mcp_registry_refresh_task.xml`
+
+**Example Usage:**
+```bash
+# List configured servers
+python3 brain_mcp_registry_refresh_skill.py --list-servers
+
+# Dry-run (no files written)
+python3 brain_mcp_registry_refresh_skill.py --dry-run --mock
+
+# Refresh all servers (mock mode)
+python3 brain_mcp_registry_refresh_skill.py --mock --once
+
+# Refresh specific server
+python3 brain_mcp_registry_refresh_skill.py --server whatsapp --mock
+```
+
+**Definition of Done:**
+- [ ] Snapshot files created for all reachable servers
+- [ ] Dashboard.md MCP Registry Status table updated
+- [ ] system_log.md entry appended
+- [ ] Logging Requirements: mcp_registry.log + system_log.md
+
+---
+
+### Operational Details: brain_handle_mcp_failure (G-M2-T06)
+
+**Purpose:** Standard MCP failure handling - log, create remediation task, continue operations
+
+**Implementation:** `brain_handle_mcp_failure_skill.py` (vault root)
+
+**CLI Flags:**
+- `--failure-type <type>` — Required: connection_timeout | auth_failure | rate_limit | server_error
+- `--server-name <name>` — Required: Name of failed MCP server
+- `--error-message <msg>` — Required: Error message details
+
+**Supported Failure Types:**
+1. **connection_timeout** — Server unreachable or network timeout
+2. **auth_failure** — Authentication/credentials invalid or expired
+3. **rate_limit** — HTTP 429 rate limit exceeded
+4. **server_error** — Server error (5xx status codes)
+
+**Outputs:**
+- `Logs/mcp_failures.log` — JSON failure log (append-only)
+- `Needs_Action/remediation__mcp__<server>__YYYYMMDD-HHMM.md` — Remediation task
+- `system_log.md` — Failure entry appended
+
+**Remediation Task Format:**
+```yaml
+---
+id: remediation_mcp_<server>_<timestamp>
+source: mcp_failure_handler
+failure_type: <type>
+server_name: <server>
+status: pending
+priority: high
+plan_required: false
+---
+```
+
+**CRITICAL Failure Handling Rule:**
+- NEVER claim success when MCP failed
+- Create remediation task + log error + continue operations
+- Human intervention required to resolve
+- Test fix with: `python3 brain_mcp_registry_refresh_skill.py --server <name>`
+
+**Example Usage:**
+```bash
+# Handle connection timeout
+python3 brain_handle_mcp_failure_skill.py \
+  --failure-type connection_timeout \
+  --server-name whatsapp \
+  --error-message "Connection timeout after 30s"
+
+# Handle auth failure
+python3 brain_handle_mcp_failure_skill.py \
+  --failure-type auth_failure \
+  --server-name odoo \
+  --error-message "Invalid API key"
+```
+
+**Definition of Done:**
+- [ ] Failure logged to Logs/mcp_failures.log (JSON format)
+- [ ] Remediation task created in Needs_Action/
+- [ ] system_log.md entry appended
+- [ ] Recommended actions included based on failure type
+- [ ] Logging Requirements: mcp_failures.log + system_log.md
+
+---
+
+### Gold Tier Vault Extensions
+
+**New Directories (G-M1):**
+- `Social/Inbox/` — Social media intake wrappers (WhatsApp, LinkedIn, Twitter)
+- `Social/Summaries/` — Daily/weekly social summaries
+- `Social/Analytics/` — Social performance metrics
+- `Business/Goals/` — Strategic goals and OKRs
+- `Business/Briefings/` — Weekly CEO briefings
+- `Business/Accounting/` — Accounting audit reports
+- `Business/Clients/` — Client information
+- `Business/Invoices/` — Invoice tracking
+- `MCP/` — MCP registry snapshots and server notes
+
+**New Templates (G-M1):**
+- `templates/social_intake_wrapper_template.md` — Social media intake format (9 YAML fields)
+- `templates/ceo_briefing_template.md` — Weekly CEO briefing format (8 sections)
+
+**Privacy Protection (.gitignored):**
+- All social intake wrappers (PII redacted in excerpts, full content gitignored)
+- All business content (goals, briefings, accounting, clients, invoices)
+- MCP tool snapshots (contain server capabilities)
+- Watcher checkpoint files
+
+**For complete Gold Tier specification, see:** `specs/001-gold-tier-full/spec.md`
+
+---
+
 ## 3. WATCHER SYSTEM
 
 ### Bronze Tier: Filesystem Watcher (watcher_skill)
@@ -1160,6 +1362,19 @@ The AI Employee operates in this cycle:
 - Updated Section 3 (Watcher System) with new flags documentation
 - All existing functionality preserved (100% backward compatible)
 - Standard library only (no external dependencies)
+
+**2026-02-15 (21:50 UTC):** Gold Tier - G-M2: MCP Registry + Reliability Core:
+- Implemented mcp_helpers.py with PII redaction, rate limiting, disk space checks
+- Created brain_mcp_registry_refresh_skill.py (MCP tool discovery + snapshot caching)
+- Created brain_handle_mcp_failure_skill.py (graceful degradation + remediation tasks)
+- Added MCP tools snapshot example: Docs/mcp_tools_snapshot_example.json
+- Created Windows Task Scheduler XML: Scheduled/mcp_registry_refresh_task.xml
+- Added comprehensive test suite: tests/test_mcp_helpers.py (100% passing)
+- Updated Dashboard.md with MCP Registry Status section
+- Added Section 2.3: Gold Tier Agent Skills documentation
+- Mock mode support for testing without real MCP server connections
+- Configured 4 MCP servers: whatsapp, linkedin, twitter, odoo
+- All G-M2 tasks completed (8/8) - ready for G-M3 watchers
 
 ---
 
