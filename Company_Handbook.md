@@ -195,6 +195,242 @@ python watcher_skill.py --vault /path/to/vault
 
 ---
 
+## 2.2 SILVER TIER AGENT SKILLS (MCP-First)
+
+**Silver Skills Pack Location:** `.claude/skills/`
+
+The Silver Tier extends Bronze foundation with human-in-the-loop (HITL) approval workflow and MCP integration for external actions.
+
+### Silver Skills Overview
+
+All Silver skills follow the mandatory approval workflow:
+**Perception → Reasoning → Plan → Approval → Action → Logging**
+
+### Silver Skills Reference Table
+
+| Skill # | Skill Name | Doc Path | Purpose |
+|---------|------------|----------|---------|
+| **Meta** | silver_operating_loop | [.claude/skills/silver_operating_loop.md](.claude/skills/silver_operating_loop.md) | Complete Silver Tier workflow |
+| **S16** | brain_create_plan | [.claude/skills/brain_create_plan.md](.claude/skills/brain_create_plan.md) | Generate plan files for external actions |
+| **S17** | brain_request_approval | [.claude/skills/brain_request_approval.md](.claude/skills/brain_request_approval.md) | Move plans to Pending_Approval/ with notification |
+| **S18** | brain_execute_with_mcp | [.claude/skills/brain_execute_with_mcp.md](.claude/skills/brain_execute_with_mcp.md) | Execute approved plans via MCP (dry-run first) |
+| **S19** | brain_log_action | [.claude/skills/brain_log_action.md](.claude/skills/brain_log_action.md) | Log MCP actions to audit trail |
+| **S20** | brain_handle_mcp_failure | [.claude/skills/brain_handle_mcp_failure.md](.claude/skills/brain_handle_mcp_failure.md) | Handle MCP failures with escalation |
+| **S21** | brain_generate_summary | [.claude/skills/brain_generate_summary.md](.claude/skills/brain_generate_summary.md) | Generate daily/weekly summaries |
+| **S22** | brain_monitor_approvals | [.claude/skills/brain_monitor_approvals.md](.claude/skills/brain_monitor_approvals.md) | Check Approved/ folder for ready plans |
+| **S23** | brain_archive_plan | [.claude/skills/brain_archive_plan.md](.claude/skills/brain_archive_plan.md) | Archive executed/rejected plans |
+| **S24** | watcher_gmail | [.claude/skills/watcher_gmail.md](.claude/skills/watcher_gmail.md) | Gmail OAuth2 watcher (perception-only) |
+
+### MCP Governance (CRITICAL)
+
+For ANY external action (email, calendar, file ops):
+
+✅ **MUST:**
+- Have approved plan in Approved/ folder
+- Support dry-run mode (preview before execution)
+- Log to Logs/mcp_actions.log AND system_log.md
+- STOP immediately on MCP failure (no retries without approval)
+
+❌ **MUST NOT:**
+- Execute MCP calls without approved plan
+- Skip dry-run phase
+- Continue execution after MCP failure
+- Modify plan after approval
+
+### Silver State Transitions
+
+```
+Draft → Pending_Approval → Approved → Executed → Archived
+                        ↓
+                    Rejected → Archived
+```
+
+### Human-in-the-Loop (HITL) Approval Workflow
+
+**Core Principle:** No external action without approved plan + approved file.
+
+**Workflow Steps:**
+1. **Plan Creation (brain_create_plan):**
+   - Agent detects need for external action (email, calendar, file ops)
+   - Generates plan file in `Plans/` with Status: Draft
+   - Plan includes: Objective, MCP tools, risk level, rollback strategy
+
+2. **Approval Request (brain_request_approval):**
+   - Plan status updated to: Pending_Approval
+   - Plan file moved from `Plans/` → `Pending_Approval/`
+   - Console displays approval request with plan details
+   - **User action required:** Review plan file
+
+3. **User Decision (Manual File Move):**
+   - **To Approve:** User moves plan file to `Approved/` folder
+   - **To Reject:** User moves plan file to `Rejected/` folder
+   - No command-line approval (file-based only for audit trail)
+
+4. **Approval Monitoring (brain_monitor_approvals):**
+   - Runs every 15 minutes (scheduled) or on-demand
+   - Checks `Approved/` folder for plans
+   - Triggers execution for approved plans
+
+5. **Dry-Run Phase (brain_execute_with_mcp --dry-run):**
+   - Executes MCP calls with `--dry-run` flag
+   - Displays preview of what will happen
+   - **CRITICAL:** No actual external actions taken
+   - Requests user confirmation: "Results look good? (yes/no)"
+
+6. **Execution Phase (brain_execute_with_mcp --execute):**
+   - Only runs if dry-run approved
+   - Executes real MCP calls
+   - Logs all operations to `Logs/mcp_actions.log`
+   - If any step fails: STOP immediately (no retry without new approval)
+
+7. **Archival (brain_archive_plan):**
+   - Executed plans → `Plans/completed/`
+   - Failed plans → `Plans/failed/`
+   - Rejected plans → kept in `Rejected/` (already archived)
+
+### MCP Governance + Dry-Run + Failure Handling
+
+**Dry-Run Requirements:**
+- **MANDATORY** for all MCP calls before real execution
+- Must display preview/results to user for inspection
+- User must explicitly approve dry-run results ("yes/no")
+- If dry-run fails or shows wrong results: plan moves back to `Pending_Approval/`
+
+**Failure Handling Rules:**
+1. **STOP Immediately:** On any MCP failure, halt execution (no further operations)
+2. **Create Escalation Log:** `Logs/mcp_failures/{timestamp}_failure.log`
+3. **Update Plan Status:** Status → Failed, move to `Plans/failed/`
+4. **Notify User:** Display failure details in console
+5. **No Simulated Success:** NEVER claim execution succeeded if MCP call failed
+6. **No Auto-Retry:** Retries require new plan and new approval
+
+**Logging Requirements:**
+- **All MCP Calls:** Logged to `Logs/mcp_actions.log` (dry-run + execute modes)
+- **Format:** `[timestamp] Tool | Operation | Parameters | Mode | Result | Duration`
+- **System Log:** Significant actions logged to `system_log.md`
+- **Append-Only:** Never overwrite logs (audit trail integrity)
+
+**For complete Silver Tier documentation, see:** `.claude/skills/README.md`
+
+### Operational Details: brain_create_plan (Skill 16)
+
+**Purpose:** Generate structured plan files for any action requiring external execution or approval.
+
+**Implementation:** `brain_create_plan_skill.py` (vault root)
+
+**Inputs:**
+- Task file from `Needs_Action/` folder
+- Objective (one-sentence goal)
+- Risk level (Low/Medium/High)
+
+**Outputs:**
+- Plan file in `Plans/` folder
+- Format: `PLAN_<YYYYMMDD-HHMM>__<task_slug>.md`
+- Status: Draft (ready for review)
+- Log entry in `system_log.md`
+
+**When to Use:**
+Plans MUST be created for:
+1. External communication (emails, GitHub, social media)
+2. MCP tool invocations with side effects (POST/PUT/DELETE)
+3. File operations outside `Done/` (destructive/risky)
+4. Scheduled tasks (automation requires documentation)
+5. Multi-step tasks (>3 actions with dependencies)
+
+Plans NOT required for:
+- Reading files (perception)
+- Creating drafts in `Needs_Action/` (no external effect)
+- Running watchers in `--dry-run` mode
+- Appending to `system_log.md` (logging)
+- Updating `Dashboard.md` counts
+
+**How to Run:**
+
+1. **Check if Plan Required (Optional):**
+   ```bash
+   python brain_create_plan_skill.py --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md --check-only
+   ```
+   Returns YES/NO based on task analysis.
+
+2. **Create Plan from Task:**
+   ```bash
+   python brain_create_plan_skill.py \
+       --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md \
+       --objective "Reply to Q1 hackathon update email" \
+       --risk-level Medium \
+       --status Draft
+   ```
+
+3. **Create Plan Ready for Approval:**
+   ```bash
+   python brain_create_plan_skill.py \
+       --task Needs_Action/test_task.md \
+       --objective "Send test email" \
+       --risk-level High \
+       --status Pending_Approval
+   ```
+
+**CLI Flags:**
+- `--task` (required): Path to task file
+- `--objective` (required): One-sentence goal
+- `--risk-level`: Low/Medium/High (default: Medium)
+- `--status`: Draft/Pending_Approval (default: Draft)
+- `--check-only`: Only check if plan required, don't create
+
+**Plan Template Structure:**
+All plans use `templates/plan_template.md` with 12 mandatory sections:
+1. Objective
+2. Success Criteria
+3. Inputs/Context
+4. Files to Touch
+5. MCP Tools Required
+6. Approval Gates
+7. Risk Assessment
+8. Execution Steps
+9. Rollback Strategy
+10. Dry-Run Results
+11. Execution Log
+12. Definition of Done
+
+**State Machine:**
+```
+Draft → Pending_Approval → Approved → Executed → Archived
+                        ↓
+                    Rejected → Archived
+```
+
+**Next Steps After Creation:**
+1. Review plan file in `Plans/`
+2. Fill in any remaining placeholders (MCP tools, execution steps)
+3. Update Status to `Pending_Approval` if ready
+4. Move to `Pending_Approval/` folder for user review (requires M5)
+
+**Test Procedure:**
+```bash
+# Verify plan template exists
+ls templates/plan_template.md
+
+# Create test plan from mock email
+python brain_create_plan_skill.py \
+    --task Needs_Action/inbox__gmail__20260211-1612__mock001a.md \
+    --objective "Reply to project update email" \
+    --risk-level Low \
+    --status Draft
+
+# Verify plan created
+ls Plans/PLAN_*.md
+```
+
+**Definition of Done:**
+- [ ] Plan file created in `Plans/` with unique ID
+- [ ] All 12 template sections present
+- [ ] Status set correctly (Draft or Pending_Approval)
+- [ ] Task file reference included
+- [ ] system_log.md updated with creation entry
+- [ ] Logging Requirements: Appends to system_log.md
+
+---
+
 ## 3. WATCHER SYSTEM
 
 ### Bronze Tier: Filesystem Watcher (watcher_skill)
@@ -268,6 +504,134 @@ python watcher_skill.py --loop --interval 30
 **Bronze Best Practice:** Run `--once` after dropping files into Inbox, then review intake files before triaging.
 
 **Status:** ✓ Active (Python script deployed with premium CLI UX)
+
+---
+
+### Silver Tier: Gmail Watcher (gmail_watcher_skill) - PERCEPTION ONLY
+
+**Type:** OAuth2-based Gmail API monitoring
+**Implementation:** `gmail_watcher_skill.py` (vault root)
+**Target:** Gmail inbox via OAuth2
+**Trigger:** Manual or scheduled (M7)
+
+**CRITICAL:** This is a **perception-only** watcher. It NEVER sends emails, NEVER calls MCP to act, NEVER completes tasks. It only creates intake wrappers in `Needs_Action/`.
+
+**Features:**
+- OAuth2 authentication with Gmail API (read-only)
+- Email fetching with configurable Gmail search queries
+- Intake wrapper creation with PII redaction
+- Checkpointing to avoid duplicate processing
+- Privacy-safe by default (no full email bodies stored)
+- Mock mode for testing without Gmail API
+
+**How to Run:**
+
+1. **Setup (First Time):**
+   ```bash
+   # Install Gmail API dependencies
+   pip install -r requirements.txt
+
+   # Follow OAuth2 setup guide
+   # See: Docs/gmail_oauth_setup.md
+   ```
+
+2. **Test with Mock Data (No OAuth Required):**
+   ```bash
+   python3 gmail_watcher_skill.py --mock --once
+   ```
+   Uses fake emails from `templates/mock_emails.json` for safe testing.
+
+3. **Dry-Run Mode (Preview):**
+   ```bash
+   python3 gmail_watcher_skill.py --dry-run
+   ```
+   Shows what emails would be processed without creating intake wrappers.
+
+4. **Single Run (Default):**
+   ```bash
+   python3 gmail_watcher_skill.py --once
+   ```
+   Fetches emails from Gmail, creates intake wrappers, exits.
+
+**CLI Flags:**
+
+- `--dry-run` - Preview what would be processed (no files written)
+- `--once` - Process once and exit (default)
+- `--mock` - Use mock email fixture (no Gmail API)
+- `--max-results N` - Max emails to fetch (default: 10)
+- `--query "search"` - Gmail search query (default: "is:unread newer_than:7d")
+- `--since-checkpoint` - Use checkpoint to skip already processed (default: ON)
+- `--no-checkpoint` - Ignore checkpoint, process all emails
+- `--reset-checkpoint` - Reset checkpoint and exit
+- `--include-body` - Include full email body (⚠️ PRIVACY WARNING - OFF by default)
+
+**Inputs:**
+- Gmail inbox (via OAuth2 read-only access)
+- Query filter (configurable)
+- Checkpoint file (`Logs/gmail_checkpoint.json`)
+
+**Outputs:**
+- Intake wrappers in `Needs_Action/` with format: `inbox__gmail__<YYYYMMDD-HHMM>__<short_id>.md`
+- Each wrapper includes:
+  - YAML frontmatter (id, source, received_at, from, subject, status, plan_required)
+  - Email summary
+  - Redacted excerpt (max 500 chars, PII removed)
+  - Suggested next steps (emphasizing plan approval requirement)
+
+**Privacy & Security:**
+- ✓ PII redaction (emails: a***@domain.com, phones: [PHONE-REDACTED])
+- ✓ Truncated excerpts (500 char max, no full bodies by default)
+- ✓ OAuth2 credentials NOT committed (in .gitignore)
+- ✓ Checkpointing prevents duplicate processing
+- ✓ Append-only logging (`Logs/gmail_watcher.log`)
+- ✓ Read-only Gmail API scope (cannot send/delete)
+
+**Checkpointing:**
+- Stores processed email IDs in `Logs/gmail_checkpoint.json`
+- Prevents re-processing same emails
+- Keeps last 1000 IDs (auto-cleanup to prevent file bloat)
+- Can be reset with: `python3 gmail_watcher_skill.py --reset-checkpoint`
+
+**Logging:**
+- **gmail_watcher.log:** Detailed run logs (timestamp, mode, query, counts, errors, duration)
+- **system_log.md:** Summary entries for significant runs
+- Format: `[timestamp] Mode | Query | Found: X | Processed: Y | Skipped: Z | Errors: N | Duration: Xs`
+
+**Example Usage:**
+
+```bash
+# First time: Setup OAuth2 (browser will open)
+python3 gmail_watcher_skill.py --once
+
+# Daily monitoring (manual)
+python3 gmail_watcher_skill.py --once
+
+# Custom query (important unread emails only)
+python3 gmail_watcher_skill.py --query "is:unread is:important" --max-results 20
+
+# Test with mock data (no Gmail API needed)
+python3 gmail_watcher_skill.py --mock --dry-run
+```
+
+**Scheduled Task (M7):**
+- Runs every 30 minutes via Windows Task Scheduler
+- Uses `--once --quiet --no-banner` for automation
+- Logs to `Logs/gmail_watcher.log` and `Logs/scheduler.log`
+
+**Important Notes:**
+1. **Perception-Only:** This watcher ONLY creates intake wrappers. It NEVER sends emails.
+2. **All Email Actions Require Plan Approval:** To reply/forward/send emails:
+   - Create plan with `brain_create_plan` (Skill 16)
+   - Request approval with `brain_request_approval` (Skill 17)
+   - User moves plan to `Approved/` (HITL)
+   - Execute with `brain_execute_with_mcp` (Skill 18) after dry-run
+3. **Privacy-First:** By default, NO full email bodies are stored. Only safe excerpts (500 char max) with PII redaction.
+
+**Status:** ✓ Implemented (M3 Complete - Python script with OAuth2, checkpointing, PII redaction)
+
+**OAuth2 Setup Guide:** See `Docs/gmail_oauth_setup.md`
+
+**Mock Mode Testing:** See `templates/mock_emails.json` for sample fixture
 
 ---
 
