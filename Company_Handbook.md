@@ -448,7 +448,7 @@ The Gold Tier extends Silver with multi-channel social integration (WhatsApp, Li
 - MCP registry management (tool discovery + graceful degradation)
 - Ralph Wiggum loop (bounded autonomous multi-step orchestration)
 
-### Gold Skills Reference Table (G-M2 + G-M5: MCP Registry + Odoo Integration)
+### Gold Skills Reference Table (G-M2 + G-M5 + G-M6: MCP Registry + Odoo + Reporting)
 
 | Skill # | Skill Name | Implementation | Purpose |
 |---------|------------|----------------|---------|
@@ -458,6 +458,8 @@ The Gold Tier extends Silver with multi-channel social integration (WhatsApp, Li
 | **G-M5-T02** | odoo_watcher | `odoo_watcher_skill.py` | Odoo accounting perception (invoices, payments) |
 | **G-M5-T03** | brain_odoo_query_with_mcp | `brain_odoo_query_with_mcp_skill.py` | Read-only Odoo queries (no approval) |
 | **G-M5-T04** | brain_execute_odoo_with_mcp | `brain_execute_odoo_with_mcp_skill.py` | Odoo action execution (approval required) |
+| **G-M6-T01** | brain_generate_weekly_ceo_briefing | `brain_generate_weekly_ceo_briefing_skill.py` | Weekly executive briefing (8 sections) |
+| **G-M6-T02** | brain_generate_accounting_audit | `brain_generate_accounting_audit_skill.py` | Accounting audit report (AR aging + anomalies) |
 
 ### Operational Details: mcp_helpers (G-M2-H1)
 
@@ -730,6 +732,115 @@ python3 brain_execute_odoo_with_mcp_skill.py --execute --mode mock
 - [ ] Dashboard "Last External Action (Gold)" updated
 - [ ] Remediation task created on failure
 - [ ] Logging Requirements: mcp_actions.log + system_log.md
+
+---
+
+### Operational Details: brain_generate_weekly_ceo_briefing (G-M6-T01)
+
+**Purpose:** Generate weekly executive briefing (cross-domain synthesis)
+
+**Implementation:** `brain_generate_weekly_ceo_briefing_skill.py` (vault root)
+
+**Type:** REPORT-ONLY (no approval gates, no external actions)
+
+**CLI Flags:**
+- `--week-start YYYY-MM-DD` — Week start date (default: current week Monday)
+- `--mode <mock|live>` — Data gathering mode (default: mock)
+- `--output <path>` — Optional output path override
+- `--verbose` — Enable verbose logging
+
+**Output:** `Business/Briefings/CEO_Briefing__YYYY-WW.md`
+
+**8 Required Sections:**
+1. KPIs - System health metrics
+2. Wins - Recent accomplishments
+3. Risks - Identified issues
+4. Outstanding Invoices + AR Aging - Financial status
+5. Social Performance - Social media activity
+6. Next Week Priorities - Goals and focus areas
+7. Pending Approvals - Action queue
+8. Summary - Executive overview
+
+**Data Sources (Graceful Degradation):**
+- `system_log.md` — Primary timeline
+- `Logs/mcp_actions.log` — MCP statistics
+- `Social/Summaries/` or `Social/Inbox/` — Social metrics
+- `Business/Goals/` — Strategic goals
+- `Business/Accounting/Reports/` — Odoo metrics
+- `Pending_Approval/` — Approval queue
+
+**Data Confidence Scoring:**
+- **High:** Data source exists and parsed successfully
+- **Medium:** Data source exists but incomplete or estimated
+- **Low:** Data source missing or unavailable
+
+**Example Usage:**
+```bash
+# Generate briefing for current week (mock mode)
+python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock
+
+# Generate briefing for specific week
+python3 brain_generate_weekly_ceo_briefing_skill.py --week-start 2026-02-10 --mode mock
+
+# Generate in live mode (real data gathering)
+python3 brain_generate_weekly_ceo_briefing_skill.py --mode live
+```
+
+**Scheduled Execution:** Weekly on Sunday at 23:59 UTC via `Scheduled/weekly_ceo_briefing_task.xml`
+
+**Definition of Done:**
+- [ ] Briefing generated with all 8 sections
+- [ ] Data confidence score included per section
+- [ ] Output file in Business/Briefings/
+- [ ] system_log.md updated
+- [ ] NO external actions executed
+
+---
+
+### Operational Details: brain_generate_accounting_audit (G-M6-T02)
+
+**Purpose:** Generate comprehensive accounting audit report
+
+**Implementation:** `brain_generate_accounting_audit_skill.py` (vault root)
+
+**Type:** REPORT-ONLY (no approval gates, no external actions)
+
+**CLI Flags:**
+- `--as-of YYYY-MM-DD` — As-of date for audit (default: today)
+- `--mode <mock|mcp>` — Data source mode (default: mock)
+- `--verbose` — Enable verbose logging
+
+**Output:** `Business/Accounting/Reports/accounting_audit__YYYY-MM-DD.md`
+
+**Report Includes:**
+- **AR Aging Summary:** Buckets (0-30, 31-60, 61-90, 90+ days)
+- **Top Unpaid Invoices:** Top 10 by amount
+- **Anomalies Detection:**
+  - Invoices overdue > 90 days
+  - Outstanding % > 40%
+  - Sudden jump in overdue count
+- **Recommended Actions:** (NOT executed, suggestions only)
+
+**Example Usage:**
+```bash
+# Generate audit for today (mock mode)
+python3 brain_generate_accounting_audit_skill.py --mode mock
+
+# Generate audit for specific date
+python3 brain_generate_accounting_audit_skill.py --as-of 2026-02-15 --mode mock
+
+# Generate in MCP mode (requires Odoo configured)
+python3 brain_generate_accounting_audit_skill.py --mode mcp
+```
+
+**Definition of Done:**
+- [ ] AR aging summary calculated
+- [ ] Top 10 unpaid invoices listed
+- [ ] Anomalies detected and reported
+- [ ] Recommended actions included (NOT executed)
+- [ ] Output file in Business/Accounting/Reports/
+- [ ] system_log.md updated
+- [ ] PII redacted in logs
 
 ---
 
@@ -1515,6 +1626,17 @@ The AI Employee operates in this cycle:
 - Updated Company_Handbook.md Section 2.3 with G-M5 skills documentation
 - End-to-end testing complete: watcher (2 intake wrappers), query (1 report), executor (dry-run + execute)
 - All G-M5 deliverables complete (7/7) - ready for G-M6 briefing generation
+
+**2026-02-16 (08:10 UTC):** Gold Tier - G-M6: Weekly CEO Briefing + Accounting Audit:
+- Created brain_generate_weekly_ceo_briefing_skill.py (8-section executive briefing)
+- Created brain_generate_accounting_audit_skill.py (AR aging + anomaly detection)
+- Created Scheduled/weekly_ceo_briefing_task.xml (weekly Sunday 23:59 UTC)
+- Updated Dashboard.md with Latest CEO Briefing and Accounting Audit links
+- Updated Company_Handbook.md Section 2.3 with G-M6 skills documentation
+- Features: Data confidence scoring, graceful degradation, cross-domain synthesis
+- Reports: Business/Briefings/CEO_Briefing__YYYY-WW.md + Business/Accounting/Reports/accounting_audit__YYYY-MM-DD.md
+- Testing complete: Both skills generate reports successfully in mock mode
+- All G-M6 deliverables complete (5/5) - ready for G-M7 Ralph loop orchestrator
 
 ---
 
