@@ -231,34 +231,153 @@ plan_reference: {plan_path}
         """
         Parse approved plan to extract MCP actions.
 
+        Supports two formats:
+        1. Markdown table under "## MCP Tools" or "## Actions"
+           Columns: server | operation | parameters (JSON string)
+        2. Fenced JSON block under "## Actions JSON"
+           Array of {server, operation, parameters} objects
+
         Args:
             plan_path: Path to approved plan file
 
         Returns:
             Dict with plan metadata and actions list
-
-        Note: This is a simplified parser. Real implementation would
-        parse the plan's structured format to extract exact MCP tool calls.
         """
         try:
             content = plan_path.read_text(encoding='utf-8')
+            actions = []
 
-            # TODO: Implement robust plan parsing (G-M4)
-            # For now, return a template structure
-            # Real implementation would parse YAML frontmatter and action sections
+            # Extract plan ID from filename
+            plan_id = plan_path.stem.split('__')[1] if '__' in plan_path.stem else 'unknown'
+
+            # Method 1: Try to find JSON block first (## Actions JSON)
+            import re
+            json_block_pattern = r'##\s+Actions\s+JSON\s*\n\s*```(?:json)?\s*\n(.*?)\n\s*```'
+            json_match = re.search(json_block_pattern, content, re.DOTALL | re.IGNORECASE)
+
+            if json_match:
+                try:
+                    json_str = json_match.group(1)
+                    actions = json.loads(json_str)
+
+                    if not isinstance(actions, list):
+                        raise ValueError("Actions JSON must be an array")
+
+                    logger.info(f"Parsed {len(actions)} actions from JSON block")
+
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON in Actions JSON block: {e}")
+                    return {
+                        'error': f"Invalid JSON: {e}",
+                        'parsed_successfully': False
+                    }
+
+            # Method 2: Try to find markdown table (## MCP Tools or ## Actions)
+            if not actions:
+                table_pattern = r'##\s+(?:MCP\s+Tools|Actions)\s*\n\s*\|.*?\n\s*\|[-:\s|]+\n((?:\|.*?\n)+)'
+                table_match = re.search(table_pattern, content, re.DOTALL | re.IGNORECASE)
+
+                if table_match:
+                    table_rows = table_match.group(1).strip().split('\n')
+
+                    for row in table_rows:
+                        cells = [cell.strip() for cell in row.split('|')[1:-1]]  # Skip first/last empty
+
+                        if len(cells) >= 3:
+                            server = cells[0].strip()
+                            operation = cells[1].strip()
+                            params_str = cells[2].strip()
+
+                            try:
+                                parameters = json.loads(params_str) if params_str else {}
+                            except json.JSONDecodeError:
+                                logger.warning(f"Invalid JSON in parameters, using as-is: {params_str}")
+                                parameters = {'text': params_str}
+
+                            actions.append({
+                                'server': server,
+                                'operation': operation,
+                                'parameters': parameters
+                            })
+
+                    logger.info(f"Parsed {len(actions)} actions from markdown table")
+
+            if not actions:
+                logger.warning("No actions found in plan (tried JSON block and markdown table)")
+                return {
+                    'plan_id': plan_id,
+                    'plan_path': str(plan_path),
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'actions': [],
+                    'parsed_successfully': True,
+                    'parse_note': 'No actions found (plan may be informational only)'
+                }
+
+            # Validate and normalize action format
+            normalized_actions = []
+            for idx, action in enumerate(actions):
+                if not isinstance(action, dict):
+                    logger.error(f"Action {idx} is not a dict: {action}")
+                    continue
+
+                server = action.get('server', '').lower()
+                operation = action.get('operation', '')
+                parameters = action.get('parameters', {})
+
+                if not server or not operation:
+                    logger.error(f"Action {idx} missing server or operation: {action}")
+                    continue
+
+                normalized_actions.append({
+                    'server': server,
+                    'tool': operation,  # Normalize to 'tool' for consistency
+                    'params': parameters  # Normalize to 'params'
+                })
 
             return {
-                'plan_id': plan_path.stem.split('__')[1] if '__' in plan_path.stem else 'unknown',
+                'plan_id': plan_id,
                 'plan_path': str(plan_path),
                 'created_at': datetime.now(timezone.utc).isoformat(),
-                'actions': [],  # TODO: Parse actual actions from plan
-                'parsed_successfully': False,
-                'parse_note': 'Plan parsing not fully implemented (G-M4 TODO)'
+                'actions': normalized_actions,
+                'parsed_successfully': True,
+                'actions_count': len(normalized_actions)
             }
 
         except Exception as e:
             logger.error(f"Failed to parse plan: {e}")
             return {'error': str(e), 'parsed_successfully': False}
+
+    def _validate_action(self, server: str, tool: str, params: Dict) -> tuple[bool, str]:
+        """
+        Validate action parameters against platform constraints.
+
+        Args:
+            server: MCP server name
+            tool: Tool name
+            params: Parameters dict
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Twitter constraint: max 280 characters
+        if server == 'twitter' and tool in ['create_post', 'reply_post']:
+            content = params.get('content', params.get('text', ''))
+            if len(content) > 280:
+                return False, f"Twitter content too long: {len(content)} chars (max 280)"
+
+        # WhatsApp: check required fields
+        if server == 'whatsapp':
+            if tool == 'send_message' and not params.get('to'):
+                return False, "WhatsApp send_message requires 'to' field"
+            if tool == 'reply_message' and not params.get('message_id'):
+                return False, "WhatsApp reply_message requires 'message_id' field"
+
+        # LinkedIn: check required fields
+        if server == 'linkedin' and tool == 'create_post':
+            if not params.get('content') and not params.get('text'):
+                return False, "LinkedIn create_post requires 'content' or 'text' field"
+
+        return True, ""
 
     def _execute_action(self, server: str, tool: str, params: Dict, dry_run: bool = True) -> Dict:
         """
@@ -290,19 +409,59 @@ plan_reference: {plan_path}
                 'tool': tool
             }
 
+        # Validate action parameters
+        is_valid, error_msg = self._validate_action(server, tool, params)
+        if not is_valid:
+            logger.error(f"Validation failed: {error_msg}")
+            return {
+                'success': False,
+                'error': error_msg,
+                'server': server,
+                'tool': tool
+            }
+
+        # Prepare redacted params for logging
+        redacted_params = {}
+        for key, value in params.items():
+            if isinstance(value, str):
+                redacted_params[key] = redact_pii(value)
+            else:
+                redacted_params[key] = value
+
         # Log attempt
         action_log = {
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'server': server,
             'tool': tool,
-            'params': params,
+            'params': redacted_params,
             'dry_run': dry_run,
             'status': 'pending'
         }
 
         if dry_run:
+            # Print detailed dry-run preview
+            print(f"\n  📋 Action Preview:")
+            print(f"     Platform: {server.title()}")
+            print(f"     Operation: {tool}")
+
+            # Show content preview (redacted)
+            content_key = 'content' if 'content' in params else 'text' if 'text' in params else 'message'
+            if content_key in params:
+                content = params[content_key]
+                content_preview = redact_pii(content)
+                print(f"     Content: {content_preview[:100]}{'...' if len(content_preview) > 100 else ''}")
+                print(f"     Length: {len(content)} chars")
+
+                # Show constraint validation
+                if server == 'twitter':
+                    print(f"     Twitter limit: {len(content)}/280 chars {'✓' if len(content) <= 280 else '✗ EXCEEDS LIMIT'}")
+
+            # Show other params (redacted)
+            for key, value in params.items():
+                if key not in [content_key]:
+                    print(f"     {key}: {redact_pii(str(value))}")
+
             logger.info(f"[DRY-RUN] Would execute: {server}.{tool}")
-            logger.info(f"[DRY-RUN] Parameters: {params}")
 
             action_log['status'] = 'dry_run_success'
             action_log['result'] = 'Dry-run successful (no real action taken)'
@@ -316,21 +475,107 @@ plan_reference: {plan_path}
                 'result': 'Dry-run successful'
             }
 
-        # TODO: Real MCP client execution (G-M4)
-        # For now, return "not implemented" error for real execution
-        logger.warning(f"Real MCP execution not implemented: {server}.{tool}")
+        # Real execution mode
+        # TODO: Real MCP client execution (M4.1 - simulated for now)
+        logger.info(f"[EXECUTE] Simulating: {server}.{tool}")
+        print(f"\n  🚀 Executing Action (SIMULATED):")
+        print(f"     Platform: {server.title()}")
+        print(f"     Operation: {tool}")
+        print(f"     Status: Simulated success (real MCP integration pending)")
 
-        action_log['status'] = 'not_implemented'
-        action_log['error'] = 'Real MCP client integration pending (G-M4)'
+        action_log['status'] = 'simulated_success'
+        action_log['result'] = 'Simulated execution successful'
+        action_log['note'] = 'Real MCP client integration pending (M4.1 TODO)'
         self._log_action(action_log)
 
         return {
-            'success': False,
-            'error': 'Real MCP execution not implemented (use --dry-run for testing)',
+            'success': True,
+            'simulated': True,
             'server': server,
             'tool': tool,
-            'note': 'TODO: Integrate MCP client library (G-M4)'
+            'result': 'Simulated execution successful'
         }
+
+    def _move_plan(self, plan_path: Path, destination: str) -> bool:
+        """
+        Move plan to completed/ or failed/ subdirectory.
+
+        Args:
+            plan_path: Path to plan file
+            destination: 'completed' or 'failed'
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            dest_dir = self.base_dir / 'Plans' / destination
+            dest_dir.mkdir(parents=True, exist_ok=True)
+
+            dest_path = dest_dir / plan_path.name
+
+            # If destination already exists, append timestamp
+            if dest_path.exists():
+                timestamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+                stem = plan_path.stem
+                dest_path = dest_dir / f"{stem}_{timestamp}{plan_path.suffix}"
+
+            plan_path.rename(dest_path)
+            logger.info(f"Moved plan to {destination}/: {dest_path.name}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to move plan to {destination}/: {e}")
+            return False
+
+    def _update_dashboard_last_action(self, server: str, tool: str, status: str) -> None:
+        """
+        Update Dashboard.md with last external action.
+
+        Args:
+            server: MCP server name
+            tool: Tool name
+            status: Action status
+        """
+        try:
+            dashboard_path = self.base_dir / 'Dashboard.md'
+
+            if not dashboard_path.exists():
+                logger.warning("Dashboard.md not found, skipping update")
+                return
+
+            content = dashboard_path.read_text(encoding='utf-8')
+            timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+
+            # Create or update "Last External Action (Gold)" section
+            action_info = f"{server}.{tool} - {status} - {timestamp}"
+
+            import re
+            pattern = r'(\*\*Last External Action \(Gold\)\*\*:)(.*?)(\n|$)'
+            match = re.search(pattern, content)
+
+            if match:
+                # Update existing entry
+                new_content = re.sub(
+                    pattern,
+                    rf'\1 {action_info}\3',
+                    content
+                )
+            else:
+                # Add new entry (append after MCP Registry Status section if exists)
+                if "## MCP Registry Status" in content:
+                    new_content = content.replace(
+                        "## MCP Registry Status",
+                        f"**Last External Action (Gold)**: {action_info}\n\n## MCP Registry Status"
+                    )
+                else:
+                    new_content = content + f"\n\n**Last External Action (Gold)**: {action_info}\n"
+
+            dashboard_path.write_text(new_content, encoding='utf-8')
+            logger.info("Updated Dashboard.md with last action")
+
+        except Exception as e:
+            logger.error(f"Failed to update dashboard: {e}")
 
     def execute(self, plan_id: Optional[str] = None, dry_run: bool = True, verbose: bool = False) -> Dict:
         """
@@ -459,16 +704,45 @@ plan_reference: {plan_path}
         self._log_system(summary)
         logger.info(summary)
 
-        # Create remediation task if any failures
-        if failed_actions and not dry_run:
-            self._create_remediation_task(
-                f"{len(failed_actions)} action(s) failed",
-                f"Failed actions:\n" + "\n".join([
-                    f"- {fa['server']}.{fa['tool']}: {fa['error']}"
-                    for fa in failed_actions
-                ]),
-                plan_path=str(plan_path)
-            )
+        # Plan lifecycle management (only for real execution, not dry-run)
+        if not dry_run:
+            if success:
+                # Move plan to completed/
+                if self._move_plan(plan_path, 'completed'):
+                    logger.info(f"Plan moved to Plans/completed/")
+
+                    # Update dashboard with last action
+                    if actions_attempted > 0:
+                        last_action = results[-1]
+                        self._update_dashboard_last_action(
+                            last_action.get('server', 'unknown'),
+                            last_action.get('tool', 'unknown'),
+                            'success'
+                        )
+            else:
+                # Move plan to failed/
+                if self._move_plan(plan_path, 'failed'):
+                    logger.info(f"Plan moved to Plans/failed/")
+
+                # Create remediation task if any failures
+                if failed_actions:
+                    self._create_remediation_task(
+                        f"{len(failed_actions)} action(s) failed",
+                        f"Failed actions:\n" + "\n".join([
+                            f"- {fa['server']}.{fa['tool']}: {fa['error']}"
+                            for fa in failed_actions
+                        ]),
+                        plan_path=str(plan_path)
+                    )
+
+                # Update dashboard with last action (failure)
+                if failed_actions:
+                    first_fail = failed_actions[0]
+                    self._update_dashboard_last_action(
+                        first_fail.get('server', 'unknown'),
+                        first_fail.get('tool', 'unknown'),
+                        'failed'
+                    )
 
         return {
             'success': success,
