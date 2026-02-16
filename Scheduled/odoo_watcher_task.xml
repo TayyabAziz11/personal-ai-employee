@@ -44,7 +44,7 @@ Follow Docs/mcp_odoo_setup.md for setup instructions.
 
   <Execution>
     <Command>python3</Command>
-    <Script>odoo_watcher_skill.py</Script>
+    <Script>scripts/odoo_watcher_skill.py</Script>
     <Arguments>
       <Argument>--once</Argument>
       <Argument>--mode</Argument>
@@ -109,27 +109,27 @@ Follow Docs/mcp_odoo_setup.md for setup instructions.
     <!-- Manual runs for testing -->
     <Example>
       <Description>Dry-run in mock mode</Description>
-      <Command>python3 odoo_watcher_skill.py --once --mode mock --dry-run --max-results 3</Command>
+      <Command>python3 scripts/odoo_watcher_skill.py --once --mode mock --dry-run --max-results 3</Command>
     </Example>
 
     <Example>
       <Description>Real run in mock mode (creates intake wrappers)</Description>
-      <Command>python3 odoo_watcher_skill.py --once --mode mock --max-results 5</Command>
+      <Command>python3 scripts/odoo_watcher_skill.py --once --mode mock --max-results 5</Command>
     </Example>
 
     <Example>
       <Description>Real run in MCP mode (requires credentials)</Description>
-      <Command>python3 odoo_watcher_skill.py --once --mode mcp --max-results 10</Command>
+      <Command>python3 scripts/odoo_watcher_skill.py --once --mode mcp --max-results 10</Command>
     </Example>
 
     <Example>
       <Description>Reset checkpoint (re-process all invoices)</Description>
-      <Command>python3 odoo_watcher_skill.py --reset-checkpoint</Command>
+      <Command>python3 scripts/odoo_watcher_skill.py --reset-checkpoint</Command>
     </Example>
 
     <Example>
       <Description>Verbose logging for debugging</Description>
-      <Command>python3 odoo_watcher_skill.py --once --mode mock --verbose</Command>
+      <Command>python3 scripts/odoo_watcher_skill.py --once --mode mock --verbose</Command>
     </Example>
   </Examples>
 

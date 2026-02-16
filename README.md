@@ -226,13 +226,13 @@ cp ~/Downloads/credentials.json .secrets/gmail_credentials.json
 **8. Authenticate (First-Time Only):**
 ```bash
 # Run authentication helper
-python3 gmail_api_helper.py --check-auth
+python3 scripts/gmail_api_helper.py --check-auth
 
 # Follow OAuth2 flow in browser
 # Token will be saved to .secrets/gmail_token.json
 
 # Verify authentication
-python3 gmail_api_helper.py --check-auth
+python3 scripts/gmail_api_helper.py --check-auth
 # Should output: ✓ Gmail API authenticated successfully
 ```
 
@@ -266,9 +266,12 @@ personal-ai-employee/
 │   │       ├── brain_ralph_loop_orchestrator_skill.py
 │   │       └── brain_generate_weekly_ceo_briefing_skill.py
 │   └── __init__.py
-├── gmail_watcher_skill.py             # Root wrapper (backwards compat)
-├── brain_create_plan_skill.py         # Root wrapper
-├── ... (other root wrappers)          # All skills have root wrappers
+├── scripts/                           # Backwards-compatible entrypoint wrappers
+│   ├── README.md                     # Wrapper documentation
+│   ├── gmail_watcher_skill.py        # Wrapper → silver/gmail_watcher_skill.py
+│   ├── brain_create_plan_skill.py    # Wrapper → silver/brain_create_plan_skill.py
+│   ├── brain_ralph_loop_orchestrator_skill.py  # Wrapper → gold/...
+│   └── ... (22 total wrappers)       # All skills + gmail_api_helper
 ├── pyproject.toml                     # Package configuration
 └── requirements.txt                   # Dependencies
 ```
@@ -276,7 +279,7 @@ personal-ai-employee/
 ### Root Wrappers (Backwards Compatibility)
 
 All skill scripts in the root directory are **wrapper scripts** that maintain compatibility with:
-- Existing CLI commands (e.g., `python3 gmail_watcher_skill.py --once`)
+- Existing CLI commands (e.g., `python3 scripts/gmail_watcher_skill.py --once`)
 - Scheduled task XML files in `Scheduled/`
 - Documentation examples
 
@@ -313,9 +316,9 @@ pip install -e .
 
 **WSL Note:** The package structure works seamlessly in WSL. Continue using existing commands:
 ```bash
-python3 gmail_watcher_skill.py --mock --once
-python3 brain_ralph_loop_orchestrator_skill.py --dry-run
-python3 odoo_watcher_skill.py --mode mock --once
+python3 scripts/gmail_watcher_skill.py --mock --once
+python3 scripts/brain_ralph_loop_orchestrator_skill.py --dry-run
+python3 scripts/odoo_watcher_skill.py --mode mock --once
 ```
 
 ---
@@ -326,17 +329,17 @@ python3 odoo_watcher_skill.py --mode mock --once
 
 ```bash
 # Filesystem watcher (check Needs_Action/ folder)
-python3 filesystem_watcher_skill.py --once
+python3 scripts/filesystem_watcher_skill.py --once
 
 # Gmail watcher (check for new emails)
-python3 gmail_watcher_skill.py --dry-run --once
+python3 scripts/gmail_watcher_skill.py --dry-run --once
 ```
 
 ### 2. Create a Plan
 
 ```bash
 # Generate plan from a task file
-python3 brain_create_plan_skill.py \
+python3 scripts/brain_create_plan_skill.py \
   --task Needs_Action/your_task_file.md \
   --objective "Send email to confirm meeting" \
   --risk-level Low \
@@ -347,7 +350,7 @@ python3 brain_create_plan_skill.py \
 
 ```bash
 # Create approval request (creates ACTION file in Pending_Approval/)
-python3 brain_request_approval_skill.py \
+python3 scripts/brain_request_approval_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
 ```
 
@@ -359,14 +362,14 @@ python3 brain_request_approval_skill.py \
 # To: Approved/ACTION_*.md (or Rejected/)
 
 # STEP 2: Process the approval decision
-python3 brain_monitor_approvals_skill.py
+python3 scripts/brain_monitor_approvals_skill.py
 ```
 
 ### 5. Execute with Dry-Run
 
 ```bash
 # Dry-run is DEFAULT (no flag needed)
-python3 brain_execute_with_mcp_skill.py \
+python3 scripts/brain_execute_with_mcp_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
 
 # Shows email preview without sending
@@ -376,7 +379,7 @@ python3 brain_execute_with_mcp_skill.py \
 
 ```bash
 # REQUIRES explicit --execute flag
-python3 brain_execute_with_mcp_skill.py \
+python3 scripts/brain_execute_with_mcp_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md \
   --execute
 

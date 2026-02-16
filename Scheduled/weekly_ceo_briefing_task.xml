@@ -37,7 +37,7 @@ Follow Company_Handbook.md for scheduler setup instructions.
 
   <Execution>
     <Command>python3</Command>
-    <Script>scheduler_runner.py</Script>
+    <Script>scripts/scheduler_runner.py</Script>
     <Arguments>
       <Argument>--task</Argument>
       <Argument>weekly_ceo_briefing</Argument>
@@ -69,7 +69,7 @@ Follow Company_Handbook.md for scheduler setup instructions.
   <Scheduler_Runner_Integration>
     <!-- Ensure scheduler_runner.py handles 'weekly_ceo_briefing' task -->
     <TaskName>weekly_ceo_briefing</TaskName>
-    <Command>python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
+    <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
     <Description>Generates executive briefing with 8 sections and confidence scoring</Description>
     <NoApprovalRequired>true</NoApprovalRequired>
     <ReportOnly>true</ReportOnly>
@@ -112,22 +112,22 @@ Follow Company_Handbook.md for scheduler setup instructions.
     <!-- Manual runs for testing -->
     <Example>
       <Description>Generate briefing for current week (mock mode)</Description>
-      <Command>python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
     </Example>
 
     <Example>
       <Description>Generate briefing for specific week (mock mode)</Description>
-      <Command>python3 brain_generate_weekly_ceo_briefing_skill.py --week-start 2026-02-10 --mode mock</Command>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --week-start 2026-02-10 --mode mock</Command>
     </Example>
 
     <Example>
       <Description>Generate briefing in live mode (real data gathering)</Description>
-      <Command>python3 brain_generate_weekly_ceo_briefing_skill.py --mode live</Command>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode live</Command>
     </Example>
 
     <Example>
       <Description>Run via scheduler_runner</Description>
-      <Command>python3 scheduler_runner.py --task weekly_ceo_briefing</Command>
+      <Command>python3 scripts/scheduler_runner.py --task weekly_ceo_briefing</Command>
     </Example>
   </Examples>
 
