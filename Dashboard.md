@@ -585,7 +585,12 @@
 >
 > ### 🔁 Ralph Loop Status
 >
-> **Status:** Not implemented yet (G-M7)
+> **Status:** ✅ **Operational** (G-M7 Complete)
+>
+> **Last Run:** Not yet executed
+> **Iterations Used:** N/A
+> **Plans Created:** N/A
+> **Current Status:** Stopped
 >
 > **Purpose:** Autonomous multi-step task completion with bounded iterations, approval gates respected, and remediation task creation on failure.
 >
@@ -595,10 +600,32 @@
 > - MUST stop when approval required (cannot bypass HITL)
 > - Timeout per iteration (max 5 minutes)
 > - Creates remediation tasks on failure
+> - Never executes actions directly (only creates plans)
 >
-> **Usage:** `python brain_ralph_loop_orchestrator_skill.py --task-description "<desc>" --max-iterations 10`
+> **Usage:**
+> ```bash
+> # Dry-run (show decisions without creating plans)
+> python3 brain_ralph_loop_orchestrator_skill.py --dry-run
 >
-> **Documentation:** `Docs/ralph_loop_usage.md` (created in G-M7)
+> # Execute (create plans, NOT execute actions)
+> python3 brain_ralph_loop_orchestrator_skill.py --execute
+>
+> # Custom limits
+> python3 brain_ralph_loop_orchestrator_skill.py --execute --max-iterations 5 --max-plans 3
+> ```
+>
+> **Decision Logic (Mock Heuristic):**
+> 1. Pending approval exists → HALT immediately (respects HITL)
+> 2. Failure remediation in Needs_Action → prioritize
+> 3. Overdue invoice wrapper → create follow-up plan
+> 4. Social intake > 24h old → create response plan
+> 5. High AR % (>40%) from CEO briefing → create review plan
+>
+> **Logs:**
+> - `Logs/ralph_loop.log` — Structured iteration logs
+> - `system_log.md` — Summary entries
+>
+> **Documentation:** See implementation details in `brain_ralph_loop_orchestrator_skill.py`
 >
 > ---
 >
@@ -647,7 +674,7 @@
 > | **G-M4** | ⏳ Pending | Social MCP Execution Layer (dry-run default, approval gates, multi-channel) |
 > | **G-M5** | ✅ Complete | Odoo MCP Integration (Query → Action with JSON-RPC) |
 > | **G-M6** | ✅ Complete | Weekly CEO Briefing + Accounting Audit (cross-domain synthesis) |
-> | **G-M7** | ⏳ Pending | Ralph Loop Autonomous Orchestrator (bounded autonomy, safe multi-step) |
+> | **G-M7** | ✅ Complete | Ralph Loop Autonomous Orchestrator (bounded autonomy, safe multi-step) |
 > | **G-M8** | ⏳ Pending | End-to-End Testing + Demo Documentation (18 acceptance criteria) |
 >
 > **Total Estimated Duration:** 43-56 hours (realistic: 50h)
