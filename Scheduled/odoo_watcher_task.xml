@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Odoo Watcher Scheduled Task
+Gold Tier - G-M5: Odoo MCP Integration
+
+Purpose: Run Odoo watcher periodically to detect overdue invoices and accounting alerts
+Tier: Gold
+Skill ID: G-M5-T06
+
+IMPORTANT: This is a TEMPLATE. Do not auto-execute.
+Follow Docs/mcp_odoo_setup.md for setup instructions.
+-->
+
+<ScheduledTask version="1.0">
+  <Metadata>
+    <Name>Odoo Watcher - Accounting Alerts</Name>
+    <Description>Monitor Odoo for overdue invoices and create intake wrappers</Description>
+    <Tier>Gold</Tier>
+    <SkillID>G-M5-T06</SkillID>
+    <Created>2026-02-16T10:00:00Z</Created>
+    <LastModified>2026-02-16T10:00:00Z</LastModified>
+  </Metadata>
+
+  <Schedule>
+    <!-- Option 1: Hourly (Recommended for active businesses) -->
+    <Frequency>hourly</Frequency>
+    <CronExpression>0 * * * *</CronExpression>
+    <Description>Run every hour at :00 minutes</Description>
+
+    <!-- Option 2: Daily (Alternative for less active businesses) -->
+    <!-- Uncomment to use daily schedule instead:
+    <Frequency>daily</Frequency>
+    <CronExpression>0 9 * * *</CronExpression>
+    <Description>Run daily at 9:00 AM</Description>
+    -->
+
+    <!-- Option 3: Every 4 hours (Balanced approach) -->
+    <!-- Uncomment to use 4-hour schedule:
+    <Frequency>every-4-hours</Frequency>
+    <CronExpression>0 */4 * * *</CronExpression>
+    <Description>Run every 4 hours</Description>
+    -->
+  </Schedule>
+
+  <Execution>
+    <Command>python3</Command>
+    <Script>odoo_watcher_skill.py</Script>
+    <Arguments>
+      <Argument>--once</Argument>
+      <Argument>--mode</Argument>
+      <Argument>mock</Argument>  <!-- Change to 'mcp' when real Odoo configured -->
+      <Argument>--max-results</Argument>
+      <Argument>10</Argument>
+    </Arguments>
+    <WorkingDirectory>.</WorkingDirectory>
+    <Timeout>300</Timeout>  <!-- 5 minutes -->
+  </Execution>
+
+  <Configuration>
+    <Mode>mock</Mode>  <!-- Change to 'mcp' when Odoo credentials configured -->
+    <MaxResults>10</MaxResults>
+    <DryRun>false</DryRun>  <!-- Watcher creates intake wrappers, not actions -->
+    <Verbose>false</Verbose>
+
+    <!-- Data Source -->
+    <MockFixture>templates/mock_odoo_invoices.json</MockFixture>
+    <RealOdooCredentials>.secrets/odoo_credentials.json</RealOdooCredentials>
+
+    <!-- Output -->
+    <OutputDirectory>Business/Accounting</OutputDirectory>
+    <CheckpointFile>Logs/odoo_watcher_checkpoint.json</CheckpointFile>
+    <LogFile>Logs/odoo_watcher.log</LogFile>
+  </Configuration>
+
+  <Notifications>
+    <!-- Optional: Notify on errors -->
+    <OnError>
+      <Action>create_remediation_task</Action>
+      <Destination>Needs_Action/</Destination>
+    </OnError>
+
+    <!-- Optional: Summarize in daily briefing -->
+    <OnSuccess>
+      <Action>append_to_log</Action>
+      <Destination>system_log.md</Destination>
+    </OnSuccess>
+  </Notifications>
+
+  <Setup>
+    <Prerequisites>
+      <Item>Odoo instance running (for MCP mode)</Item>
+      <Item>.secrets/odoo_credentials.json configured (for MCP mode)</Item>
+      <Item>templates/mock_odoo_invoices.json present (for mock mode)</Item>
+      <Item>Business/Accounting/ directory exists</Item>
+    </Prerequisites>
+
+    <SetupSteps>
+      <Step order="1">Review Docs/mcp_odoo_setup.md</Step>
+      <Step order="2">Choose mode: mock (testing) or mcp (production)</Step>
+      <Step order="3">If using MCP mode, configure .secrets/odoo_credentials.json</Step>
+      <Step order="4">Test manually: python3 odoo_watcher_skill.py --once --mode mock --dry-run</Step>
+      <Step order="5">Verify intake wrappers created in Business/Accounting/</Step>
+      <Step order="6">Configure scheduler (cron/systemd/Task Scheduler) using cron expression above</Step>
+      <Step order="7">Monitor Logs/odoo_watcher.log for issues</Step>
+    </SetupSteps>
+  </Setup>
+
+  <Examples>
+    <!-- Manual runs for testing -->
+    <Example>
+      <Description>Dry-run in mock mode</Description>
+      <Command>python3 odoo_watcher_skill.py --once --mode mock --dry-run --max-results 3</Command>
+    </Example>
+
+    <Example>
+      <Description>Real run in mock mode (creates intake wrappers)</Description>
+      <Command>python3 odoo_watcher_skill.py --once --mode mock --max-results 5</Command>
+    </Example>
+
+    <Example>
+      <Description>Real run in MCP mode (requires credentials)</Description>
+      <Command>python3 odoo_watcher_skill.py --once --mode mcp --max-results 10</Command>
+    </Example>
+
+    <Example>
+      <Description>Reset checkpoint (re-process all invoices)</Description>
+      <Command>python3 odoo_watcher_skill.py --reset-checkpoint</Command>
+    </Example>
+
+    <Example>
+      <Description>Verbose logging for debugging</Description>
+      <Command>python3 odoo_watcher_skill.py --once --mode mock --verbose</Command>
+    </Example>
+  </Examples>
+
+  <Monitoring>
+    <Metrics>
+      <Metric>Invoices scanned per run</Metric>
+      <Metric>Intake wrappers created per run</Metric>
+      <Metric>Invoices skipped (already processed)</Metric>
+      <Metric>Errors encountered</Metric>
+      <Metric>Execution duration</Metric>
+    </Metrics>
+
+    <Logs>
+      <Log>Logs/odoo_watcher.log</Log>
+      <Log>system_log.md</Log>
+      <Log>Logs/odoo_watcher_checkpoint.json</Log>
+    </Logs>
+
+    <Alerts>
+      <Alert condition="errors > 0">Check Logs/odoo_watcher.log for error details</Alert>
+      <Alert condition="no_invoices_found">Verify Odoo connection or mock fixture</Alert>
+      <Alert condition="execution_timeout">Increase timeout or reduce max-results</Alert>
+    </Alerts>
+  </Monitoring>
+
+  <References>
+    <Document>Docs/mcp_odoo_setup.md</Document>
+    <Document>Company_Handbook.md (Gold Skills section)</Document>
+    <Document>Dashboard.md (Accounting Status)</Document>
+  </References>
+</ScheduledTask>

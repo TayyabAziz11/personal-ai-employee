@@ -448,13 +448,16 @@ The Gold Tier extends Silver with multi-channel social integration (WhatsApp, Li
 - MCP registry management (tool discovery + graceful degradation)
 - Ralph Wiggum loop (bounded autonomous multi-step orchestration)
 
-### Gold Skills Reference Table (G-M2: MCP Registry + Reliability Core)
+### Gold Skills Reference Table (G-M2 + G-M5: MCP Registry + Odoo Integration)
 
 | Skill # | Skill Name | Implementation | Purpose |
 |---------|------------|----------------|---------|
 | **G-M2-H1** | mcp_helpers | `mcp_helpers.py` | PII redaction, rate limiting, disk space checks |
 | **G-M2-T04** | brain_mcp_registry_refresh | `brain_mcp_registry_refresh_skill.py` | MCP tool discovery + snapshot caching |
 | **G-M2-T06** | brain_handle_mcp_failure | `brain_handle_mcp_failure_skill.py` | Graceful degradation + remediation tasks |
+| **G-M5-T02** | odoo_watcher | `odoo_watcher_skill.py` | Odoo accounting perception (invoices, payments) |
+| **G-M5-T03** | brain_odoo_query_with_mcp | `brain_odoo_query_with_mcp_skill.py` | Read-only Odoo queries (no approval) |
+| **G-M5-T04** | brain_execute_odoo_with_mcp | `brain_execute_odoo_with_mcp_skill.py` | Odoo action execution (approval required) |
 
 ### Operational Details: mcp_helpers (G-M2-H1)
 
@@ -603,6 +606,130 @@ python3 brain_handle_mcp_failure_skill.py \
 - [ ] system_log.md entry appended
 - [ ] Recommended actions included based on failure type
 - [ ] Logging Requirements: mcp_failures.log + system_log.md
+
+---
+
+### Operational Details: odoo_watcher (G-M5-T02)
+
+**Purpose:** Perception-only Odoo accounting watcher - detects overdue invoices and accounting alerts
+
+**Implementation:** `odoo_watcher_skill.py` (vault root)
+
+**Type:** PERCEPTION ONLY (creates intake wrappers, never executes actions)
+
+**CLI Flags:**
+- `--once` — Run once and exit (default)
+- `--dry-run` — Simulate run without creating files
+- `--mode <mock|mcp>` — Data source: mock (default) or mcp (requires credentials)
+- `--max-results <n>` — Maximum invoices to process (default: 10)
+- `--reset-checkpoint` — Reset checkpoint before running
+- `--verbose` — Enable verbose logging
+
+**Data Sources:**
+- **Mock Mode:** `templates/mock_odoo_invoices.json` (5 sample invoices)
+- **MCP Mode:** Odoo JSON-RPC via query tools (list_unpaid_invoices)
+
+**Outputs:**
+- **Intake Wrappers:** `Business/Accounting/intake__odoo__YYYYMMDD-HHMM__<customer>.md`
+- **Checkpoint:** `Logs/odoo_watcher_checkpoint.json` (last 500 processed IDs)
+- **Logs:** `Logs/odoo_watcher.log` + `system_log.md`
+
+**Example Usage:**
+```bash
+# Dry-run in mock mode
+python3 odoo_watcher_skill.py --mode mock --once --dry-run --max-results 3
+
+# Real run in mock mode (creates intake wrappers)
+python3 odoo_watcher_skill.py --mode mock --once --max-results 5
+```
+
+**Scheduled Execution:** Hourly via `Scheduled/odoo_watcher_task.xml`
+
+**Definition of Done:**
+- [ ] Intake wrappers created in Business/Accounting/
+- [ ] Checkpoint updated with processed invoice IDs
+- [ ] Logs updated (odoo_watcher.log + system_log.md)
+- [ ] PII redacted in excerpts
+- [ ] No Odoo actions executed (perception-only verified)
+
+---
+
+### Operational Details: brain_odoo_query_with_mcp (G-M5-T03)
+
+**Purpose:** Read-only Odoo queries via MCP or mock (NO approval required)
+
+**Implementation:** `brain_odoo_query_with_mcp_skill.py` (vault root)
+
+**Type:** QUERY ONLY (read-only, no approval gates)
+
+**CLI Flags:**
+- `--operation <operation>` — Required: Query operation to execute
+- `--mode <mock|mcp>` — Data source: mock (default) or mcp (requires credentials)
+- `--report` — Generate markdown report in Business/Accounting/Reports/
+- `--verbose` — Enable verbose logging
+
+**Supported Operations:**
+1. **list_unpaid_invoices** — List all unpaid/partially paid invoices
+2. **revenue_summary** — Total invoiced, paid, outstanding
+3. **ar_aging_summary** — Accounts receivable aging breakdown
+4. **list_customers** — Customer list with invoice totals
+
+**Example Usage:**
+```bash
+# Query unpaid invoices (mock mode)
+python3 brain_odoo_query_with_mcp_skill.py --operation list_unpaid_invoices --mode mock
+
+# Generate revenue summary with report
+python3 brain_odoo_query_with_mcp_skill.py --operation revenue_summary --mode mock --report
+```
+
+**Definition of Done:**
+- [ ] Query executed successfully (mock or MCP)
+- [ ] Result printed to console (JSON format)
+- [ ] Optional report generated in Business/Accounting/Reports/
+- [ ] Query logged to Logs/mcp_actions.log with mode=query
+- [ ] PII redacted in logs
+
+---
+
+### Operational Details: brain_execute_odoo_with_mcp (G-M5-T04)
+
+**Purpose:** Execute approved Odoo actions via MCP or mock (APPROVAL REQUIRED)
+
+**Implementation:** `brain_execute_odoo_with_mcp_skill.py` (vault root)
+
+**Type:** ACTION LAYER (approval mandatory, dry-run default)
+
+**CLI Flags:**
+- `--execute` — Execute actions (default is dry-run)
+- `--mode <mock|mcp>` — Execution mode: mock (default) or mcp (requires credentials)
+- `--verbose` — Enable verbose logging
+
+**Supported Actions (Approval Required):**
+1. **create_customer** — Create new customer record
+2. **create_invoice** — Create invoice (draft state)
+3. **post_invoice** — Post invoice (validate and make official)
+4. **register_payment** — Register customer payment
+5. **create_credit_note** — Create credit note for returns/adjustments
+
+**Example Usage:**
+```bash
+# Dry-run (preview only, default)
+python3 brain_execute_odoo_with_mcp_skill.py
+
+# Execute approved plan (simulated, mock mode)
+python3 brain_execute_odoo_with_mcp_skill.py --execute --mode mock
+```
+
+**Definition of Done:**
+- [ ] Approved plan found and parsed successfully
+- [ ] All actions validated (required fields, constraints)
+- [ ] Dry-run preview shows detailed action info
+- [ ] Execute mode logs to mcp_actions.log (JSON)
+- [ ] Plan moved to completed/ or failed/
+- [ ] Dashboard "Last External Action (Gold)" updated
+- [ ] Remediation task created on failure
+- [ ] Logging Requirements: mcp_actions.log + system_log.md
 
 ---
 
@@ -1375,6 +1502,19 @@ The AI Employee operates in this cycle:
 - Mock mode support for testing without real MCP server connections
 - Configured 4 MCP servers: whatsapp, linkedin, twitter, odoo
 - All G-M2 tasks completed (8/8) - ready for G-M3 watchers
+
+**2026-02-16 (07:15 UTC):** Gold Tier - G-M5: Odoo MCP Integration (Query → Action):
+- Created Docs/mcp_odoo_setup.md (comprehensive Odoo setup documentation)
+- Implemented odoo_watcher_skill.py (perception-only watcher with --mode mock|mcp)
+- Implemented brain_odoo_query_with_mcp_skill.py (read-only queries, no approval)
+- Implemented brain_execute_odoo_with_mcp_skill.py (action executor, approval required)
+- Created templates/mock_odoo_invoices.json (5 sample invoices for testing)
+- Created Approved/plan__demo_odoo__20260216-1000.md (example Odoo plan)
+- Created Scheduled/odoo_watcher_task.xml (hourly scheduling template)
+- Updated Dashboard.md with Accounting Status section (detailed G-M5 progress)
+- Updated Company_Handbook.md Section 2.3 with G-M5 skills documentation
+- End-to-end testing complete: watcher (2 intake wrappers), query (1 report), executor (dry-run + execute)
+- All G-M5 deliverables complete (7/7) - ready for G-M6 briefing generation
 
 ---
 

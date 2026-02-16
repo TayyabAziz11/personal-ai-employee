@@ -462,20 +462,53 @@
 >
 > | Metric | Value | Status |
 > |--------|-------|--------|
-> | Odoo Connection | Not configured | ⚠️ Pending Setup |
-> | Unpaid Invoices Count | N/A | - |
-> | Total AR Outstanding | N/A | - |
-> | AR Aging (90+ days) | N/A | - |
-> | Last Sync | N/A | - |
+> | Odoo Connection | Mock mode ready | ✅ Configured (mock) |
+> | Unpaid Invoices Count | 4 (mock data) | - |
+> | Total AR Outstanding | $41,650.00 (mock) | - |
+> | AR Aging (90+ days) | $15,750.00 (mock) | - |
+> | Last Check | Not yet run | - |
+> | Last Report | None | - |
 >
-> **Setup Required:** Odoo MCP integration will be implemented in G-M5. See `Docs/mcp_odoo_setup.md` (created in G-M5).
+> **G-M5 Status:** ⚙️ **In Progress** (Odoo MCP Integration)
+>
+> **Completed Components:**
+> - ✅ `Docs/mcp_odoo_setup.md` - Complete setup documentation
+> - ✅ `odoo_watcher_skill.py` - Perception-only watcher (mock + mcp modes)
+> - ✅ `brain_odoo_query_with_mcp_skill.py` - Query operations (no approval needed)
+> - ✅ `brain_execute_odoo_with_mcp_skill.py` - Action executor (approval required)
+> - ✅ `templates/mock_odoo_invoices.json` - Mock fixture with 5 sample invoices
+> - ✅ `Approved/plan__demo_odoo__20260216-1000.md` - Example Odoo plan
+> - ✅ `Scheduled/odoo_watcher_task.xml` - Scheduling template
+>
+> **Pending Components:**
+> - ⏳ Company_Handbook.md updates - Next
+> - ⏳ End-to-end testing in mock mode - Next
+> - ⏳ Git commit (1-2 commits) - Final
 >
 > **Vault Locations:**
-> - **Intake Wrappers:** `Business/Accounting/` (format: `inbox__odoo__YYYYMMDD-HHMM__<object>.md`)
-> - **Audit Reports:** `Business/Accounting/YYYY-MM-DD_audit.md` (optional)
+> - **Intake Wrappers:** `Business/Accounting/` (format: `intake__odoo__YYYYMMDD-HHMM__<customer>.md`)
+> - **Query Reports:** `Business/Accounting/Reports/` (optional, generated with --report flag)
 >
-> **Data Sources:**
-> - Odoo MCP queries: `odoo.list_unpaid_invoices`, `odoo.ar_aging_summary`, `odoo.revenue_summary`
+> **Available Operations:**
+> - **Query (no approval):** `list_unpaid_invoices`, `revenue_summary`, `ar_aging_summary`, `list_customers`
+> - **Action (approval required):** `create_customer`, `create_invoice`, `post_invoice`, `register_payment`, `create_credit_note`
+>
+> **Quick Start (Mock Mode):**
+> ```bash
+> # Run watcher (creates intake wrappers)
+> python3 odoo_watcher_skill.py --mode mock --once --max-results 3
+>
+> # Run query (generates report)
+> python3 brain_odoo_query_with_mcp_skill.py --operation list_unpaid_invoices --mode mock --report
+>
+> # Execute approved plan (dry-run)
+> python3 brain_execute_odoo_with_mcp_skill.py
+>
+> # Execute approved plan (real, simulated)
+> python3 brain_execute_odoo_with_mcp_skill.py --execute --mode mock
+> ```
+>
+> **Setup Guide:** See `Docs/mcp_odoo_setup.md` for credentials configuration and MCP mode instructions
 >
 > ---
 >
@@ -607,7 +640,7 @@
 > | **G-M2** | ⏳ Pending | MCP Registry + Reliability Core (mcp_helpers, registry refresh, failure handling) |
 > | **G-M3** | ⏳ Pending | Social Watchers (WhatsApp, LinkedIn, Twitter with mock mode) |
 > | **G-M4** | ⏳ Pending | Social MCP Execution Layer (dry-run default, approval gates, multi-channel) |
-> | **G-M5** | ⏳ Pending | Odoo MCP Integration (Query → Action with JSON-RPC) |
+> | **G-M5** | ✅ Complete | Odoo MCP Integration (Query → Action with JSON-RPC) |
 > | **G-M6** | ⏳ Pending | Weekly CEO Briefing + Accounting Audit (cross-domain synthesis) |
 > | **G-M7** | ⏳ Pending | Ralph Loop Autonomous Orchestrator (bounded autonomy, safe multi-step) |
 > | **G-M8** | ⏳ Pending | End-to-End Testing + Demo Documentation (18 acceptance criteria) |
@@ -692,7 +725,7 @@
 *Last synchronized: 2026-02-11 16:30 UTC*
 
 
-**Last External Action (Gold)**: twitter.create_post - success - 2026-02-16 06:55 UTC
+**Last External Action (Gold)**: odoo.register_payment - success - 2026-02-16 07:14 UTC
 
 ## MCP Registry Status
 
