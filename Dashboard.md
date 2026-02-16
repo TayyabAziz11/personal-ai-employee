@@ -1,20 +1,22 @@
-# 🎯 Personal AI Employee — Silver Dashboard
+# 🎯 Personal AI Employee — Gold Tier Dashboard
 
-**Silver Tier (MCP-First with HITL Approval)**
+**Gold Tier (Multi-Channel Social + Odoo Accounting + CEO Briefing + Ralph Loop)**
 
 *Dual-interface system: VS Code (execution) + Obsidian (review/presentation)*
 *View in Obsidian Reading Mode for optimal panel-based UI*
 
 ---
 
-> [!tip] 🚀 Demo Start Here — Judge Evaluation
+> [!tip] 🚀 **GOLD TIER** Demo Start Here — Judge Evaluation
 >
-> **Silver Tier Personal AI Employee** — Autonomous FTE with Real External Actions
+> **Gold Tier Features**: Multi-channel perception (WhatsApp + LinkedIn + Twitter + Gmail), Odoo accounting, CEO briefing, autonomous orchestration (Ralph loop)
 >
-> **🎬 5-Minute Demo:**
-> - 📋 **Demo Script:** [Docs/demo_script_silver.md](Docs/demo_script_silver.md)
-> - ✅ **Completion Checklist:** [Docs/silver_completion_checklist.md](Docs/silver_completion_checklist.md)
-> - 📊 **Test Report:** [Docs/test_report_silver_e2e.md](Docs/test_report_silver_e2e.md)
+> **🎬 5-7 Minute Demo:**
+> - 📋 **Demo Script:** [Docs/gold_demo_script.md](Docs/gold_demo_script.md) — Complete walkthrough for judges
+> - ✅ **Completion Checklist:** [Docs/gold_completion_checklist.md](Docs/gold_completion_checklist.md) — All 52 FRs mapped
+> - 📊 **Test Report:** [Docs/test_report_gold_e2e.md](Docs/test_report_gold_e2e.md) — 18/18 ACs PASS
+> - 🏗️ **Architecture:** [Docs/architecture_gold.md](Docs/architecture_gold.md) — Updated system design
+> - 📚 **Lessons Learned:** [Docs/lessons_learned_gold.md](Docs/lessons_learned_gold.md) — Post-mortem insights
 >
 > **📧 Real Gmail Proof:**
 > - ✅ **Real Gmail Mode:** VERIFIED (email sent & received on 2026-02-15 03:58:05 UTC)

@@ -27,6 +27,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Import mcp_helpers for get_repo_root and redact_pii
+try:
+    from personal_ai_employee.core.mcp_helpers import get_repo_root, redact_pii
+except ImportError:
+    # Fallback for direct script execution
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from personal_ai_employee.core.mcp_helpers import get_repo_root, redact_pii
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
