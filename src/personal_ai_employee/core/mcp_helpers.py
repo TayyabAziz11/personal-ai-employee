@@ -26,6 +26,27 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+def get_repo_root() -> Path:
+    """
+    Get the repository root directory.
+
+    This function finds the repo root by locating the directory containing
+    system_log.md, which is a required file in the root of the repo.
+
+    Returns:
+        Path to repository root directory
+    """
+    # Start from this file and go up until we find system_log.md
+    current = Path(__file__).parent
+    while current != current.parent:
+        if (current / 'system_log.md').exists():
+            return current
+        current = current.parent
+
+    # Fallback: assume we're in src/personal_ai_employee/core and go up 3 levels
+    return Path(__file__).parent.parent.parent.parent
+
+
 def redact_pii(text: str) -> str:
     """
     Redact personally identifiable information (PII) from text.

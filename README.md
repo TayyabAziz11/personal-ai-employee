@@ -238,6 +238,88 @@ python3 gmail_api_helper.py --check-auth
 
 ---
 
+## 📁 Project Structure
+
+The codebase is organized as a Python package under `src/` with backwards-compatible root wrappers:
+
+```
+personal-ai-employee/
+├── src/personal_ai_employee/          # Main package
+│   ├── core/                          # Core utilities
+│   │   ├── mcp_helpers.py            # MCP utilities (PII redaction, rate limiting)
+│   │   ├── gmail_api_helper.py       # Gmail API authentication
+│   │   └── scheduler_runner.py       # Task scheduler runner
+│   ├── skills/                       # Skills organized by tier
+│   │   ├── silver/                   # Silver tier skills
+│   │   │   ├── gmail_watcher_skill.py
+│   │   │   ├── brain_create_plan_skill.py
+│   │   │   ├── brain_request_approval_skill.py
+│   │   │   ├── brain_monitor_approvals_skill.py
+│   │   │   └── brain_execute_with_mcp_skill.py
+│   │   └── gold/                     # Gold tier skills
+│   │       ├── whatsapp_watcher_skill.py
+│   │       ├── linkedin_watcher_skill.py
+│   │       ├── twitter_watcher_skill.py
+│   │       ├── odoo_watcher_skill.py
+│   │       ├── brain_execute_social_with_mcp_skill.py
+│   │       ├── brain_execute_odoo_with_mcp_skill.py
+│   │       ├── brain_ralph_loop_orchestrator_skill.py
+│   │       └── brain_generate_weekly_ceo_briefing_skill.py
+│   └── __init__.py
+├── gmail_watcher_skill.py             # Root wrapper (backwards compat)
+├── brain_create_plan_skill.py         # Root wrapper
+├── ... (other root wrappers)          # All skills have root wrappers
+├── pyproject.toml                     # Package configuration
+└── requirements.txt                   # Dependencies
+```
+
+### Root Wrappers (Backwards Compatibility)
+
+All skill scripts in the root directory are **wrapper scripts** that maintain compatibility with:
+- Existing CLI commands (e.g., `python3 gmail_watcher_skill.py --once`)
+- Scheduled task XML files in `Scheduled/`
+- Documentation examples
+
+**How it works:**
+- Wrappers add `src/` to Python path
+- Import the actual implementation from `src/personal_ai_employee/skills/`
+- Call the skill's `main()` function
+
+**Example wrapper:**
+```python
+#!/usr/bin/env python3
+"""Backwards compatibility wrapper for gmail_watcher_skill.py"""
+import sys
+from pathlib import Path
+repo_root = Path(__file__).parent
+sys.path.insert(0, str(repo_root / 'src'))
+from personal_ai_employee.skills.silver.gmail_watcher_skill import main
+if __name__ == '__main__':
+    main()
+```
+
+### Development Setup (Recommended)
+
+For development, install the package in editable mode:
+
+```bash
+# From repo root
+pip install -e .
+
+# This allows:
+# - Direct imports: from personal_ai_employee.core import mcp_helpers
+# - Root wrappers work without manual path manipulation
+```
+
+**WSL Note:** The package structure works seamlessly in WSL. Continue using existing commands:
+```bash
+python3 gmail_watcher_skill.py --mock --once
+python3 brain_ralph_loop_orchestrator_skill.py --dry-run
+python3 odoo_watcher_skill.py --mode mock --once
+```
+
+---
+
 ## 💻 Quick Start Commands
 
 ### 1. Perception (Watchers)

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-ai-employee"
+version = "1.0.0"
+description = "Multi-tier autonomous AI employee with Silver (Gmail+MCP) and Gold (Social+Odoo+CEO Briefing+Ralph Loop) capabilities"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Personal AI Employee", email = "noreply@hackathon0.ai"}
+]
+dependencies = [
+    "google-api-python-client>=2.0.0",
+    "google-auth-httplib2>=0.1.0",
+    "google-auth-oauthlib>=0.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["personal_ai_employee*"]

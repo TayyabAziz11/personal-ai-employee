@@ -1326,3 +1326,34 @@ Total calls logged: 5
 **[2026-02-15T17:25:29.066651+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.01s
 
 **[2026-02-15T17:27:50.151903+00:00]** Social executor dry-run complete (plan parsing pending G-M4)
+
+**[2026-02-16T06:55:27.356140+00:00]** Social executor dry-run complete: Plan=plan__demo_m41__20260216-0900.md, 2 attempted, 2 succeeded, 0 failed, 0.03s
+
+**[2026-02-16T06:55:44.689539+00:00]** Social executor execution complete: Plan=plan__demo_m41__20260216-0900.md, 2 attempted, 2 succeeded, 0 failed, 0.03s
+
+**[2026-02-16T07:12:58.114679+00:00]** Odoo watcher complete: 3 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-16T07:13:06.264114+00:00]** Odoo watcher complete: 2 scanned, 2 created, 0 skipped, 0 errors, 0.02s
+
+**[2026-02-16T07:14:21.897970+00:00]** Odoo execution complete: 1 actions from plan__demo_odoo__20260216-1000.md
+
+**[2026-02-16T07:59:45.813482+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-16T08:04:48.675541+00:00]** Weekly CEO briefing generated: Week 8, 2026 (7 MCP actions, 0 pending approvals)
+- **2026-02-16T12:41:59.149082+00:00**: Ralph Loop - Started (dry_run=True, max_iter=10)
+- **2026-02-16T12:41:59.322237+00:00**: Ralph Loop - Halted at iteration 1: Approval required (1 pending)
+- **2026-02-16T12:41:59.346123+00:00**: Ralph Loop - Ended: 0 decisions, 0 plans, Approval required (1 pending)
+- **2026-02-16T12:42:19.578133+00:00**: Ralph Loop - Started (dry_run=True, max_iter=2)
+- **2026-02-16T12:42:20.064185+00:00**: Ralph Loop - Ended: 4 decisions, 0 plans, Max iterations reached
+- **2026-02-16T12:46:28.553298+00:00**: Ralph Loop - Started (dry_run=False, max_iter=1)
+- **2026-02-16T12:46:28.809473+00:00**: Ralph Loop - Halted at iteration 1: Approval required (1 pending)
+- **2026-02-16T12:46:28.841671+00:00**: Ralph Loop - Ended: 0 decisions, 0 plans, Approval required (1 pending)
+- **2026-02-16T12:47:29.142730+00:00**: Ralph Loop - Started (dry_run=False, max_iter=1)
+- **2026-02-16T12:47:29.620116+00:00**: Ralph Loop - Max plans at iteration 1: Max plans per iteration reached (2)
+- **2026-02-16T12:47:29.643747+00:00**: Ralph Loop - Ended: 2 decisions, 2 plans, Max plans per iteration reached (2)
+
+**[2026-02-16T13:10:46.499075+00:00]** WhatsApp watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.04s
+
+**[2026-02-16T13:22:35.486476+00:00]** Remediation task created: Approved plan not found
+
+**[2026-02-16T13:25:13.579061+00:00]** Odoo watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.01s
