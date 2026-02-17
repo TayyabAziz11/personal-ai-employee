@@ -381,6 +381,109 @@ class LinkedInAPIHelper:
             logger.error(f"Token refresh failed: {e}")
             raise LinkedInAuthError(f"Failed to refresh token: {e}")
 
+    def get_person_urn(self) -> str:
+        """
+        Derive the LinkedIn person URN for the authenticated member.
+
+        Strategy:
+        1. Try /v2/me endpoint (returns numeric member id → urn:li:person:<id>).
+        2. If that fails (scope not granted), fall back to OIDC sub from /v2/userinfo.
+        3. Cache result in memory and in .secrets/linkedin_profile.json.
+
+        Returns:
+            Full person URN string, e.g. "urn:li:person:ABC123"
+
+        Raises:
+            LinkedInAuthError: If neither method yields a usable ID.
+        """
+        if hasattr(self, '_person_urn') and self._person_urn:
+            return self._person_urn
+
+        # Try cached profile file first
+        profile_file = self.secrets_dir / "linkedin_profile.json"
+        if profile_file.exists():
+            try:
+                with open(profile_file, 'r') as f:
+                    cached = json.load(f)
+                if cached.get('person_urn'):
+                    self._person_urn = cached['person_urn']
+                    logger.info(f"Person URN loaded from cache: {redact_pii(self._person_urn)}")
+                    return self._person_urn
+            except Exception:
+                pass
+
+        access_token = self.get_access_token()
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'X-Restli-Protocol-Version': '2.0.0',
+        }
+
+        method_used = None
+        person_id = None
+
+        # --- Attempt 1: /v2/me (gives numeric LinkedIn member id) ---
+        try:
+            resp = requests.get(f"{self.API_BASE}/me", headers=headers, timeout=30)
+            logger.info(f"GET /v2/me → status={resp.status_code}")
+            if resp.status_code == 200:
+                me_data = resp.json()
+                person_id = me_data.get('id')
+                if person_id:
+                    method_used = 'v2_me'
+                    logger.info(f"Obtained member id via /v2/me: {redact_pii(str(person_id))}")
+            else:
+                logger.warning(
+                    f"/v2/me returned {resp.status_code} – "
+                    f"response snippet: {resp.text[:200]}"
+                )
+        except Exception as e:
+            logger.warning(f"/v2/me request failed: {e}")
+
+        # --- Attempt 2: OIDC userinfo sub ---
+        if not person_id:
+            try:
+                resp = requests.get(self.USERINFO_URL, headers=headers, timeout=30)
+                logger.info(f"GET /v2/userinfo → status={resp.status_code}")
+                if resp.status_code == 200:
+                    userinfo = resp.json()
+                    person_id = userinfo.get('sub')
+                    if person_id:
+                        method_used = 'oidc_sub'
+                        logger.info(f"Obtained person id via OIDC sub: {redact_pii(str(person_id))}")
+                else:
+                    logger.warning(
+                        f"/v2/userinfo returned {resp.status_code} – "
+                        f"response snippet: {resp.text[:200]}"
+                    )
+            except Exception as e:
+                logger.warning(f"/v2/userinfo request failed: {e}")
+
+        if not person_id:
+            raise LinkedInAuthError(
+                "Could not determine LinkedIn person ID via /v2/me or OIDC userinfo. "
+                "Ensure the token has at least 'profile' scope."
+            )
+
+        self._person_urn = f"urn:li:person:{person_id}"
+        logger.info(f"Person URN resolved ({method_used}): {redact_pii(self._person_urn)}")
+
+        # Persist to cache
+        try:
+            self.secrets_dir.mkdir(parents=True, exist_ok=True)
+            profile_data = {
+                'person_urn': self._person_urn,
+                'person_id': person_id,
+                'method': method_used,
+                'cached_at': datetime.now(timezone.utc).isoformat(),
+            }
+            with open(profile_file, 'w') as f:
+                json.dump(profile_data, f, indent=2)
+            os.chmod(profile_file, 0o600)
+        except Exception as e:
+            logger.warning(f"Could not cache profile: {e}")
+
+        return self._person_urn
+
     def get_access_token(self) -> str:
         """
         Get valid access token (refresh if expired).
@@ -619,18 +722,29 @@ class LinkedInAPIHelper:
             'author': author_urn,
             'count': limit
         }
+        endpoint = '/ugcPosts'
 
         try:
-            response = self._api_request('GET', '/ugcPosts', params=params)
+            response = self._api_request('GET', endpoint, params=params)
             data = response.json()
 
             posts = data.get('elements', [])
-            logger.info(f"Retrieved {len(posts)} UGC posts for author {author_urn}")
+            logger.info(
+                f"GET {endpoint} → status={response.status_code} "
+                f"retrieved {len(posts)} UGC posts for author={redact_pii(author_urn)}"
+            )
+
+            if not posts:
+                snippet = str(data)[:300]
+                logger.warning(
+                    f"GET {endpoint} returned 0 posts. "
+                    f"Response snippet: {snippet}"
+                )
 
             return posts
 
         except LinkedInAPIError as e:
-            logger.error(f"Failed to list UGC posts: {e}")
+            logger.error(f"GET {endpoint} failed for author={redact_pii(author_urn)}: {e}")
             return []
 
     # ============================================================================
@@ -841,6 +955,77 @@ def run_oauth_server_and_get_code(auth_url: str, timeout: int = 300) -> Optional
         return None
 
 
+def show_whoami():
+    """Show identity details: sub, person_urn, method used, scopes detected."""
+    print("=" * 70)
+    print("LinkedIn Identity & URN Resolution")
+    print("=" * 70)
+
+    helper = LinkedInAPIHelper()
+
+    # Step 1: OIDC userinfo
+    try:
+        auth_result = helper.check_auth()
+    except Exception as e:
+        print(f"\n❌ Auth check failed: {e}")
+        return
+
+    if auth_result['status'] != 'authenticated':
+        print(f"\n❌ Not authenticated: {auth_result.get('error', 'unknown')}")
+        print(f"\n   Run: python3 scripts/linkedin_oauth_helper.py --init")
+        print("\n" + "=" * 70)
+        return
+
+    profile = auth_result.get('profile', {})
+    auth_method = auth_result.get('auth_method', 'unknown')
+
+    print(f"\n📋 OIDC Userinfo ({auth_method.upper()}):")
+    print(f"   sub     : {profile.get('sub', 'n/a')}")
+    print(f"   name    : {profile.get('name', profile.get('given_name', '') + ' ' + profile.get('family_name', ''))}")
+    if 'email' in profile:
+        print(f"   email   : {profile.get('email')}")
+
+    # Step 2: Person URN resolution
+    print(f"\n🔗 Person URN Resolution:")
+    try:
+        person_urn = helper.get_person_urn()
+        # Determine which method was used from cached profile file
+        profile_file = helper.secrets_dir / "linkedin_profile.json"
+        method = "unknown"
+        if profile_file.exists():
+            with open(profile_file, 'r') as f:
+                cached = json.load(f)
+            method = cached.get('method', 'unknown')
+        print(f"   person_urn : {person_urn}")
+        print(f"   method     : {method}")
+    except Exception as e:
+        print(f"   ❌ URN resolution failed: {e}")
+        print(f"   Tip: /v2/me requires 'profile' scope or legacy 'r_liteprofile' scope")
+
+    # Step 3: Scopes / products detected
+    print(f"\n🔐 Scopes / Products Detected:")
+    creds_file = helper.credentials_file
+    if creds_file.exists():
+        try:
+            with open(creds_file, 'r') as f:
+                creds = json.load(f)
+            scopes = creds.get('scopes', ['openid', 'profile', 'email', 'w_member_social'])
+            print(f"   Configured scopes: {scopes}")
+        except Exception:
+            print(f"   Could not read credentials file")
+    else:
+        print(f"   credentials file not found")
+
+    token_data = helper._load_token()
+    if token_data:
+        print(f"\n🔑 Token:")
+        print(f"   expires_at : {token_data.get('expires_at', 'unknown')}")
+        has_refresh = 'refresh_token' in token_data
+        print(f"   refresh_token available: {has_refresh}")
+
+    print("\n" + "=" * 70)
+
+
 def show_status():
     """Show current LinkedIn OAuth status"""
     print("=" * 70)
@@ -1019,19 +1204,16 @@ def main():
     LinkedIn OAuth2 CLI Helper
 
     Commands:
-        --init     : Initialize OAuth flow (browser auto-open + local server)
-        --status   : Check current authentication status
+        --init       : Initialize OAuth flow (browser auto-open + local server)
+        --status     : Check current authentication status
         --check-auth : Quick authentication check (alias for --status)
+        --whoami     : Show identity details (sub, person_urn, method, scopes)
 
     Usage:
-        # Initialize OAuth (first time setup)
         python3 scripts/linkedin_oauth_helper.py --init
-
-        # Check authentication status
         python3 scripts/linkedin_oauth_helper.py --status
-
-        # Verify authentication
         python3 scripts/linkedin_oauth_helper.py --check-auth
+        python3 scripts/linkedin_oauth_helper.py --whoami
     """
     import argparse
 
@@ -1048,6 +1230,9 @@ Examples:
 
   # Quick auth check
   python3 scripts/linkedin_oauth_helper.py --check-auth
+
+  # Show identity details and person URN
+  python3 scripts/linkedin_oauth_helper.py --whoami
         """
     )
 
@@ -1057,17 +1242,21 @@ Examples:
                         help='Show current authentication status')
     parser.add_argument('--check-auth', action='store_true',
                         help='Quick authentication check (alias for --status)')
+    parser.add_argument('--whoami', action='store_true',
+                        help='Show identity details: sub, person_urn, method, scopes')
 
     args = parser.parse_args()
 
     # If no args provided, show help
-    if not (args.init or args.status or args.check_auth):
+    if not (args.init or args.status or args.check_auth or args.whoami):
         parser.print_help()
         return
 
     # Execute command
     if args.init:
         init_oauth()
+    elif args.whoami:
+        show_whoami()
     elif args.status or args.check_auth:
         show_status()
     else:

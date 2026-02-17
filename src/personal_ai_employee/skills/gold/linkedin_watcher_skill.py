@@ -303,7 +303,9 @@ comment_id: {comment_id}
             # Verify authentication before proceeding
             try:
                 auth_info = helper.check_auth()
-                logger.info(f"LinkedIn auth OK: {auth_info.get('localizedFirstName', 'User')}")
+                profile = auth_info.get('profile', {})
+                display_name = profile.get('name', profile.get('localizedFirstName', 'User'))
+                logger.info(f"LinkedIn auth OK ({auth_info.get('auth_method', 'unknown')}): {display_name}")
             except Exception as auth_error:
                 logger.warning(f"LinkedIn authentication failed: {auth_error}")
                 self._create_remediation_task(
@@ -311,24 +313,40 @@ comment_id: {comment_id}
                     f"Real mode requires valid LinkedIn OAuth2 token.\n\n"
                     f"Error: {auth_error}\n\n"
                     f"To authenticate:\n"
-                    f"1. Run: python3 src/personal_ai_employee/core/linkedin_api_helper.py\n"
-                    f"2. Follow OAuth2 flow and paste callback URL\n"
+                    f"1. Run: python3 scripts/linkedin_oauth_helper.py --init\n"
+                    f"2. Follow OAuth2 flow in browser\n"
                     f"3. Token will be saved to .secrets/linkedin_token.json\n"
                     f"4. Re-run watcher in real mode\n\n"
-                    f"See Docs/linkedin_real_setup.md for details."
+                    f"See Docs/mcp_linkedin_setup.md for details."
+                )
+                return []
+
+            # Resolve person URN (uses /v2/me first, OIDC sub as fallback)
+            try:
+                author_urn = helper.get_person_urn()
+                logger.info(f"Using author URN: {redact_pii(author_urn)}")
+            except Exception as urn_error:
+                logger.warning(f"Could not determine LinkedIn author URN: {urn_error}")
+                self._create_remediation_task(
+                    "LinkedIn person URN resolution failed",
+                    f"Could not derive person URN for UGC query.\n\nError: {urn_error}\n\n"
+                    f"Ensure token has 'profile' scope and LinkedIn Products are enabled."
                 )
                 return []
 
             # Fetch UGC posts (read-only perception)
-            # Note: LinkedIn API requires author URN which we get from auth
-            author_urn = auth_info.get('id', '')
-            if not author_urn:
-                logger.warning("Could not determine LinkedIn author URN from auth response")
-                return []
-
-            logger.info(f"Fetching LinkedIn UGC posts for author: {author_urn}")
+            logger.info(f"Fetching LinkedIn UGC posts for author: {redact_pii(author_urn)}")
+            endpoint_used = f"/ugcPosts?q=author&author={author_urn}"
             max_results = self.config.get('max_results', 10)
-            posts = helper.list_ugc_posts(author_urn=f"urn:li:person:{author_urn}", limit=max_results)
+            posts = helper.list_ugc_posts(author_urn=author_urn, limit=max_results)
+
+            if not posts:
+                logger.warning(
+                    f"API returned 0 posts. "
+                    f"Endpoint attempted: GET {endpoint_used} | "
+                    f"Possible causes: no posts exist, 'w_member_social' scope not granted, "
+                    f"or 'Share on LinkedIn' product not enabled in LinkedIn Developer Console."
+                )
 
             # Transform LinkedIn API response to standard format
             items = []

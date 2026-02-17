@@ -214,6 +214,67 @@ LinkedIn supports two authentication methods:
 
 ---
 
+## Person URN Requirement for Posting Endpoints
+
+### Why OIDC Userinfo Is Not Enough
+
+LinkedIn's posting and content-query APIs (e.g., `/v2/ugcPosts`) require an **author URN** of the form `urn:li:person:<member_id>`.
+
+The OIDC `/v2/userinfo` endpoint returns a `sub` field that is an **opaque subject identifier** — it is suitable for authentication but is **not reliably usable** as the member ID needed in UGC endpoint queries:
+
+| Source | Field | Format | Usable for UGC? |
+|---|---|---|---|
+| `/v2/userinfo` (OIDC) | `sub` | opaque string | sometimes, but unreliable |
+| `/v2/me` (Legacy) | `id` | numeric member id | ✅ yes |
+
+### Resolution Strategy (`get_person_urn()`)
+
+Our implementation resolves the person URN automatically:
+
+1. **Try `/v2/me`** — returns the numeric member ID → `urn:li:person:<id>` (most reliable)
+2. **Fallback to OIDC `sub`** — if `/v2/me` returns 403/401 (scope not granted)
+3. **Cache in `.secrets/linkedin_profile.json`** (gitignored) to avoid repeated lookups
+
+### Diagnosing URN Resolution
+
+```bash
+# Show sub, person_urn, method used, and scopes
+python3 scripts/linkedin_oauth_helper.py --whoami
+```
+
+Example output:
+```
+LinkedIn Identity & URN Resolution
+📋 OIDC Userinfo (OIDC):
+   sub     : 6A129M19xg
+   name    : Jane Doe
+   email   : jane@example.com
+
+🔗 Person URN Resolution:
+   person_urn : urn:li:person:6A129M19xg
+   method     : v2_me
+
+🔐 Scopes / Products Detected:
+   Configured scopes: ['openid', 'profile', 'email', 'w_member_social']
+```
+
+### If `/v2/me` Returns 403
+
+This means the `profile` scope or the **Sign In with LinkedIn using OpenID Connect** product is not fully enabled. Steps:
+
+1. Go to https://www.linkedin.com/developers/apps → Your App → Products
+2. Ensure **Sign In with LinkedIn using OpenID Connect** is approved
+3. Re-run OAuth init to get a fresh token with the right scopes:
+   ```bash
+   python3 scripts/linkedin_oauth_helper.py --init
+   ```
+4. Verify URN resolution:
+   ```bash
+   python3 scripts/linkedin_oauth_helper.py --whoami
+   ```
+
+---
+
 ## MCP Server Configuration
 
 The LinkedIn MCP server provides these tools:
