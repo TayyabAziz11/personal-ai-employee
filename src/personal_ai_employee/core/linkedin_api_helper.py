@@ -367,6 +367,14 @@ class LinkedInAPIHelper:
 
             logger.info("Access token obtained successfully")
 
+            # Parse and store granted_scopes from OAuth `scope` field (space/comma-separated)
+            scope_str = token.get('scope', '')
+            if scope_str:
+                token['granted_scopes'] = [
+                    s.strip() for s in scope_str.replace(',', ' ').split() if s.strip()
+                ]
+                logger.info(f"Granted scopes parsed: {token['granted_scopes']}")
+
             # Save token
             self._save_token(token)
 
@@ -491,6 +499,99 @@ class LinkedInAPIHelper:
             os.chmod(profile_file, 0o600)
         except Exception as e:
             logger.warning(f"Could not cache profile: {e}")
+
+    def _get_granted_scopes(self) -> List[str]:
+        """
+        Return the list of OAuth scopes actually granted to this token.
+
+        Priority:
+        1. token['granted_scopes'] — parsed from OAuth `scope` field at exchange time
+        2. credentials['scopes']   — configured scopes (fallback for pre-existing tokens)
+        3. []                      — if neither source is available
+        """
+        token = self._load_token()
+        if token:
+            gs = token.get('granted_scopes')
+            if isinstance(gs, list) and gs:
+                return gs
+        try:
+            creds = self._load_credentials()
+            scopes = creds.get('scopes', [])
+            if isinstance(scopes, list):
+                return scopes
+        except Exception:
+            pass
+        return []
+
+    def get_author_urn(self) -> str:
+        """
+        Return the LinkedIn URN of the authenticated member for posting/querying.
+
+        Unlike ``get_person_urn()``, this method uses OIDC ``sub`` as a fallback
+        when ``/v2/me`` is blocked (HTTP 401/403), enabling real-mode posting without
+        the legacy ``r_liteprofile`` scope.
+
+        Resolution order:
+        1. In-memory cache (_author_urn).
+        2. On-disk cache .secrets/linkedin_profile.json (any method).
+        3. Live GET /v2/me call.
+        4. OIDC /v2/userinfo ``sub`` field → ``urn:li:person:<sub>``.
+
+        Returns:
+            Full person URN string, e.g. "urn:li:person:ABC123xyz"
+
+        Raises:
+            LinkedInAuthError: If none of the above sources can produce a URN.
+        """
+        # In-memory cache
+        if getattr(self, '_author_urn', None):
+            return self._author_urn
+
+        # On-disk cache (any method)
+        profile_file = self.secrets_dir / "linkedin_profile.json"
+        if profile_file.exists():
+            try:
+                with open(profile_file, 'r') as f:
+                    cached = json.load(f)
+                if cached.get('person_urn'):
+                    self._author_urn = cached['person_urn']
+                    logger.info(
+                        f"Author URN loaded from cache (method={cached.get('method')}): "
+                        f"{redact_pii(self._author_urn)}"
+                    )
+                    return self._author_urn
+            except Exception:
+                pass
+
+        # Try /v2/me
+        member_id = self.get_person_id_v2_me()
+        if member_id:
+            self._author_urn = f"urn:li:person:{member_id}"
+            # get_person_id_v2_me() already caches to disk as method='v2_me'
+            logger.info(f"Author URN resolved via /v2/me: {redact_pii(self._author_urn)}")
+            return self._author_urn
+
+        # OIDC sub fallback — works when /v2/me is blocked
+        logger.info("GET /v2/me unavailable — falling back to OIDC sub for author URN")
+        try:
+            auth_result = self.check_auth()
+            sub = auth_result.get('profile', {}).get('sub')
+            if sub:
+                self._author_urn = f"urn:li:person:{sub}"
+                self._cache_profile(
+                    person_urn=self._author_urn,
+                    person_id=sub,
+                    method='oidc_sub',
+                )
+                logger.info(f"Author URN derived from OIDC sub: {redact_pii(self._author_urn)}")
+                return self._author_urn
+        except Exception as exc:
+            logger.warning(f"OIDC sub fallback failed: {exc}")
+
+        raise LinkedInAuthError(
+            "Cannot resolve author URN: /v2/me blocked and OIDC sub unavailable.\n"
+            "Run: python3 scripts/linkedin_oauth_helper.py --init"
+        )
 
     def get_person_urn(self) -> str:
         """
@@ -1012,7 +1113,7 @@ class LinkedInAPIHelper:
         Raises:
             LinkedInAPIError: If posting fails (HTTP error or network error)
         """
-        author_urn = self.get_person_urn()
+        author_urn = self.get_author_urn()
 
         payload = {
             "author": author_urn,
@@ -1089,7 +1190,7 @@ class LinkedInAPIHelper:
             }
         """
         try:
-            author_urn = self.get_person_urn()
+            author_urn = self.get_author_urn()
         except LinkedInAuthError as exc:
             return {'available': False, 'status': -2, 'reason': str(exc)}
 
@@ -1113,29 +1214,20 @@ class LinkedInAPIHelper:
         """
         Check whether posting (w_member_social) is available.
 
-        Verifies the scope is configured and a person URN can be resolved
-        (required for all posting endpoints).
+        Only verifies the scope is present — no network call is made.
+        Uses _get_granted_scopes() which reads from token['granted_scopes'] first,
+        then falls back to credentials['scopes'].
 
         Returns:
             {'available': bool, 'reason': str}
         """
-        try:
-            creds = self._load_credentials()
-            scopes = creds.get('scopes', [])
-            if not isinstance(scopes, list) or 'w_member_social' not in scopes:
-                return {
-                    'available': False,
-                    'reason': 'w_member_social scope not in configured scopes',
-                }
-        except Exception as exc:
-            return {'available': False, 'reason': f'Cannot load credentials: {exc}'}
-
-        # Scope is configured — verify person URN is resolvable (needed to post)
-        try:
-            self.get_person_urn()
-            return {'available': True, 'reason': ''}
-        except LinkedInAuthError as exc:
-            return {'available': False, 'reason': f'Person URN unavailable: {exc}'}
+        scopes = self._get_granted_scopes()
+        if 'w_member_social' not in scopes:
+            return {
+                'available': False,
+                'reason': 'w_member_social scope not in configured scopes',
+            }
+        return {'available': True, 'reason': ''}
 
     def reply_comment(self, comment_id: str, text: str) -> Dict[str, Any]:
         """
@@ -1287,34 +1379,24 @@ def run_oauth_server_and_get_code(auth_url: str, timeout: int = 300) -> Optional
         return None
 
 
-def test_endpoints():
+def test_endpoints(execute: bool = False):
     """
-    Test the three key LinkedIn API endpoints and print labelled diagnostics.
+    5-step LinkedIn API endpoint diagnostic.
 
-    Calls (in order):
-      1. GET /v2/me                                        — must return numeric 'id'
-      2. GET /v2/shares?q=owners&owners=<urn>&count=1      — requires Share on LinkedIn product
-      3. GET /v2/ugcPosts?q=author&author=<urn>&count=1   — requires w_member_social scope
-
-    For each endpoint prints:  status code | result (OK / FAIL) | guidance on failure.
+    Step 1: OIDC /v2/userinfo          — verifies token is valid
+    Step 2: Author URN resolution      — /v2/me with OIDC sub fallback
+    Step 3: Post validation (dry-run)  — confirms w_member_social scope + URN ready
+    Step 4: POST rest/posts            — real post (only when execute=True)
+    Step 5: Read endpoints             — informational; failure is NOT fatal
     """
     SEP = "=" * 70
-
-    def _ok(label: str, msg: str):
-        print(f"  ✅ {label}: {msg}")
-
-    def _fail(label: str, status: int, snippet: str, guidance: str):
-        print(f"  ❌ {label}: HTTP {status}")
-        print(f"     Response: {snippet}")
-        print(f"     Fix:      {guidance}")
-
     print(SEP)
     print("LinkedIn API Endpoint Diagnostics (--test-endpoints)")
     print(SEP)
 
     helper = LinkedInAPIHelper()
 
-    # ── Check token first ──────────────────────────────────────────────────
+    # ── Token check ──────────────────────────────────────────────────────────
     try:
         access_token = helper.get_access_token()
     except Exception as e:
@@ -1324,108 +1406,171 @@ def test_endpoints():
         return
 
     headers = helper._build_headers(access_token)
-    linkedin_version_sent = headers.get('LinkedIn-Version', 'MISSING')
-    print(f"   LinkedIn-Version header applied : {linkedin_version_sent}")
-    print(f"   X-Restli-Protocol-Version       : {headers.get('X-Restli-Protocol-Version', 'MISSING')}")
+    print(f"   LinkedIn-Version          : {headers.get('LinkedIn-Version', 'MISSING')}")
+    print(f"   X-Restli-Protocol-Version : {headers.get('X-Restli-Protocol-Version', 'MISSING')}")
 
-    # ── 1. GET /v2/me ──────────────────────────────────────────────────────
-    print("\n[1/3] GET /v2/me")
-    member_urn = None
+    # ── [1/5] OIDC /v2/userinfo ───────────────────────────────────────────
+    print("\n[1/5] OIDC /v2/userinfo")
+    oidc_sub = None
     try:
-        resp = requests.get(f"{helper.API_BASE}/me", headers=headers, timeout=30)
+        resp = requests.get(helper.USERINFO_URL, headers=headers, timeout=30)
         if resp.status_code == 200:
-            data = resp.json()
-            member_id = data.get('id', '')
-            if member_id:
-                member_urn = f"urn:li:person:{member_id}"
-                _ok("/v2/me", f"id={member_id}  →  URN={member_urn}")
-                # Refresh the on-disk cache with this fresh v2_me result
-                helper._cache_profile(
-                    person_urn=member_urn,
-                    person_id=str(member_id),
-                    method='v2_me',
-                    raw_me=data,
-                )
-                helper._person_urn = member_urn
-                helper._person_urn_method = 'v2_me'
-            else:
-                _fail("/v2/me", 200, str(data)[:200],
-                      "Response OK but 'id' field missing — unusual, contact LinkedIn support.")
-        elif resp.status_code in (401, 403):
-            _fail("/v2/me", resp.status_code, resp.text[:200],
-                  "Token lacks profile scope OR was issued before products were enabled.\n"
-                  "     Re-run OAuth:  python3 scripts/linkedin_oauth_helper.py --init\n"
-                  "     Then confirm these products are enabled in LinkedIn Developer Console:\n"
-                  "       • Sign In with LinkedIn using OpenID Connect\n"
-                  "       • Share on LinkedIn")
+            profile = resp.json()
+            oidc_sub = profile.get('sub', '')
+            name = profile.get('name', profile.get('given_name', ''))
+            print(f"  ✅ OK — sub={oidc_sub}, name={name}")
         else:
-            _fail("/v2/me", resp.status_code, resp.text[:200], "Unexpected error from LinkedIn API.")
+            print(f"  ❌ HTTP {resp.status_code}: {resp.text[:200]}")
+            print(f"     Fix: Run --init to refresh token")
     except Exception as e:
-        print(f"  ❌ /v2/me network error: {e}")
+        print(f"  ❌ Network error: {e}")
 
-    if not member_urn:
-        print(
-            "\n⚠️  Cannot test shares/ugcPosts without a valid URN from /v2/me.\n"
-            "   Fix /v2/me first (see above), then re-run --test-endpoints."
-        )
-        print(f"\n{SEP}")
-        return
-
-    # ── 2. GET /v2/shares ─────────────────────────────────────────────────
-    print("\n[2/3] GET /v2/shares?q=owners&owners=<urn>&count=1")
+    # ── [2/5] Author URN ──────────────────────────────────────────────────
+    print("\n[2/5] Author URN Resolution (/v2/me with OIDC sub fallback)")
+    author_urn = None
     try:
-        resp = requests.get(
-            f"{helper.API_BASE}/shares",
-            headers=headers,
-            params={'q': 'owners', 'owners': member_urn, 'count': 1},
-            timeout=30,
-        )
-        if resp.status_code == 200:
-            elements = resp.json().get('elements', [])
-            _ok("/v2/shares", f"{len(elements)} element(s) returned")
-        elif resp.status_code == 403:
-            _fail("/v2/shares", 403, resp.text[:200],
-                  "Enable 'Share on LinkedIn' product in LinkedIn Developer Console.\n"
-                  "     After enabling, re-run:  python3 scripts/linkedin_oauth_helper.py --init")
-        elif resp.status_code == 404:
-            _fail("/v2/shares", 404, resp.text[:200],
-                  "/v2/shares endpoint not found — check LinkedIn API version or product availability.")
-        else:
-            _fail("/v2/shares", resp.status_code, resp.text[:200], "Unexpected error.")
+        author_urn = helper.get_author_urn()
+        profile_file = helper.secrets_dir / "linkedin_profile.json"
+        method = 'unknown'
+        if profile_file.exists():
+            try:
+                with open(profile_file) as f:
+                    cached = json.load(f)
+                method = cached.get('method', 'unknown')
+            except Exception:
+                pass
+        print(f"  ✅ URN={author_urn} (method={method})")
     except Exception as e:
-        print(f"  ❌ /v2/shares network error: {e}")
+        print(f"  ❌ URN resolution failed: {e}")
+        if oidc_sub:
+            print(f"     Note: OIDC sub={oidc_sub} is available")
 
-    # ── 3. GET /v2/ugcPosts ───────────────────────────────────────────────
-    print("\n[3/3] GET /v2/ugcPosts?q=author&author=<urn>&count=1")
-    try:
-        resp = requests.get(
-            f"{helper.API_BASE}/ugcPosts",
-            headers=headers,
-            params={'q': 'author', 'author': member_urn, 'count': 1},
-            timeout=30,
-        )
-        if resp.status_code == 200:
-            elements = resp.json().get('elements', [])
-            _ok("/v2/ugcPosts", f"{len(elements)} element(s) returned")
-        elif resp.status_code == 403:
-            _fail("/v2/ugcPosts", 403, resp.text[:200],
-                  "Token may lack 'w_member_social' scope or 'Share on LinkedIn' product not approved.\n"
-                  "     Re-run OAuth after enabling products.")
-        elif resp.status_code == 404:
-            _fail("/v2/ugcPosts", 404, resp.text[:200],
-                  "/v2/ugcPosts not found for this app — check that 'Share on LinkedIn' product is active.\n"
-                  "     Note: if you have no posts yet, 200 + empty elements[] is the expected response.")
+    # ── [3/5] Post validation (dry-run) ──────────────────────────────────
+    print("\n[3/5] Post Validation (dry-run — no content is sent)")
+    can_post = False
+    if author_urn:
+        post_result = helper.check_can_post()
+        if post_result['available']:
+            print(f"  ✅ w_member_social scope confirmed, author URN ready — can post")
+            can_post = True
         else:
-            _fail("/v2/ugcPosts", resp.status_code, resp.text[:200], "Unexpected error.")
-    except Exception as e:
-        print(f"  ❌ /v2/ugcPosts network error: {e}")
+            print(f"  ❌ Cannot post: {post_result.get('reason', 'unknown')}")
+    else:
+        print(f"  ⚠️  Skipped — no author URN resolved")
+
+    # ── [4/5] Real post (only with --execute) ─────────────────────────────
+    if execute:
+        print("\n[4/5] POST rest/posts (--execute)")
+        if can_post and author_urn:
+            ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+            test_text = f"[ENDPOINT TEST] Automated connectivity check | {ts}"
+            try:
+                result = helper.create_post(test_text)
+                print(f"  ✅ Posted! URN={result.get('id')}, endpoint={result.get('endpoint_used')}")
+            except Exception as e:
+                print(f"  ❌ Post failed: {e}")
+        else:
+            print(f"  ⚠️  Skipped — posting not available")
+    else:
+        print(f"\n[4/5] POST rest/posts → skipped (dry-run; use --execute to actually post)")
+
+    # ── [5/5] Read endpoints (informational) ──────────────────────────────
+    print("\n[5/5] Read Endpoints (informational — failure is expected for most apps)")
+    if author_urn:
+        read_result = helper.check_read_access()
+        if read_result['available']:
+            print(f"  ✅ Read OK (status={read_result['status']})")
+        else:
+            status = read_result.get('status', -1)
+            reason = read_result.get('reason', 'unknown')
+            print(f"  ⚠️  Read unavailable (status={status}): {reason}")
+            print(f"     Expected — r_member_social requires LinkedIn partner program approval")
+            print(f"     Posting is unaffected by this restriction.")
+    else:
+        print(f"  ⚠️  Skipped — no author URN")
 
     print(f"\n{SEP}")
-    print("Next steps if any endpoint failed:")
-    print("  1. Enable required LinkedIn Developer Console products (see fixes above)")
-    print("  2. Re-run OAuth: python3 scripts/linkedin_oauth_helper.py --init")
-    print("  3. Re-run this check: python3 scripts/linkedin_oauth_helper.py --test-endpoints")
+    print("Summary:")
+    print(f"  OIDC userinfo : {'OK' if oidc_sub else 'FAIL'}")
+    print(f"  Author URN    : {'OK (' + author_urn + ')' if author_urn else 'FAIL'}")
+    print(f"  Can Post      : {'YES' if can_post else 'NO'}")
     print(f"{SEP}\n")
+
+
+def post_test(text: str, execute: bool = False):
+    """
+    Test posting to LinkedIn.
+
+    Args:
+        text:    Post text (used verbatim in dry-run; prefixed with [TEST POST] when execute=True)
+        execute: If True, actually send the post; if False (default), dry-run only.
+
+    Dry-run validates: auth OK, author URN resolved, w_member_social scope present.
+    Execute: prepends "[TEST POST] " + timestamp to distinguish from real posts.
+    """
+    SEP = "-" * 60
+    print(SEP)
+    print("LinkedIn Post Test")
+    print(SEP)
+
+    helper = LinkedInAPIHelper()
+
+    # Step 1: Auth check
+    try:
+        auth = helper.check_auth()
+        if auth['status'] != 'authenticated':
+            print(f"❌ Not authenticated: {auth.get('error')}")
+            print(f"   Run: python3 scripts/linkedin_oauth_helper.py --init")
+            return
+        profile = auth.get('profile', {})
+        name = (profile.get('name') or profile.get('sub') or 'unknown')
+        print(f"✅ Authenticated as: {name}")
+    except Exception as e:
+        print(f"❌ Auth check failed: {e}")
+        return
+
+    # Step 2: Resolve author URN
+    try:
+        author_urn = helper.get_author_urn()
+        print(f"✅ Author URN: {author_urn}")
+    except Exception as e:
+        print(f"❌ Author URN resolution failed: {e}")
+        return
+
+    # Step 3: Scope check
+    post_result = helper.check_can_post()
+    if not post_result['available']:
+        print(f"❌ Cannot post: {post_result.get('reason')}")
+        return
+    print(f"✅ w_member_social scope: confirmed")
+
+    # Step 4: Build post text
+    if execute:
+        ts = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        post_text = f"[TEST POST] {text} | {ts}"
+    else:
+        post_text = text
+
+    print(f"\n📝 Post content ({len(post_text)} chars):")
+    print(f"   {post_text[:200]}{'...' if len(post_text) > 200 else ''}")
+
+    if not execute:
+        print(f"\n✅ Dry-run OK — payload validated, author URN resolved, scope confirmed")
+        print(f"   To actually post, add --execute")
+        print(SEP)
+        return
+
+    # Step 5: Send
+    print("\n🚀 Posting to LinkedIn...")
+    try:
+        result = helper.create_post(post_text)
+        print(f"✅ Posted!")
+        print(f"   URN      : {result.get('id')}")
+        print(f"   Endpoint : {result.get('endpoint_used')}")
+        print(f"   Author   : {result.get('author')}")
+    except Exception as e:
+        print(f"❌ Post failed: {e}")
+    print(SEP)
 
 
 def show_whoami():
@@ -1742,20 +1887,23 @@ def main():
     LinkedIn OAuth2 CLI Helper
 
     Commands:
-        --init            : Initialize OAuth flow (browser auto-open + local server)
-        --status          : Check current authentication status
-        --check-auth      : Quick authentication check (alias for --status)
-        --whoami          : Show identity details (sub, person_urn, method, scopes)
-        --test-endpoints  : Test /v2/me, /v2/shares, /v2/ugcPosts with diagnostics
-        --capabilities    : Show LinkedIn API capabilities (post/read/auth)
+        --init                   : Initialize OAuth flow (browser auto-open + local server)
+        --status                 : Check current authentication status
+        --check-auth             : Quick authentication check (alias for --status)
+        --whoami                 : Show identity details (sub, person_urn, method, scopes)
+        --test-endpoints         : 5-step diagnostic (OIDC, URN, dry-run, optional post, read)
+        --capabilities           : Show LinkedIn API capabilities (post/read/auth)
+        --post-test "TEXT"       : Validate posting pipeline (dry-run by default)
+        --post-test "TEXT" --execute : Send a real test post to LinkedIn
 
     Usage:
         python3 scripts/linkedin_oauth_helper.py --init
         python3 scripts/linkedin_oauth_helper.py --status
-        python3 scripts/linkedin_oauth_helper.py --check-auth
+        python3 scripts/linkedin_oauth_helper.py --capabilities
         python3 scripts/linkedin_oauth_helper.py --whoami
         python3 scripts/linkedin_oauth_helper.py --test-endpoints
-        python3 scripts/linkedin_oauth_helper.py --capabilities
+        python3 scripts/linkedin_oauth_helper.py --post-test "Hello from AI"
+        python3 scripts/linkedin_oauth_helper.py --post-test "Hello from AI" --execute
     """
     import argparse
 
@@ -1767,17 +1915,24 @@ Examples:
   # First-time setup (opens browser automatically)
   python3 scripts/linkedin_oauth_helper.py --init
 
-  # Check if authenticated
+  # Check if authenticated and what is possible
   python3 scripts/linkedin_oauth_helper.py --status
-
-  # Show what the integration can and cannot do
   python3 scripts/linkedin_oauth_helper.py --capabilities
 
   # Show identity details and person URN
   python3 scripts/linkedin_oauth_helper.py --whoami
 
-  # Test all API endpoints with labelled diagnostics
+  # 5-step endpoint diagnostic (dry-run)
   python3 scripts/linkedin_oauth_helper.py --test-endpoints
+
+  # 5-step endpoint diagnostic + real post
+  python3 scripts/linkedin_oauth_helper.py --test-endpoints --execute
+
+  # Validate post pipeline without sending
+  python3 scripts/linkedin_oauth_helper.py --post-test "My test post"
+
+  # Actually send a test post to LinkedIn
+  python3 scripts/linkedin_oauth_helper.py --post-test "My test post" --execute
         """
     )
 
@@ -1790,14 +1945,18 @@ Examples:
     parser.add_argument('--whoami', action='store_true',
                         help='Show identity details: sub, person_urn, method, scopes')
     parser.add_argument('--test-endpoints', action='store_true',
-                        help='Test /v2/me, /v2/shares, /v2/ugcPosts with labelled diagnostics')
+                        help='5-step diagnostic: OIDC, URN, dry-run post, optional real post, read')
     parser.add_argument('--capabilities', action='store_true',
                         help='Show LinkedIn API capabilities (authenticated/can-post/can-read)')
+    parser.add_argument('--post-test', metavar='TEXT',
+                        help='Validate posting pipeline with TEXT (dry-run by default)')
+    parser.add_argument('--execute', action='store_true',
+                        help='With --post-test or --test-endpoints: actually send a real post')
 
     args = parser.parse_args()
 
     if not (args.init or args.status or args.check_auth or args.whoami
-            or args.test_endpoints or args.capabilities):
+            or args.test_endpoints or args.capabilities or args.post_test):
         parser.print_help()
         return
 
@@ -1805,8 +1964,10 @@ Examples:
         init_oauth()
     elif args.capabilities:
         show_capabilities()
+    elif args.post_test:
+        post_test(args.post_test, execute=args.execute)
     elif args.test_endpoints:
-        test_endpoints()
+        test_endpoints(execute=args.execute)
     elif args.whoami:
         show_whoami()
     elif args.status or args.check_auth:

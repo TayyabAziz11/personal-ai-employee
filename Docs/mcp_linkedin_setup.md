@@ -381,6 +381,98 @@ enabled and lacks the required `profile` scope.
 
 ---
 
+## OIDC Apps: /v2/me May Be Blocked — This Is Expected
+
+### Background
+
+New LinkedIn apps using **Sign In with LinkedIn using OpenID Connect** authenticate via
+`/v2/userinfo` (OIDC standard).  The legacy `/v2/me` endpoint was historically gated behind
+the `r_liteprofile` scope, which is only available through the **Sign In with LinkedIn** legacy
+product — a different product from the OIDC one.
+
+**Bottom line**: If your app only has the OIDC product enabled, `/v2/me` may return 403.
+This is **not a bug** — it is a LinkedIn product boundary.
+
+### What Still Works Without `/v2/me`
+
+| Capability | Status | How |
+|---|---|---|
+| Authentication | ✅ Works | OIDC `/v2/userinfo` → `sub` |
+| Identify who I am | ✅ Works | `get_author_urn()` falls back to `urn:li:person:<sub>` |
+| Post content | ✅ Works | `POST rest/posts` with `urn:li:person:<sub>` as author |
+| Read my posts | ❌ Not available | Requires `r_member_social` (partner program only) |
+
+### Author URN Resolution (`get_author_urn()`)
+
+Our implementation uses a 4-step fallback chain to resolve the author URN:
+
+1. **In-memory cache** — fastest, reuses previous result
+2. **Disk cache** (`.secrets/linkedin_profile.json`) — persists across runs
+3. **Live `GET /v2/me`** — numeric member ID when available
+4. **OIDC `sub` fallback** — `urn:li:person:<sub>` when `/v2/me` is blocked
+
+The `sub` from OIDC userinfo is accepted by LinkedIn's REST Posts API (`POST rest/posts`)
+as a valid author URN for new OIDC apps.
+
+### Verify With Exact Commands (WSL)
+
+Run these in order after OAuth:
+
+```bash
+# 1. Confirm token + OIDC identity
+python3 scripts/linkedin_oauth_helper.py --status
+
+# 2. Show capabilities (no network to ugcPosts yet)
+python3 scripts/linkedin_oauth_helper.py --capabilities
+# Expected (OIDC app):
+# Authenticated:  YES
+# Can Post:       YES
+# Can Read Posts: NO (r_member_social not granted — expected)
+
+# 3. 5-step diagnostic (dry-run — no post sent)
+python3 scripts/linkedin_oauth_helper.py --test-endpoints
+# Expected:
+# [1/5] OIDC /v2/userinfo   → ✅ OK — sub=<sub>, name=<name>
+# [2/5] Author URN          → ✅ URN=urn:li:person:<sub> (method=oidc_sub)
+# [3/5] Post validation     → ✅ w_member_social scope confirmed, author URN ready
+# [4/5] POST rest/posts     → skipped (dry-run)
+# [5/5] Read endpoints      → ⚠️  Read unavailable (expected — r_member_social)
+
+# 4. Validate post pipeline (dry-run — no post sent)
+python3 scripts/linkedin_oauth_helper.py --post-test "Hello from my AI Employee"
+
+# 5. Send a real test post (optional — actually posts to LinkedIn)
+python3 scripts/linkedin_oauth_helper.py --post-test "Hello from my AI Employee" --execute
+
+# 6. Watcher real mode (exits cleanly if read is blocked; remediation file created once)
+python3 scripts/linkedin_watcher_skill.py --mode real --once
+```
+
+### Watcher Graceful Degradation
+
+When the watcher runs in real mode and `r_member_social` is not granted:
+
+- First run: logs warning + creates `Needs_Action/remediation__linkedin_read_permission__YYYYMMDD-HHMM.md`
+- Subsequent runs: logs info ("already created") + exits cleanly — **no duplicate files**
+- The `read_blocked_since` field in `Logs/linkedin_watcher_checkpoint.json` tracks when the
+  block was first detected, preventing remediation file spam.
+
+### Expected `--capabilities` Output (OIDC App)
+
+```
+----------------------------------------
+LinkedIn Capabilities
+----------------------------------------
+Authenticated: YES
+Can Post:      YES
+Can Read Posts: NO (r_member_social not granted (LinkedIn requires special access approval))
+----------------------------------------
+```
+
+**"Can Post: YES"** confirms the integration is working correctly even without `/v2/me`.
+
+---
+
 ## MCP Server Configuration
 
 The LinkedIn MCP server provides these tools:

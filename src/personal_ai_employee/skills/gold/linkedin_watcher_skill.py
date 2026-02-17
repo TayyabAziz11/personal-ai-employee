@@ -410,36 +410,54 @@ comment_id: {comment_id}
                 )
                 return []
 
-            # Resolve person URN (uses /v2/me first, OIDC sub as fallback)
+            # Resolve author URN — uses /v2/me first, falls back to OIDC sub
             try:
-                author_urn = helper.get_person_urn()
+                author_urn = helper.get_author_urn()
                 logger.info(f"Using author URN: {redact_pii(author_urn)}")
             except Exception as urn_error:
                 logger.warning(f"Could not determine LinkedIn author URN: {urn_error}")
                 self._create_remediation_task(
                     "LinkedIn person URN resolution failed",
                     f"Could not derive person URN for UGC query.\n\nError: {urn_error}\n\n"
-                    f"Ensure token has 'profile' scope and LinkedIn Products are enabled."
+                    f"Ensure token has 'openid profile' scopes and LinkedIn Products are enabled.\n"
+                    f"Run: python3 scripts/linkedin_oauth_helper.py --init"
                 )
                 return []
 
             # Check read access before fetching posts.
             # GET /v2/ugcPosts returning 403 means r_member_social is not granted.
-            # This is a known LinkedIn restriction — degrade gracefully instead of erroring.
+            # Anti-spam: only create remediation file once; subsequent blocked runs just log info.
             read_access = helper.check_read_access()
             if not read_access['available'] and read_access.get('status') == 403:
-                logger.warning(
-                    "LinkedIn read permission (r_member_social) not granted. "
-                    "Watcher running in limited real mode."
-                )
-                self._create_read_permission_remediation(
-                    reason=read_access.get('reason', 'r_member_social not granted')
-                )
+                read_blocked_since = self.checkpoint_data.get('read_blocked_since')
+                if read_blocked_since:
+                    logger.info(
+                        f"LinkedIn read permission still unavailable (r_member_social not granted, "
+                        f"blocked since {read_blocked_since}). Remediation already created — skipping."
+                    )
+                else:
+                    logger.warning(
+                        "LinkedIn read permission (r_member_social) not granted. "
+                        "Watcher running in limited real mode."
+                    )
+                    self._create_read_permission_remediation(
+                        reason=read_access.get('reason', 'r_member_social not granted')
+                    )
+                    # Record when we first detected the block so future runs skip file creation
+                    self.checkpoint_data['read_blocked_since'] = (
+                        datetime.now(timezone.utc).isoformat()
+                    )
+                    self._save_checkpoint()
                 self._append_log(
                     "LinkedIn watcher: limited real mode — read permission unavailable "
                     "(r_member_social not granted). Posting unaffected."
                 )
                 return []
+
+            # Read access available — clear any stale block marker
+            if self.checkpoint_data.get('read_blocked_since'):
+                del self.checkpoint_data['read_blocked_since']
+                self._save_checkpoint()
 
             # Fetch posts via list_posts() — tries /v2/ugcPosts then /v2/shares automatically
             logger.info(f"Fetching LinkedIn posts for author: {redact_pii(author_urn)}")

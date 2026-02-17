@@ -60,7 +60,7 @@ def _fake_helper_authenticated(tmp_path: Path):
         'profile': {'name': 'Test User', 'sub': 'TEST123'},
         'auth_method': 'oidc',
     }
-    helper.get_person_urn.return_value = 'urn:li:person:TEST123'
+    helper.get_author_urn.return_value = 'urn:li:person:TEST123'
     helper.check_read_access.return_value = {
         'available': False,
         'status': 403,
@@ -196,7 +196,7 @@ class TestWatcherGracefulDegradation:
             'profile': {'name': 'User', 'sub': 'X'},
             'auth_method': 'oidc',
         }
-        helper.get_person_urn.return_value = 'urn:li:person:X'
+        helper.get_author_urn.return_value = 'urn:li:person:X'
         helper.check_read_access.return_value = {'available': True, 'status': 200, 'reason': ''}
         helper.list_posts.return_value = []  # No posts (but permission OK)
 
