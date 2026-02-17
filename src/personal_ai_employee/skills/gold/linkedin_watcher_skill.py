@@ -334,49 +334,42 @@ comment_id: {comment_id}
                 )
                 return []
 
-            # Fetch UGC posts (read-only perception)
-            logger.info(f"Fetching LinkedIn UGC posts for author: {redact_pii(author_urn)}")
-            endpoint_used = f"/ugcPosts?q=author&author={author_urn}"
+            # Fetch posts via list_posts() — tries /v2/ugcPosts then /v2/shares automatically
+            logger.info(f"Fetching LinkedIn posts for author: {redact_pii(author_urn)}")
             max_results = self.config.get('max_results', 10)
-            posts = helper.list_ugc_posts(author_urn=author_urn, limit=max_results)
+            normalized_posts = helper.list_posts(author_urn=author_urn, count=max_results)
 
-            if not posts:
+            if not normalized_posts:
                 logger.warning(
-                    f"API returned 0 posts. "
-                    f"Endpoint attempted: GET {endpoint_used} | "
-                    f"Possible causes: no posts exist, 'w_member_social' scope not granted, "
-                    f"or 'Share on LinkedIn' product not enabled in LinkedIn Developer Console."
+                    f"Both /v2/ugcPosts and /v2/shares returned 0 results for "
+                    f"author={redact_pii(author_urn)}. "
+                    f"Possible causes: no posts exist, 'w_member_social' / 'Share on LinkedIn' "
+                    f"product not enabled in LinkedIn Developer Console, or URN mismatch."
                 )
 
-            # Transform LinkedIn API response to standard format
+            # Transform normalized posts into standard intake-wrapper format.
+            # normalized_posts use unified fields from _normalize_post():
+            #   id, author_urn, text, created_ms, source_endpoint
             items = []
-            for post in posts:
-                # Extract relevant fields from LinkedIn UGC post response
+            for post in normalized_posts:
                 post_id = post.get('id', '')
-                created_time = post.get('created', {}).get('time', datetime.now(timezone.utc).timestamp() * 1000)
-                created_iso = datetime.fromtimestamp(created_time / 1000, tz=timezone.utc).isoformat()
-
-                # Extract text from specificContent
-                text_content = ""
-                specific_content = post.get('specificContent', {})
-                share_content = specific_content.get('com.linkedin.ugc.ShareContent', {})
-                share_commentary = share_content.get('shareCommentary', {})
-                text_content = share_commentary.get('text', '')
-
-                # Get author info
-                author = post.get('author', '')
+                created_ms = post.get('created_ms', 0) or (datetime.now(timezone.utc).timestamp() * 1000)
+                created_iso = datetime.fromtimestamp(created_ms / 1000, tz=timezone.utc).isoformat()
+                text_content = post.get('text', '')
+                source_ep = post.get('source_endpoint', 'unknown')
 
                 item = {
                     'id': post_id,
                     'sender': f"https://www.linkedin.com/feed/update/{post_id}",
-                    'sender_name': 'You',  # Since we're fetching our own posts
+                    'sender_name': 'You',
                     'timestamp': created_iso,
                     'body': text_content,
                     'type': 'post',
                     'post_id': post_id,
                     'comment_id': '',
                     'thread_id': f"linkedin_{post_id}",
-                    'urgent': False
+                    'urgent': False,
+                    'source_endpoint': source_ep,
                 }
                 items.append(item)
 

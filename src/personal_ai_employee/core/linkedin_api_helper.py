@@ -381,14 +381,84 @@ class LinkedInAPIHelper:
             logger.error(f"Token refresh failed: {e}")
             raise LinkedInAuthError(f"Failed to refresh token: {e}")
 
+    def get_person_id_v2_me(self) -> Optional[str]:
+        """
+        Call GET /v2/me and return the numeric LinkedIn member ID string.
+
+        Caches the raw /v2/me response to .secrets/linkedin_profile.json alongside the URN.
+
+        Returns:
+            Member ID string (e.g. "ABC123") or None if /v2/me returns 401/403/other error.
+        """
+        access_token = self.get_access_token()
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'X-Restli-Protocol-Version': '2.0.0',
+        }
+
+        try:
+            resp = requests.get(f"{self.API_BASE}/me", headers=headers, timeout=30)
+            logger.info(f"GET /v2/me → status={resp.status_code}")
+
+            if resp.status_code == 200:
+                me_data = resp.json()
+                member_id = me_data.get('id')
+                if member_id:
+                    # Cache raw /v2/me response alongside any existing profile data
+                    self._cache_profile(
+                        person_urn=f"urn:li:person:{member_id}",
+                        person_id=str(member_id),
+                        method='v2_me',
+                        raw_me=me_data,
+                    )
+                    logger.info(f"GET /v2/me → member id obtained: {redact_pii(str(member_id))}")
+                    return str(member_id)
+                logger.warning("/v2/me 200 but 'id' field missing in response")
+            elif resp.status_code in (401, 403):
+                logger.warning(
+                    f"GET /v2/me → {resp.status_code} (scope not granted). "
+                    f"Response: {resp.text[:200]}"
+                )
+            else:
+                logger.warning(
+                    f"GET /v2/me → unexpected {resp.status_code}. "
+                    f"Response: {resp.text[:200]}"
+                )
+        except Exception as e:
+            logger.warning(f"GET /v2/me request failed: {e}")
+
+        return None
+
+    def _cache_profile(self, person_urn: str, person_id: str, method: str,
+                       raw_me: Optional[Dict] = None):
+        """Persist resolved person URN + optional raw /v2/me data to .secrets/linkedin_profile.json."""
+        profile_file = self.secrets_dir / "linkedin_profile.json"
+        try:
+            self.secrets_dir.mkdir(parents=True, exist_ok=True)
+            profile_data: Dict[str, Any] = {
+                'person_urn': person_urn,
+                'person_id': person_id,
+                'method': method,
+                'cached_at': datetime.now(timezone.utc).isoformat(),
+            }
+            if raw_me:
+                profile_data['raw_me'] = raw_me
+            with open(profile_file, 'w') as f:
+                json.dump(profile_data, f, indent=2)
+            os.chmod(profile_file, 0o600)
+        except Exception as e:
+            logger.warning(f"Could not cache profile: {e}")
+
     def get_person_urn(self) -> str:
         """
         Derive the LinkedIn person URN for the authenticated member.
 
-        Strategy:
-        1. Try /v2/me endpoint (returns numeric member id → urn:li:person:<id>).
-        2. If that fails (scope not granted), fall back to OIDC sub from /v2/userinfo.
-        3. Cache result in memory and in .secrets/linkedin_profile.json.
+        Strategy (in order):
+        1. Return cached in-memory URN if available.
+        2. Try cached .secrets/linkedin_profile.json.
+        3. Try GET /v2/me → numeric member id → urn:li:person:<id>  (most reliable).
+        4. Fallback to OIDC userinfo sub if /v2/me returns 401 or 403.
+           (Warns that OIDC sub may not work for posting/UGC endpoints.)
 
         Returns:
             Full person URN string, e.g. "urn:li:person:ABC123"
@@ -412,35 +482,19 @@ class LinkedInAPIHelper:
             except Exception:
                 pass
 
-        access_token = self.get_access_token()
-        headers = {
-            'Authorization': f'Bearer {access_token}',
-            'X-Restli-Protocol-Version': '2.0.0',
-        }
-
         method_used = None
         person_id = None
 
-        # --- Attempt 1: /v2/me (gives numeric LinkedIn member id) ---
-        try:
-            resp = requests.get(f"{self.API_BASE}/me", headers=headers, timeout=30)
-            logger.info(f"GET /v2/me → status={resp.status_code}")
-            if resp.status_code == 200:
-                me_data = resp.json()
-                person_id = me_data.get('id')
-                if person_id:
-                    method_used = 'v2_me'
-                    logger.info(f"Obtained member id via /v2/me: {redact_pii(str(person_id))}")
-            else:
-                logger.warning(
-                    f"/v2/me returned {resp.status_code} – "
-                    f"response snippet: {resp.text[:200]}"
-                )
-        except Exception as e:
-            logger.warning(f"/v2/me request failed: {e}")
+        # --- Attempt 1: /v2/me (preferred — gives numeric member id) ---
+        member_id = self.get_person_id_v2_me()
+        if member_id:
+            person_id = member_id
+            method_used = 'v2_me'
 
-        # --- Attempt 2: OIDC userinfo sub ---
+        # --- Attempt 2: OIDC userinfo sub (fallback for 401/403 on /v2/me) ---
         if not person_id:
+            access_token = self.get_access_token()
+            headers = {'Authorization': f'Bearer {access_token}'}
             try:
                 resp = requests.get(self.USERINFO_URL, headers=headers, timeout=30)
                 logger.info(f"GET /v2/userinfo → status={resp.status_code}")
@@ -449,11 +503,15 @@ class LinkedInAPIHelper:
                     person_id = userinfo.get('sub')
                     if person_id:
                         method_used = 'oidc_sub'
-                        logger.info(f"Obtained person id via OIDC sub: {redact_pii(str(person_id))}")
+                        logger.warning(
+                            "Person URN derived from OIDC sub — this may not work for "
+                            "UGC/posting endpoints. Enable 'Sign In with LinkedIn' product "
+                            "to allow /v2/me access."
+                        )
+                        logger.info(f"OIDC sub → person id: {redact_pii(str(person_id))}")
                 else:
                     logger.warning(
-                        f"/v2/userinfo returned {resp.status_code} – "
-                        f"response snippet: {resp.text[:200]}"
+                        f"/v2/userinfo → {resp.status_code}: {resp.text[:200]}"
                     )
             except Exception as e:
                 logger.warning(f"/v2/userinfo request failed: {e}")
@@ -467,20 +525,13 @@ class LinkedInAPIHelper:
         self._person_urn = f"urn:li:person:{person_id}"
         logger.info(f"Person URN resolved ({method_used}): {redact_pii(self._person_urn)}")
 
-        # Persist to cache
-        try:
-            self.secrets_dir.mkdir(parents=True, exist_ok=True)
-            profile_data = {
-                'person_urn': self._person_urn,
-                'person_id': person_id,
-                'method': method_used,
-                'cached_at': datetime.now(timezone.utc).isoformat(),
-            }
-            with open(profile_file, 'w') as f:
-                json.dump(profile_data, f, indent=2)
-            os.chmod(profile_file, 0o600)
-        except Exception as e:
-            logger.warning(f"Could not cache profile: {e}")
+        # Persist to cache (only if not already written by get_person_id_v2_me)
+        if method_used == 'oidc_sub':
+            self._cache_profile(
+                person_urn=self._person_urn,
+                person_id=str(person_id),
+                method=method_used,
+            )
 
         return self._person_urn
 
@@ -683,6 +734,87 @@ class LinkedInAPIHelper:
 
         raise LinkedInAPIError(f"API request failed after {self.MAX_RETRIES} attempts")
 
+    def _api_request_raw(self, method: str, endpoint: str, **kwargs) -> requests.Response:
+        """
+        Make an authenticated API request and return the raw response WITHOUT raising.
+
+        Handles 429 rate limiting with backoff.  For 4xx/5xx responses the caller is
+        responsible for checking ``response.status_code``; no exception is raised for
+        client/server errors (only for network-level failures).
+
+        This exists so that callers that implement endpoint fallback logic can inspect
+        the status code before deciding whether to try a secondary endpoint.
+        """
+        access_token = self.get_access_token()
+
+        headers = kwargs.pop('headers', {})
+        headers.update({
+            'Authorization': f'Bearer {access_token}',
+            'X-Restli-Protocol-Version': '2.0.0',
+        })
+        if 'json' in kwargs:
+            headers['Content-Type'] = 'application/json'
+
+        url = f"{self.API_BASE}{endpoint}" if endpoint.startswith('/') else f"{self.API_BASE}/{endpoint}"
+
+        backoff = self.INITIAL_BACKOFF
+        last_exc: Optional[Exception] = None
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                response = requests.request(method, url, headers=headers, timeout=30, **kwargs)
+
+                if response.status_code == 429:
+                    retry_after = int(response.headers.get('Retry-After', backoff))
+                    logger.warning(f"Rate limited (429). Retrying after {retry_after}s...")
+                    time.sleep(retry_after)
+                    backoff *= 2
+                    continue
+
+                # Return immediately — caller checks status_code
+                return response
+
+            except requests.exceptions.RequestException as e:
+                last_exc = e
+                logger.warning(f"Network error (attempt {attempt + 1}): {e}")
+                if attempt < self.MAX_RETRIES - 1:
+                    time.sleep(backoff)
+                    backoff *= 2
+
+        raise LinkedInAPIError(
+            f"Network request failed after {self.MAX_RETRIES} attempts: {last_exc}"
+        )
+
+    @staticmethod
+    def _normalize_post(post: Dict[str, Any], source: str) -> Dict[str, Any]:
+        """
+        Normalize a raw API post dict from either ugcPosts or shares into a unified structure.
+
+        Unified fields:
+            id, author_urn, text, created_ms, source_endpoint
+        """
+        if source == 'ugcPosts':
+            text = (
+                post.get('specificContent', {})
+                    .get('com.linkedin.ugc.ShareContent', {})
+                    .get('shareCommentary', {})
+                    .get('text', '')
+            )
+            author_urn = post.get('author', '')
+            created_ms = post.get('created', {}).get('time', 0)
+        else:  # shares
+            text = post.get('text', {}).get('text', '') if isinstance(post.get('text'), dict) else post.get('text', '')
+            author_urn = post.get('owner', '')
+            created_ms = post.get('created', {}).get('time', 0)
+
+        return {
+            'id': post.get('id', ''),
+            'author_urn': author_urn,
+            'text': text,
+            'created_ms': created_ms,
+            'source_endpoint': source,
+            '_raw': post,
+        }
+
     # ============================================================================
     # QUERY METHODS (Perception - Read-Only)
     # ============================================================================
@@ -708,44 +840,100 @@ class LinkedInAPIHelper:
 
     def list_ugc_posts(self, author_urn: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
-        List recent UGC (User Generated Content) posts by author.
+        List recent UGC posts by author (raw API response elements).
 
-        Args:
-            author_urn: Author URN (e.g., "urn:li:person:ABC123")
-            limit: Max number of posts to return
-
-        Returns:
-            List of post dicts
+        Prefer ``list_posts()`` which transparently falls back to /v2/shares on 404/403.
         """
-        params = {
-            'q': 'author',
-            'author': author_urn,
-            'count': limit
-        }
+        params = {'q': 'author', 'author': author_urn, 'count': limit}
         endpoint = '/ugcPosts'
 
         try:
             response = self._api_request('GET', endpoint, params=params)
             data = response.json()
-
             posts = data.get('elements', [])
             logger.info(
-                f"GET {endpoint} → status={response.status_code} "
-                f"retrieved {len(posts)} UGC posts for author={redact_pii(author_urn)}"
+                f"GET {endpoint} → {response.status_code} | "
+                f"{len(posts)} posts for author={redact_pii(author_urn)}"
             )
-
             if not posts:
-                snippet = str(data)[:300]
-                logger.warning(
-                    f"GET {endpoint} returned 0 posts. "
-                    f"Response snippet: {snippet}"
-                )
-
+                logger.warning(f"GET {endpoint} returned 0 posts. Response: {str(data)[:300]}")
             return posts
-
         except LinkedInAPIError as e:
             logger.error(f"GET {endpoint} failed for author={redact_pii(author_urn)}: {e}")
             return []
+
+    def list_posts(self, author_urn: str, count: int = 10) -> List[Dict[str, Any]]:
+        """
+        List recent posts by author with automatic endpoint fallback.
+
+        Tries endpoints in order:
+        1. GET /v2/ugcPosts?q=author&author=<urn>&count=<count>
+        2. GET /v2/shares?q=owners&owners=<urn>&count=<count>  (if ugcPosts → 404 or 403)
+
+        Both responses are normalised into a unified structure via ``_normalize_post()``.
+
+        Returns:
+            List of normalised post dicts (may be empty if both endpoints fail).
+        """
+        redacted_urn = redact_pii(author_urn)
+
+        # --- Attempt 1: ugcPosts ---
+        ugc_params = {'q': 'author', 'author': author_urn, 'count': count}
+        try:
+            resp = self._api_request_raw('GET', '/ugcPosts', params=ugc_params)
+            logger.info(f"GET /ugcPosts → status={resp.status_code} for author={redacted_urn}")
+
+            if resp.status_code == 200:
+                elements = resp.json().get('elements', [])
+                posts = [self._normalize_post(p, 'ugcPosts') for p in elements]
+                logger.info(f"GET /ugcPosts → {len(posts)} posts retrieved (endpoint: ugcPosts)")
+                if not posts:
+                    logger.warning(
+                        f"GET /ugcPosts returned 0 posts. "
+                        f"Response snippet: {resp.text[:300]}"
+                    )
+                return posts
+
+            if resp.status_code in (403, 404):
+                logger.warning(
+                    f"GET /ugcPosts → {resp.status_code} "
+                    f"({resp.text[:200]}). Falling back to /v2/shares."
+                )
+            else:
+                logger.warning(
+                    f"GET /ugcPosts → unexpected {resp.status_code} "
+                    f"({resp.text[:200]}). Falling back to /v2/shares."
+                )
+
+        except LinkedInAPIError as e:
+            logger.warning(f"GET /ugcPosts network error: {e}. Falling back to /v2/shares.")
+
+        # --- Attempt 2: shares (fallback) ---
+        shares_params = {'q': 'owners', 'owners': author_urn, 'count': count}
+        try:
+            resp = self._api_request_raw('GET', '/shares', params=shares_params)
+            logger.info(f"GET /shares → status={resp.status_code} for author={redacted_urn}")
+
+            if resp.status_code == 200:
+                elements = resp.json().get('elements', [])
+                posts = [self._normalize_post(p, 'shares') for p in elements]
+                logger.info(f"GET /shares → {len(posts)} posts retrieved (endpoint: shares)")
+                if not posts:
+                    logger.warning(
+                        f"GET /shares returned 0 posts. "
+                        f"Response snippet: {resp.text[:300]}"
+                    )
+                return posts
+
+            logger.error(
+                f"GET /shares → {resp.status_code} ({resp.text[:300]}). "
+                f"Both endpoints failed for author={redacted_urn}."
+            )
+
+        except LinkedInAPIError as e:
+            logger.error(f"GET /shares network error: {e}. Both endpoints failed.")
+
+        return []
 
     # ============================================================================
     # ACTION METHODS (Execution - Write Operations)
@@ -753,56 +941,98 @@ class LinkedInAPIHelper:
 
     def create_post(self, text: str, visibility: str = "PUBLIC") -> Dict[str, Any]:
         """
-        Create a LinkedIn post (UGC).
+        Create a LinkedIn post with automatic endpoint fallback.
+
+        Tries in order:
+        1. POST /v2/ugcPosts   (preferred)
+        2. POST /v2/shares     (fallback if ugcPosts → 404 or 403)
 
         Args:
             text: Post text content
-            visibility: Visibility setting (PUBLIC, CONNECTIONS, PRIVATE)
+            visibility: Visibility string — "PUBLIC" | "CONNECTIONS"
+                        (mapped per endpoint schema automatically)
 
         Returns:
-            Created post dict with id
+            Created post dict with id and endpoint_used field
 
         Raises:
-            LinkedInAPIError: If post creation fails
+            LinkedInAPIError: If both endpoints fail
         """
-        # Get authenticated user URN
-        auth_result = self.check_auth()
-        if auth_result['status'] != 'authenticated':
-            raise LinkedInAPIError(f"Not authenticated: {auth_result.get('error')}")
+        author_urn = self.get_person_urn()
 
-        user_id = auth_result['profile']['id']
-        author_urn = f"urn:li:person:{user_id}"
+        # visibility mapping for /v2/shares
+        shares_visibility = "ANYONE" if visibility == "PUBLIC" else "CONNECTIONS_ONLY"
 
-        # LinkedIn UGC Post API payload
-        payload = {
+        ugc_payload = {
             "author": author_urn,
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {
-                        "text": text
-                    },
-                    "shareMediaCategory": "NONE"
+                    "shareCommentary": {"text": text},
+                    "shareMediaCategory": "NONE",
                 }
             },
             "visibility": {
                 "com.linkedin.ugc.MemberNetworkVisibility": visibility
-            }
+            },
+        }
+
+        shares_payload = {
+            "owner": author_urn,
+            "text": {"text": text},
+            "distribution": {
+                "linkedInDistributionTarget": {
+                    "visibilityCode": shares_visibility
+                }
+            },
         }
 
         logger.info(f"Creating LinkedIn post (visibility={visibility}, text_length={len(text)})")
 
+        # --- Attempt 1: ugcPosts ---
         try:
-            response = self._api_request('POST', '/ugcPosts', json=payload)
-            post_data = response.json()
+            resp = self._api_request_raw('POST', '/ugcPosts', json=ugc_payload)
+            logger.info(f"POST /ugcPosts → status={resp.status_code}")
 
-            post_id = post_data.get('id', 'unknown')
-            logger.info(f"Post created successfully (id={post_id})")
+            if resp.status_code in (200, 201):
+                post_data = resp.json()
+                post_id = post_data.get('id', 'unknown')
+                logger.info(f"Post created via ugcPosts (id={post_id})")
+                post_data['endpoint_used'] = 'ugcPosts'
+                return post_data
 
-            return post_data
+            if resp.status_code in (403, 404):
+                logger.warning(
+                    f"POST /ugcPosts → {resp.status_code} ({resp.text[:200]}). "
+                    "Falling back to /v2/shares."
+                )
+            else:
+                logger.warning(
+                    f"POST /ugcPosts → unexpected {resp.status_code} ({resp.text[:200]}). "
+                    "Falling back to /v2/shares."
+                )
 
         except LinkedInAPIError as e:
-            logger.error(f"Failed to create post: {e}")
+            logger.warning(f"POST /ugcPosts network error: {e}. Falling back to /v2/shares.")
+
+        # --- Attempt 2: shares ---
+        try:
+            resp = self._api_request_raw('POST', '/shares', json=shares_payload)
+            logger.info(f"POST /shares → status={resp.status_code}")
+
+            if resp.status_code in (200, 201):
+                post_data = resp.json()
+                post_id = post_data.get('id', 'unknown')
+                logger.info(f"Post created via shares (id={post_id})")
+                post_data['endpoint_used'] = 'shares'
+                return post_data
+
+            raise LinkedInAPIError(
+                f"POST /shares → {resp.status_code}: {resp.text[:300]}"
+            )
+
+        except LinkedInAPIError as e:
+            logger.error(f"Both ugcPosts and shares failed: {e}")
             raise
 
     def reply_comment(self, comment_id: str, text: str) -> Dict[str, Any]:
