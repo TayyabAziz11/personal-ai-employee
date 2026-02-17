@@ -20,7 +20,7 @@ import logging
 import os
 import time
 import webbrowser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import requests
@@ -189,8 +189,8 @@ class LinkedInAPIHelper:
         # Calculate expires_at if not provided
         if 'expires_at' not in token and 'expires_in' in token:
             expires_in = int(token['expires_in'])
-            expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-            token['expires_at'] = expires_at.isoformat() + 'Z'
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+            token['expires_at'] = expires_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
 
         # Save token
         with open(self.token_file, 'w') as f:
@@ -217,7 +217,7 @@ class LinkedInAPIHelper:
             return True
 
         expires_at = datetime.fromisoformat(token['expires_at'].replace('Z', '+00:00'))
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Consider expired if <5 minutes remaining
         time_remaining = (expires_at - now).total_seconds()
@@ -880,14 +880,16 @@ def show_status():
             if 'expires_at' in token_data:
                 try:
                     expires_at = datetime.fromisoformat(token_data['expires_at'].replace('Z', '+00:00'))
-                    now = datetime.now(expires_at.tzinfo)
-                    time_remaining = expires_at - now
+                    now = datetime.now(timezone.utc)
+                    seconds_remaining = (expires_at - now).total_seconds()
 
-                    if time_remaining.total_seconds() > 0:
-                        days = time_remaining.days
-                        print(f"   Time remaining: {days} days")
+                    if seconds_remaining > 0:
+                        days = int(seconds_remaining // 86400)
+                        print(f"   Seconds remaining: {int(seconds_remaining)}")
+                        print(f"   Days remaining: {days}")
                     else:
                         print(f"   ⚠️  Token EXPIRED")
+                        print(f"   Run: python3 scripts/linkedin_oauth_helper.py --init")
                 except Exception as e:
                     logger.debug(f"Failed to parse expiry: {e}")
 
