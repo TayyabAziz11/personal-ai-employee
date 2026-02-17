@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import time
+import webbrowser
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -454,6 +455,7 @@ class LinkedInAPIHelper:
             return {
                 'status': 'error',
                 'error': str(e)
+            }
 
     def _api_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """
@@ -666,20 +668,173 @@ class LinkedInAPIHelper:
         raise LinkedInAPIError("Messaging not implemented - check LinkedIn API docs for Messaging API access")
 
 
-def main():
+def run_oauth_server_and_get_code(auth_url: str, timeout: int = 300) -> Optional[str]:
     """
-    Interactive OAuth2 authorization flow for LinkedIn.
+    Start local HTTP server on port 8080, open browser, and wait for OAuth callback.
 
-    Usage:
-        python3 -m personal_ai_employee.core.linkedin_api_helper
+    Args:
+        auth_url: Authorization URL to open in browser
+        timeout: Max seconds to wait for callback (default 5 minutes)
 
-    This will:
-    1. Generate authorization URL
-    2. Wait for user to authorize and paste callback URL
-    3. Extract code and exchange for token
-    4. Save token to .secrets/linkedin_token.json
-    5. Verify authentication
+    Returns:
+        Authorization code or None if timeout/error
     """
+    import webbrowser
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import threading
+
+    code_container = {'code': None, 'error': None}
+
+    class OAuthCallbackHandler(BaseHTTPRequestHandler):
+        """Handle OAuth callback from LinkedIn"""
+
+        def log_message(self, format, *args):
+            """Suppress default logging"""
+            pass
+
+        def do_GET(self):
+            """Handle GET request (OAuth callback)"""
+            try:
+                parsed = urlparse(self.path)
+                query_params = parse_qs(parsed.query)
+
+                if 'code' in query_params:
+                    code_container['code'] = query_params['code'][0]
+
+                    # Send success response
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+
+                    success_html = """
+                    <html>
+                    <head><title>LinkedIn Authorization Success</title></head>
+                    <body style="font-family: Arial; text-align: center; padding-top: 100px;">
+                        <h1 style="color: green;">✅ Authorization Successful!</h1>
+                        <p>You can close this window and return to the terminal.</p>
+                    </body>
+                    </html>
+                    """
+                    self.wfile.write(success_html.encode())
+
+                elif 'error' in query_params:
+                    code_container['error'] = query_params['error'][0]
+
+                    # Send error response
+                    self.send_response(400)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+
+                    error_html = f"""
+                    <html>
+                    <head><title>LinkedIn Authorization Error</title></head>
+                    <body style="font-family: Arial; text-align: center; padding-top: 100px;">
+                        <h1 style="color: red;">❌ Authorization Failed</h1>
+                        <p>Error: {query_params['error'][0]}</p>
+                        <p>Please close this window and try again.</p>
+                    </body>
+                    </html>
+                    """
+                    self.wfile.write(error_html.encode())
+
+            except Exception as e:
+                logger.error(f"Callback handler error: {e}")
+                code_container['error'] = str(e)
+
+    try:
+        # Start server on port 8080
+        server = HTTPServer(('localhost', 8080), OAuthCallbackHandler)
+        server.timeout = timeout
+
+        # Run server in background thread
+        server_thread = threading.Thread(target=server.handle_request)
+        server_thread.daemon = True
+        server_thread.start()
+
+        print(f"\n🌐 Opening browser for LinkedIn authorization...")
+        print(f"   (Local server listening on http://localhost:8080)")
+
+        # Open browser with authorization URL
+        webbrowser.open(auth_url)
+
+        # Wait for callback or timeout
+        server_thread.join(timeout)
+
+        # Shutdown server
+        server.server_close()
+
+        if code_container['code']:
+            return code_container['code']
+        elif code_container['error']:
+            print(f"\n❌ Authorization error: {code_container['error']}")
+            return None
+        else:
+            print(f"\n⏱️  Timeout waiting for authorization callback ({timeout}s)")
+            return None
+
+    except OSError as e:
+        if 'Address already in use' in str(e):
+            print(f"\n❌ Port 8080 is already in use. Please close other applications using this port.")
+        else:
+            print(f"\n❌ Server error: {e}")
+        return None
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {e}")
+        return None
+
+
+def show_status():
+    """Show current LinkedIn OAuth status"""
+    print("=" * 70)
+    print("LinkedIn OAuth2 Status")
+    print("=" * 70)
+
+    helper = LinkedInAPIHelper()
+    auth_result = helper.check_auth()
+
+    if auth_result['status'] == 'authenticated':
+        profile = auth_result['profile']
+        token_data = helper._load_token()
+
+        print(f"\n✅ Status: AUTHENTICATED")
+        print(f"\n📋 Profile:")
+        print(f"   User ID: {profile.get('id', 'unknown')}")
+        print(f"   Name: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
+
+        if token_data:
+            print(f"\n🔑 Token:")
+            print(f"   File: {helper.token_file}")
+            print(f"   Expires at: {token_data.get('expires_at', 'unknown')}")
+
+            # Check expiration
+            if 'expires_at' in token_data:
+                try:
+                    expires_at = datetime.fromisoformat(token_data['expires_at'].replace('Z', '+00:00'))
+                    now = datetime.now(expires_at.tzinfo)
+                    time_remaining = expires_at - now
+
+                    if time_remaining.total_seconds() > 0:
+                        days = time_remaining.days
+                        print(f"   Time remaining: {days} days")
+                    else:
+                        print(f"   ⚠️  Token EXPIRED")
+                except Exception as e:
+                    logger.debug(f"Failed to parse expiry: {e}")
+
+        print(f"\n✅ LinkedIn API access is ready")
+
+    else:
+        error = auth_result.get('error', 'Unknown error')
+        print(f"\n❌ Status: NOT AUTHENTICATED")
+        print(f"   Error: {error}")
+        print(f"\n🔧 To authenticate, run:")
+        print(f"   python3 scripts/linkedin_oauth_helper.py --init")
+
+    print("\n" + "=" * 70)
+
+
+def init_oauth():
+    """Initialize OAuth flow with browser auto-open and local server"""
     import sys
 
     print("=" * 70)
@@ -693,10 +848,10 @@ def main():
     auth_result = helper.check_auth()
 
     if auth_result['status'] == 'authenticated':
-        print(f"✅ Already authenticated!")
+        print(f"\n✅ Already authenticated!")
         profile = auth_result['profile']
-        print(f"   User ID: {profile.get('id', 'unknown')}")
-        print(f"   Profile: {profile}")
+        print(f"   User: {profile.get('localizedFirstName', 'unknown')}")
+        print(f"\nTo re-authenticate, delete: {helper.token_file}")
         return
 
     print(f"⚠️  Not authenticated: {auth_result.get('error', 'No token found')}")
@@ -706,67 +861,117 @@ def main():
     auth_url = helper.get_authorization_url()
 
     print("\n" + "=" * 70)
-    print("AUTHORIZATION REQUIRED")
+    print("BROWSER AUTHORIZATION")
     print("=" * 70)
-    print("\n1. Visit this URL in your browser:")
+    print("\nYour browser will open automatically in 3 seconds...")
+    print("Please authorize the application in the browser window.")
+    print("\nIf browser doesn't open, visit this URL manually:")
     print(f"\n   {auth_url}\n")
-    print("2. Authorize the application")
-    print("3. Copy the FULL callback URL from your browser")
-    print("   (It will look like: http://localhost:8080/callback?code=...&state=...)")
-    print("\n" + "=" * 70)
+    print("=" * 70)
 
-    # Step 3: Wait for callback URL
-    callback_url = input("\nPaste the callback URL here: ").strip()
+    time.sleep(3)
 
-    if not callback_url:
-        print("❌ No URL provided. Exiting.")
+    # Step 3: Start local server and open browser
+    print("\nStep 3: Starting local server and opening browser...")
+    code = run_oauth_server_and_get_code(auth_url, timeout=300)
+
+    if not code:
+        print(f"\n❌ Failed to obtain authorization code")
+        print(f"\nTroubleshooting:")
+        print(f"1. Ensure port 8080 is not in use")
+        print(f"2. Check redirect URI in LinkedIn app settings: http://localhost:8080/callback")
+        print(f"3. Try again with: python3 scripts/linkedin_oauth_helper.py --init")
         sys.exit(1)
 
-    # Step 4: Extract code from callback URL
-    try:
-        parsed = urlparse(callback_url)
-        query_params = parse_qs(parsed.query)
+    print(f"\n✅ Authorization code received: {code[:20]}...")
 
-        if 'code' not in query_params:
-            print(f"❌ No 'code' parameter in URL. Got: {query_params}")
-            sys.exit(1)
-
-        code = query_params['code'][0]
-        print(f"\n✅ Authorization code extracted: {code[:20]}...")
-
-    except Exception as e:
-        print(f"❌ Failed to parse callback URL: {e}")
-        sys.exit(1)
-
-    # Step 5: Exchange code for token
-    print("\nStep 3: Exchanging code for access token...")
+    # Step 4: Exchange code for token
+    print("\nStep 4: Exchanging code for access token...")
     try:
         token = helper.exchange_code_for_token(code)
-        print(f"✅ Access token obtained!")
+        print(f"\n✅ Access token obtained!")
         print(f"   Expires at: {token.get('expires_at', 'unknown')}")
         print(f"   Token saved to: {helper.token_file}")
 
     except LinkedInAuthError as e:
-        print(f"❌ Token exchange failed: {e}")
+        print(f"\n❌ Token exchange failed: {e}")
         sys.exit(1)
 
-    # Step 6: Verify authentication
-    print("\nStep 4: Verifying authentication...")
+    # Step 5: Verify authentication
+    print("\nStep 5: Verifying authentication...")
     auth_result = helper.check_auth()
 
     if auth_result['status'] == 'authenticated':
-        print(f"✅ Authentication verified!")
         profile = auth_result['profile']
-        print(f"   User ID: {profile.get('id', 'unknown')}")
-        print(f"   Profile: {profile}")
+        print(f"\n✅ Authentication successful!")
+        print(f"   User: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
+        print(f"\n🎉 LinkedIn OAuth setup complete!")
+        print(f"\nNext steps:")
+        print(f"1. Test watcher: python3 scripts/linkedin_watcher_skill.py --mode real --once")
+        print(f"2. Check status: python3 scripts/linkedin_oauth_helper.py --status")
     else:
-        print(f"❌ Authentication failed: {auth_result.get('error')}")
+        print(f"\n❌ Verification failed: {auth_result.get('error')}")
         sys.exit(1)
 
-    print("\n" + "=" * 70)
-    print("SUCCESS - LinkedIn OAuth2 setup complete!")
-    print("=" * 70)
-    print("\nYou can now use the LinkedIn API helper in your scripts.")
+
+def main():
+    """
+    LinkedIn OAuth2 CLI Helper
+
+    Commands:
+        --init     : Initialize OAuth flow (browser auto-open + local server)
+        --status   : Check current authentication status
+        --check-auth : Quick authentication check (alias for --status)
+
+    Usage:
+        # Initialize OAuth (first time setup)
+        python3 scripts/linkedin_oauth_helper.py --init
+
+        # Check authentication status
+        python3 scripts/linkedin_oauth_helper.py --status
+
+        # Verify authentication
+        python3 scripts/linkedin_oauth_helper.py --check-auth
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='LinkedIn OAuth2 Helper',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # First-time setup (opens browser automatically)
+  python3 scripts/linkedin_oauth_helper.py --init
+
+  # Check if authenticated
+  python3 scripts/linkedin_oauth_helper.py --status
+
+  # Quick auth check
+  python3 scripts/linkedin_oauth_helper.py --check-auth
+        """
+    )
+
+    parser.add_argument('--init', action='store_true',
+                        help='Initialize OAuth flow with browser auto-open')
+    parser.add_argument('--status', action='store_true',
+                        help='Show current authentication status')
+    parser.add_argument('--check-auth', action='store_true',
+                        help='Quick authentication check (alias for --status)')
+
+    args = parser.parse_args()
+
+    # If no args provided, show help
+    if not (args.init or args.status or args.check_auth):
+        parser.print_help()
+        return
+
+    # Execute command
+    if args.init:
+        init_oauth()
+    elif args.status or args.check_auth:
+        show_status()
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':
