@@ -63,6 +63,7 @@ class LinkedInAPIHelper:
     # LinkedIn OAuth2 endpoints
     AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
     TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
+    USERINFO_URL = "https://api.linkedin.com/v2/userinfo"  # OpenID Connect userinfo endpoint
 
     # LinkedIn API base URL
     API_BASE = "https://api.linkedin.com/v2"
@@ -99,11 +100,12 @@ class LinkedInAPIHelper:
         {
             "client_id": "YOUR_CLIENT_ID",
             "client_secret": "YOUR_CLIENT_SECRET",
-            "redirect_uri": "http://localhost:8080/callback"
+            "redirect_uri": "http://localhost:8080/callback",
+            "scopes": ["openid", "profile", "email", "w_member_social"]  // Optional
         }
 
         Returns:
-            Dict with client_id, client_secret, redirect_uri
+            Dict with client_id, client_secret, redirect_uri, scopes (optional)
 
         Raises:
             LinkedInAuthError: If credentials file missing or invalid
@@ -118,7 +120,8 @@ class LinkedInAPIHelper:
                 '{\n'
                 '  "client_id": "YOUR_CLIENT_ID",\n'
                 '  "client_secret": "YOUR_CLIENT_SECRET",\n'
-                '  "redirect_uri": "http://localhost:8080/callback"\n'
+                '  "redirect_uri": "http://localhost:8080/callback",\n'
+                '  "scopes": ["openid", "profile", "email", "w_member_social"]\n'
                 '}'
             )
 
@@ -231,22 +234,40 @@ class LinkedInAPIHelper:
 
         Args:
             state: Optional state parameter for CSRF protection
-            scope: Optional space-separated scopes (default: "r_liteprofile r_emailaddress w_member_social")
+            scope: Optional space-separated scopes
+                   Default: "openid profile email w_member_social" (OpenID Connect scopes)
+                   Can be overridden via credentials file "scopes" field
 
         Returns:
             Authorization URL to redirect user to
 
         Note: User must visit this URL, authorize, and you'll receive a code at redirect_uri
+
+        Scopes:
+        - openid: OpenID Connect authentication
+        - profile: Read basic profile (name, photo) via OIDC userinfo endpoint
+        - email: Read email address via OIDC userinfo endpoint
+        - w_member_social: Post content as user (requires "Share on LinkedIn" product)
+
+        Legacy scopes (deprecated for new apps):
+        - r_liteprofile: Read profile (replaced by "profile")
+        - r_emailaddress: Read email (replaced by "email")
         """
         creds = self._load_credentials()
 
         if scope is None:
-            # Default scopes for watcher + executor
-            # r_liteprofile: Read profile (name, photo)
-            # r_emailaddress: Read email (optional)
-            # w_member_social: Post content
-            # r_organization_social: Read org content (if managing company page)
-            scope = "r_liteprofile r_emailaddress w_member_social"
+            # Check if scopes defined in credentials file
+            if 'scopes' in creds and isinstance(creds['scopes'], list):
+                scope = ' '.join(creds['scopes'])
+                logger.info(f"Using scopes from credentials file: {creds['scopes']}")
+            else:
+                # Default to OpenID Connect scopes (recommended for new LinkedIn apps)
+                # openid: OpenID Connect authentication
+                # profile: Read basic profile via userinfo endpoint
+                # email: Read email via userinfo endpoint
+                # w_member_social: Post content as user
+                scope = "openid profile email w_member_social"
+                logger.info("Using default OpenID Connect scopes")
 
         if state is None:
             state = str(int(time.time()))
@@ -395,13 +416,24 @@ class LinkedInAPIHelper:
         """
         Check authentication status and get user profile.
 
+        Supports both:
+        - OpenID Connect (OIDC) tokens: Uses /v2/userinfo endpoint
+        - Legacy tokens: Falls back to /v2/me endpoint
+
         Returns:
             Dict with status, profile (if authenticated), error (if failed)
 
         Example response:
         {
             "status": "authenticated",
-            "profile": {"id": "...", "firstName": {"localized": {...}}, ...}
+            "profile": {"sub": "...", "name": "...", "email": "..."},  # OIDC
+            "auth_method": "oidc"
+        }
+        OR
+        {
+            "status": "authenticated",
+            "profile": {"id": "...", "localizedFirstName": "...", ...},  # Legacy
+            "auth_method": "legacy"
         }
         OR
         {
@@ -412,11 +444,36 @@ class LinkedInAPIHelper:
         try:
             access_token = self.get_access_token()
 
-            # Call /me endpoint to verify token
             headers = {
-                'Authorization': f'Bearer {access_token}',
-                'X-Restli-Protocol-Version': '2.0.0'
+                'Authorization': f'Bearer {access_token}'
             }
+
+            # Try OpenID Connect userinfo endpoint first (for OIDC tokens)
+            try:
+                response = requests.get(
+                    self.USERINFO_URL,
+                    headers=headers,
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    profile = response.json()
+                    logger.info(f"OIDC authentication verified (sub={profile.get('sub', 'unknown')})")
+                    return {
+                        'status': 'authenticated',
+                        'profile': profile,
+                        'auth_method': 'oidc'
+                    }
+                elif response.status_code == 401:
+                    logger.warning("OIDC userinfo returned 401, trying legacy /me endpoint")
+                else:
+                    logger.warning(f"OIDC userinfo failed ({response.status_code}), trying legacy /me endpoint")
+
+            except Exception as e:
+                logger.warning(f"OIDC userinfo request failed: {e}, trying legacy /me endpoint")
+
+            # Fall back to legacy /me endpoint (for old token scopes)
+            headers['X-Restli-Protocol-Version'] = '2.0.0'
 
             response = requests.get(
                 f"{self.API_BASE}/me",
@@ -426,10 +483,11 @@ class LinkedInAPIHelper:
 
             if response.status_code == 200:
                 profile = response.json()
-                logger.info(f"Authentication verified (user_id={profile.get('id', 'unknown')})")
+                logger.info(f"Legacy authentication verified (user_id={profile.get('id', 'unknown')})")
                 return {
                     'status': 'authenticated',
-                    'profile': profile
+                    'profile': profile,
+                    'auth_method': 'legacy'
                 }
             elif response.status_code == 401:
                 logger.error("Token invalid (401 Unauthorized)")
@@ -795,11 +853,23 @@ def show_status():
     if auth_result['status'] == 'authenticated':
         profile = auth_result['profile']
         token_data = helper._load_token()
+        auth_method = auth_result.get('auth_method', 'unknown')
 
         print(f"\n✅ Status: AUTHENTICATED")
+        print(f"   Method: {auth_method.upper()}")
+
         print(f"\n📋 Profile:")
-        print(f"   User ID: {profile.get('id', 'unknown')}")
-        print(f"   Name: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
+        # Handle both OIDC and legacy profile formats
+        if auth_method == 'oidc':
+            # OIDC format: sub, name, email, picture
+            print(f"   ID: {profile.get('sub', 'unknown')}")
+            print(f"   Name: {profile.get('name', profile.get('given_name', '') + ' ' + profile.get('family_name', ''))}")
+            if 'email' in profile:
+                print(f"   Email: {profile.get('email')}")
+        else:
+            # Legacy format: id, localizedFirstName, localizedLastName
+            print(f"   ID: {profile.get('id', 'unknown')}")
+            print(f"   Name: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
 
         if token_data:
             print(f"\n🔑 Token:")
@@ -822,6 +892,8 @@ def show_status():
                     logger.debug(f"Failed to parse expiry: {e}")
 
         print(f"\n✅ LinkedIn API access is ready")
+        print(f"\n💡 Test with:")
+        print(f"   python3 scripts/linkedin_watcher_skill.py --mode real --once")
 
     else:
         error = auth_result.get('error', 'Unknown error')
@@ -865,6 +937,8 @@ def init_oauth():
     print("=" * 70)
     print("\nYour browser will open automatically in 3 seconds...")
     print("Please authorize the application in the browser window.")
+    print("\n💡 WSL Users: If browser doesn't open automatically,")
+    print("   copy the URL below and paste it into your Windows browser.")
     print("\nIf browser doesn't open, visit this URL manually:")
     print(f"\n   {auth_url}\n")
     print("=" * 70)
@@ -880,7 +954,13 @@ def init_oauth():
         print(f"\nTroubleshooting:")
         print(f"1. Ensure port 8080 is not in use")
         print(f"2. Check redirect URI in LinkedIn app settings: http://localhost:8080/callback")
-        print(f"3. Try again with: python3 scripts/linkedin_oauth_helper.py --init")
+        print(f"3. If you see 'invalid_scope' error in browser:")
+        print(f"   - This usually means required Products are not enabled in your LinkedIn app")
+        print(f"   - Enable 'Share on LinkedIn' product for w_member_social scope")
+        print(f"   - Enable 'Sign In with LinkedIn using OpenID Connect' for profile/email scopes")
+        print(f"   - Go to: https://www.linkedin.com/developers/apps")
+        print(f"4. WSL users: If browser didn't open, copy/paste the URL manually into Windows browser")
+        print(f"5. Try again with: python3 scripts/linkedin_oauth_helper.py --init")
         sys.exit(1)
 
     print(f"\n✅ Authorization code received: {code[:20]}...")
@@ -903,14 +983,32 @@ def init_oauth():
 
     if auth_result['status'] == 'authenticated':
         profile = auth_result['profile']
-        print(f"\n✅ Authentication successful!")
-        print(f"   User: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
+        auth_method = auth_result.get('auth_method', 'unknown')
+
+        print(f"\n✅ AUTH OK: LinkedIn authentication successful!")
+        print(f"   Method: {auth_method.upper()}")
+
+        # Display minimal PII based on auth method
+        if auth_method == 'oidc':
+            # OIDC format: name, email (minimal)
+            name = profile.get('name', profile.get('given_name', '') + ' ' + profile.get('family_name', '')).strip()
+            print(f"   Name: {name or 'unknown'}")
+            if 'email' in profile:
+                print(f"   Email: {profile.get('email')}")
+        else:
+            # Legacy format: localizedFirstName, localizedLastName
+            print(f"   Name: {profile.get('localizedFirstName', 'unknown')} {profile.get('localizedLastName', '')}")
+
         print(f"\n🎉 LinkedIn OAuth setup complete!")
         print(f"\nNext steps:")
         print(f"1. Test watcher: python3 scripts/linkedin_watcher_skill.py --mode real --once")
         print(f"2. Check status: python3 scripts/linkedin_oauth_helper.py --status")
     else:
         print(f"\n❌ Verification failed: {auth_result.get('error')}")
+        print(f"\nTroubleshooting:")
+        print(f"1. Check that token was saved correctly: {helper.token_file}")
+        print(f"2. Verify LinkedIn app has required Products enabled")
+        print(f"3. Try re-authenticating: python3 scripts/linkedin_oauth_helper.py --init")
         sys.exit(1)
 
 

@@ -50,13 +50,12 @@ Create `.secrets/linkedin_credentials.json`:
 {
   "client_id": "your_client_id_here",
   "client_secret": "your_client_secret_here",
-  "access_token": "your_access_token_here",
-  "refresh_token": "your_refresh_token_here",
-  "member_id": "your_member_id_here",
-  "api_version": "202401",
-  "scopes": ["r_liteprofile", "r_emailaddress", "w_member_social"]
+  "redirect_uri": "http://localhost:8080/callback",
+  "scopes": ["openid", "profile", "email", "w_member_social"]
 }
 ```
+
+**Note**: The `scopes` field is optional. If omitted, defaults to OpenID Connect scopes above.
 
 **File permissions**: `chmod 600 .secrets/linkedin_credentials.json`
 
@@ -78,11 +77,17 @@ Create `.secrets/linkedin_credentials.json`:
 
 1. In app settings, go to "Products"
 2. Request access to:
-   - **Sign In with LinkedIn** (required)
-   - **Share on LinkedIn** (required for posting)
+   - **Sign In with LinkedIn using OpenID Connect** (required for profile/email scopes)
+   - **Share on LinkedIn** (required for w_member_social scope - posting)
    - **Marketing Developer Platform** (optional, for analytics)
 
-3. Wait for approval (usually instant for Sign In, may take days for others)
+3. Wait for approval (usually instant for Sign In, may take 1-2 days for Share on LinkedIn)
+
+**IMPORTANT**: If you see `invalid_scope` error during OAuth flow:
+- This usually means required Products are not enabled
+- Enable "Share on LinkedIn" product for `w_member_social` scope
+- Enable "Sign In with LinkedIn using OpenID Connect" for `profile` and `email` scopes
+- Products must be approved before OAuth scopes can be used
 
 ### Step 3: Get Client ID and Secret
 
@@ -92,15 +97,40 @@ Create `.secrets/linkedin_credentials.json`:
 
 ### Step 4: Generate Access Token
 
-**Option A: Use OAuth 2.0 Authorization Code Flow (Recommended)**
+**Option A: Use OAuth Helper Script (Recommended - Automated)**
 
-1. Build authorization URL:
+We provide an OAuth helper that automates the entire flow with browser auto-open and local server:
+
+```bash
+# Initialize OAuth (browser opens automatically, token saved to .secrets/)
+python3 scripts/linkedin_oauth_helper.py --init
+
+# Check authentication status
+python3 scripts/linkedin_oauth_helper.py --status
+
+# Quick authentication check
+python3 scripts/linkedin_oauth_helper.py --check-auth
+```
+
+**What it does:**
+1. Starts local HTTP server on port 8080
+2. Opens browser automatically to LinkedIn authorization page
+3. Captures OAuth callback automatically (no manual copy/paste)
+4. Exchanges code for access token
+5. Verifies token with OIDC userinfo endpoint
+6. Saves token to `.secrets/linkedin_token.json`
+
+**WSL Users**: If browser doesn't open automatically, copy the displayed URL and paste into Windows browser.
+
+**Option B: Manual OAuth 2.0 Authorization Code Flow**
+
+1. Build authorization URL (using OpenID Connect scopes):
    ```
    https://www.linkedin.com/oauth/v2/authorization?
    response_type=code&
    client_id=YOUR_CLIENT_ID&
-   redirect_uri=http://localhost:8000/callback&
-   scope=r_liteprofile%20r_emailaddress%20w_member_social
+   redirect_uri=http://localhost:8080/callback&
+   scope=openid%20profile%20email%20w_member_social
    ```
 
 2. Visit URL in browser, authorize app
@@ -110,16 +140,12 @@ Create `.secrets/linkedin_credentials.json`:
    curl -X POST https://www.linkedin.com/oauth/v2/accessToken \
      -d grant_type=authorization_code \
      -d code=YOUR_AUTH_CODE \
-     -d redirect_uri=http://localhost:8000/callback \
+     -d redirect_uri=http://localhost:8080/callback \
      -d client_id=YOUR_CLIENT_ID \
      -d client_secret=YOUR_CLIENT_SECRET
    ```
 
-5. Response includes `access_token` and `refresh_token`
-
-**Option B: Use LinkedIn OAuth Helper Tool**
-
-Use a tool like Postman or create a simple Python script with `requests-oauthlib`.
+5. Response includes `access_token` and `expires_in` (60 days)
 
 ### Step 5: Get Member ID
 
@@ -130,6 +156,61 @@ curl -X GET 'https://api.linkedin.com/v2/me' \
 
 # Extract "id" from response
 ```
+
+---
+
+## Authentication Methods: OIDC vs Legacy
+
+LinkedIn supports two authentication methods:
+
+### OpenID Connect (OIDC) - Recommended for New Apps
+
+**Scopes**: `openid`, `profile`, `email`, `w_member_social`
+
+**Endpoints**:
+- Authorization: `https://www.linkedin.com/oauth/v2/authorization`
+- Token: `https://www.linkedin.com/oauth/v2/accessToken`
+- Userinfo: `https://api.linkedin.com/v2/userinfo` (OIDC standard endpoint)
+
+**Benefits**:
+- Standard OpenID Connect protocol
+- Simpler profile data format
+- Better for new LinkedIn apps
+- Required "Sign In with LinkedIn using OpenID Connect" product
+
+**Profile response format**:
+```json
+{
+  "sub": "user-id",
+  "name": "John Doe",
+  "given_name": "John",
+  "family_name": "Doe",
+  "email": "john@example.com",
+  "picture": "https://..."
+}
+```
+
+### Legacy API - For Existing Apps
+
+**Scopes**: `r_liteprofile`, `r_emailaddress`, `w_member_social`
+
+**Endpoints**:
+- Profile: `https://api.linkedin.com/v2/me`
+
+**When to use**:
+- Existing apps with legacy scope approvals
+- Apps that need legacy profile format
+
+**Profile response format**:
+```json
+{
+  "id": "user-id",
+  "localizedFirstName": "John",
+  "localizedLastName": "Doe"
+}
+```
+
+**Note**: Our implementation supports both methods automatically. The `check_auth()` function tries OIDC first, falls back to legacy if needed.
 
 ---
 
@@ -191,10 +272,15 @@ cat Logs/mcp_tools_snapshot_linkedin.json
     -d client_secret=YOUR_CLIENT_SECRET
   ```
 
-### Error: "Insufficient permissions"
-- **Cause**: App doesn't have required scopes
-- **Fix**: Request additional products in LinkedIn Developer Console
-- **Required scopes**: `r_liteprofile`, `r_emailaddress`, `w_member_social`
+### Error: "invalid_scope" or "Insufficient permissions"
+- **Cause**: App doesn't have required Products enabled or using legacy scopes on new app
+- **Fix**:
+  1. Go to LinkedIn Developer Console → Your App → Products
+  2. Enable "Sign In with LinkedIn using OpenID Connect" (for profile/email scopes)
+  3. Enable "Share on LinkedIn" (for w_member_social scope)
+  4. Wait for approval (instant for OIDC, 1-2 days for Share)
+  5. Use OpenID Connect scopes: `openid`, `profile`, `email`, `w_member_social`
+- **Legacy scopes** (deprecated for new apps): `r_liteprofile`, `r_emailaddress`
 
 ### Error: "Rate limit exceeded"
 - **Cause**: Too many API calls
@@ -237,5 +323,5 @@ cat Logs/mcp_tools_snapshot_linkedin.json
 
 ---
 
-**Last Updated**: 2026-02-15
-**Version**: 1.0.0 (Gold Tier - G-M4)
+**Last Updated**: 2026-02-17
+**Version**: 1.1.0 (Gold Tier - G-M4: OpenID Connect OAuth)
