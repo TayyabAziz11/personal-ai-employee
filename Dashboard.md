@@ -775,13 +775,35 @@
 
 ## Social Channel Status
 
-| Channel | Status | Last Check | Message Count | Latest Intake |
-|---------|--------|------------|---------------|---------------|
-| WhatsApp | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__whatsapp__20260215-1705__15552345678.md |
-| LinkedIn | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__linkedin__20260215-1705__alexchen.md |
-| Twitter | ✅ Operational (mock-ready) | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__twitter__20260215-1705__techexpert_ai.md |
+| Channel | Status | Real Mode | Last Check | Message Count | Latest Intake |
+|---------|--------|-----------|------------|---------------|---------------|
+| WhatsApp | ✅ Operational (mock-ready) | ⏳ Pending | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__whatsapp__20260215-1705__15552345678.md |
+| LinkedIn | ✅ Operational (mock + real) | ✅ **Available** | 2026-02-17 10:00 UTC | 5 | Social/Inbox/inbox__linkedin__20260215-1705__alexchen.md |
+| Twitter | ✅ Operational (mock-ready) | ⏳ Pending | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__twitter__20260215-1705__techexpert_ai.md |
 
-**Last Updated**: 2026-02-15 17:05 UTC
+**Last Updated**: 2026-02-17 10:00 UTC
 
-**Note**: All watchers currently running in mock mode with test fixtures. Switch to real mode after configuring MCP servers.
+**LinkedIn Real Mode**: ✅ **ENABLED** (OAuth2 configured)
+- 📚 **Setup Guide**: [Docs/linkedin_real_setup.md](Docs/linkedin_real_setup.md)
+- 🔑 **Authentication**: OAuth2 (credentials in `.secrets/linkedin_credentials.json`, token in `.secrets/linkedin_token.json`)
+- ✅ **Watcher**: Fetches real LinkedIn posts via API (`--mode real`)
+- ✅ **Executor**: Posts to LinkedIn for real via approved plans (`--execute`)
+- 🔒 **Security**: PII redaction, dry-run default, approval required for all actions
+
+**Real Mode Commands**:
+```bash
+# Test authentication
+python3 src/personal_ai_employee/core/linkedin_api_helper.py --check-auth
+
+# Run watcher in real mode
+python3 scripts/linkedin_watcher_skill.py --mode real --once --max-results 5
+
+# Execute approved plan (dry-run first)
+python3 scripts/brain_execute_social_with_mcp_skill.py --dry-run
+
+# Execute approved plan (real posting - requires explicit flag)
+python3 scripts/brain_execute_social_with_mcp_skill.py --execute
+```
+
+**Note**: WhatsApp and Twitter watchers currently run in mock mode only. Switch to real mode after configuring MCP servers (see respective setup guides in `Docs/`).
 

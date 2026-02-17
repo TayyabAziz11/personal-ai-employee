@@ -69,6 +69,32 @@ python3 scripts/linkedin_watcher_skill.py --mode mock --once --max-results 2
 - `Social/Inbox/inbox__linkedin__*.md` (if created, else explain checkpointing)
 - Mention: System skips already-processed items (checkpoint file prevents duplicates)
 
+#### 2a. LinkedIn Real Mode (OPTIONAL - if credentials configured)
+
+**Prerequisites**: LinkedIn OAuth2 token configured (see `Docs/linkedin_real_setup.md`)
+
+```bash
+# Test authentication first
+python3 src/personal_ai_employee/core/linkedin_api_helper.py --check-auth
+
+# Run watcher in real mode to fetch actual LinkedIn posts
+python3 scripts/linkedin_watcher_skill.py --mode real --once --max-results 3
+```
+
+**Expected Output**:
+```
+✅ LinkedIn auth OK: Your Name
+✅ Fetched 3 LinkedIn posts from API
+✅ LinkedIn watcher complete: 3 scanned, 3 created, 0 skipped, 0 errors
+```
+
+**Show**:
+- Intake wrappers in `Social/Inbox/` created from YOUR real LinkedIn posts
+- **Point out**: Real post content (with PII redacted in excerpt)
+- Checkpoint file `Logs/linkedin_watcher_checkpoint.json` tracks processed post IDs
+
+**Narration**: "In real mode, the watcher fetches your actual LinkedIn posts via OAuth2 API. All credentials are stored securely in `.secrets/` (gitignored). The executor can also post to LinkedIn for real—but only with an approved plan and explicit `--execute` flag."
+
 ### 3. Accounting Activity (30 sec)
 
 ```bash

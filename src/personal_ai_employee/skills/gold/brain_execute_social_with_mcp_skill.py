@@ -56,6 +56,16 @@ except ImportError:
             current = current.parent
         return Path(__file__).parent.parent.parent.parent.parent
 
+# Import LinkedIn API helper for real mode execution
+try:
+    from personal_ai_employee.core.linkedin_api_helper import LinkedInAPIHelper
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    try:
+        from personal_ai_employee.core.linkedin_api_helper import LinkedInAPIHelper
+    except ImportError:
+        LinkedInAPIHelper = None
+
 
 # Configure logging
 logging.basicConfig(
@@ -485,25 +495,102 @@ plan_reference: {plan_path}
             }
 
         # Real execution mode
-        # TODO: Real MCP client execution (M4.1 - simulated for now)
-        logger.info(f"[EXECUTE] Simulating: {server}.{tool}")
-        print(f"\n  🚀 Executing Action (SIMULATED):")
+        logger.info(f"[EXECUTE] Real execution: {server}.{tool}")
+        print(f"\n  🚀 Executing Action:")
         print(f"     Platform: {server.title()}")
         print(f"     Operation: {tool}")
-        print(f"     Status: Simulated success (real MCP integration pending)")
 
-        action_log['status'] = 'simulated_success'
-        action_log['result'] = 'Simulated execution successful'
-        action_log['note'] = 'Real MCP client integration pending (M4.1 TODO)'
-        self._log_action(action_log)
+        # LinkedIn real execution
+        if server == 'linkedin':
+            try:
+                if LinkedInAPIHelper is None:
+                    raise ImportError("LinkedInAPIHelper not available")
 
-        return {
-            'success': True,
-            'simulated': True,
-            'server': server,
-            'tool': tool,
-            'result': 'Simulated execution successful'
-        }
+                # Initialize LinkedIn helper
+                secrets_dir = self.base_dir / '.secrets'
+                helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+
+                # Verify authentication
+                try:
+                    helper.check_auth()
+                except Exception as auth_error:
+                    raise Exception(f"LinkedIn authentication failed: {auth_error}")
+
+                # Execute based on tool type
+                if tool == 'create_post':
+                    text = params.get('content', params.get('text', ''))
+                    visibility = params.get('visibility', 'PUBLIC')
+                    result_data = helper.create_post(text=text, visibility=visibility)
+
+                    action_log['status'] = 'success'
+                    action_log['result'] = f"Post created: {result_data.get('id', 'unknown')}"
+                    action_log['post_id'] = result_data.get('id', '')
+                    print(f"     ✅ Post created successfully")
+                    print(f"     Post ID: {result_data.get('id', 'N/A')}")
+
+                elif tool == 'reply_comment':
+                    comment_id = params.get('comment_id', '')
+                    text = params.get('text', params.get('content', ''))
+                    result_data = helper.reply_comment(comment_id=comment_id, text=text)
+
+                    action_log['status'] = 'success'
+                    action_log['result'] = f"Comment replied: {result_data.get('id', 'unknown')}"
+                    print(f"     ✅ Comment reply posted successfully")
+
+                elif tool == 'send_message':
+                    recipient_urn = params.get('recipient_urn', params.get('to', ''))
+                    text = params.get('text', params.get('content', ''))
+                    result_data = helper.send_message(recipient_urn=recipient_urn, text=text)
+
+                    action_log['status'] = 'success'
+                    action_log['result'] = f"Message sent: {result_data.get('id', 'unknown')}"
+                    print(f"     ✅ Message sent successfully")
+
+                else:
+                    raise ValueError(f"Unsupported LinkedIn tool: {tool}")
+
+                self._log_action(action_log)
+
+                return {
+                    'success': True,
+                    'server': server,
+                    'tool': tool,
+                    'result': action_log['result'],
+                    'response': result_data
+                }
+
+            except Exception as e:
+                logger.error(f"LinkedIn execution failed: {e}")
+                print(f"     ❌ Execution failed: {e}")
+
+                action_log['status'] = 'failed'
+                action_log['error'] = str(e)
+                self._log_action(action_log)
+
+                return {
+                    'success': False,
+                    'server': server,
+                    'tool': tool,
+                    'error': str(e)
+                }
+
+        # For other platforms (WhatsApp, Twitter): simulated for now
+        else:
+            logger.info(f"[EXECUTE] Simulating: {server}.{tool} (real integration pending)")
+            print(f"     Status: Simulated success (real MCP integration pending for {server})")
+
+            action_log['status'] = 'simulated_success'
+            action_log['result'] = f'Simulated execution successful for {server}'
+            action_log['note'] = f'Real {server} integration pending'
+            self._log_action(action_log)
+
+            return {
+                'success': True,
+                'simulated': True,
+                'server': server,
+                'tool': tool,
+                'result': f'Simulated execution successful for {server}'
+            }
 
     def _move_plan(self, plan_path: Path, destination: str) -> bool:
         """

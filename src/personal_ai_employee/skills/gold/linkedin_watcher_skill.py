@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 
-# Import PII redaction
+# Import PII redaction and helpers
 try:
     from personal_ai_employee.core.mcp_helpers import redact_pii, get_repo_root
 except ImportError:
@@ -40,6 +40,17 @@ except ImportError:
                 return current
             current = current.parent
         return Path(__file__).parent.parent.parent.parent.parent
+
+# Import LinkedIn API helper for real mode
+try:
+    from personal_ai_employee.core.linkedin_api_helper import LinkedInAPIHelper
+except ImportError:
+    # If running as script without proper sys.path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    try:
+        from personal_ai_employee.core.linkedin_api_helper import LinkedInAPIHelper
+    except ImportError:
+        LinkedInAPIHelper = None
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -268,43 +279,102 @@ comment_id: {comment_id}
 
     def _fetch_items_real(self) -> List[Dict]:
         """
-        Fetch notifications from real LinkedIn MCP using QUERY tools only.
+        Fetch posts from real LinkedIn API using OAuth2 helper (QUERY only).
 
-        IMPORTANT: This ONLY calls QUERY tools (list_notifications, get_post_analytics).
-        NEVER calls ACTION tools (create_post, reply_comment, send_message).
+        IMPORTANT: This ONLY calls QUERY methods (list_ugc_posts).
+        NEVER calls ACTION methods (create_post, reply_comment, send_message).
 
         Returns:
-            List of notification dicts in standard format
+            List of post dicts in standard format for intake wrapper creation
         """
         try:
-            # TODO: Real MCP client integration (G-M4)
-            # For now, check if MCP credentials exist
-            secrets_path = Path(__file__).parent / '.secrets' / 'linkedin_credentials.json'
-
-            if not secrets_path.exists():
-                logger.warning("LinkedIn MCP credentials not found at .secrets/linkedin_credentials.json")
+            if LinkedInAPIHelper is None:
+                logger.error("LinkedInAPIHelper not available (import failed)")
                 self._create_remediation_task(
-                    "LinkedIn MCP credentials missing",
-                    "MCP mode requested but credentials not configured. See Docs/mcp_linkedin_setup.md"
+                    "LinkedIn API helper import failed",
+                    "Could not import LinkedInAPIHelper. Check src/personal_ai_employee/core/linkedin_api_helper.py exists"
                 )
                 return []
 
-            # TODO: When MCP client is integrated:
-            # 1. Load credentials from secrets_path
-            # 2. Initialize MCP client
-            # 3. Call linkedin.list_notifications (QUERY tool, no side effects)
-            # 4. Transform to standard notification format
-            # 5. Return notifications
+            # Initialize helper (will check for credentials and token)
+            secrets_dir = Path(self.config['base_dir']) / '.secrets'
+            helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
 
-            logger.info("LinkedIn MCP query tools integration pending (G-M4)")
-            logger.info("Use --mode mock for testing until MCP servers are configured")
-            return []
+            # Verify authentication before proceeding
+            try:
+                auth_info = helper.check_auth()
+                logger.info(f"LinkedIn auth OK: {auth_info.get('localizedFirstName', 'User')}")
+            except Exception as auth_error:
+                logger.warning(f"LinkedIn authentication failed: {auth_error}")
+                self._create_remediation_task(
+                    "LinkedIn authentication required",
+                    f"Real mode requires valid LinkedIn OAuth2 token.\n\n"
+                    f"Error: {auth_error}\n\n"
+                    f"To authenticate:\n"
+                    f"1. Run: python3 src/personal_ai_employee/core/linkedin_api_helper.py\n"
+                    f"2. Follow OAuth2 flow and paste callback URL\n"
+                    f"3. Token will be saved to .secrets/linkedin_token.json\n"
+                    f"4. Re-run watcher in real mode\n\n"
+                    f"See Docs/linkedin_real_setup.md for details."
+                )
+                return []
+
+            # Fetch UGC posts (read-only perception)
+            # Note: LinkedIn API requires author URN which we get from auth
+            author_urn = auth_info.get('id', '')
+            if not author_urn:
+                logger.warning("Could not determine LinkedIn author URN from auth response")
+                return []
+
+            logger.info(f"Fetching LinkedIn UGC posts for author: {author_urn}")
+            max_results = self.config.get('max_results', 10)
+            posts = helper.list_ugc_posts(author_urn=f"urn:li:person:{author_urn}", limit=max_results)
+
+            # Transform LinkedIn API response to standard format
+            items = []
+            for post in posts:
+                # Extract relevant fields from LinkedIn UGC post response
+                post_id = post.get('id', '')
+                created_time = post.get('created', {}).get('time', datetime.now(timezone.utc).timestamp() * 1000)
+                created_iso = datetime.fromtimestamp(created_time / 1000, tz=timezone.utc).isoformat()
+
+                # Extract text from specificContent
+                text_content = ""
+                specific_content = post.get('specificContent', {})
+                share_content = specific_content.get('com.linkedin.ugc.ShareContent', {})
+                share_commentary = share_content.get('shareCommentary', {})
+                text_content = share_commentary.get('text', '')
+
+                # Get author info
+                author = post.get('author', '')
+
+                item = {
+                    'id': post_id,
+                    'sender': f"https://www.linkedin.com/feed/update/{post_id}",
+                    'sender_name': 'You',  # Since we're fetching our own posts
+                    'timestamp': created_iso,
+                    'body': text_content,
+                    'type': 'post',
+                    'post_id': post_id,
+                    'comment_id': '',
+                    'thread_id': f"linkedin_{post_id}",
+                    'urgent': False
+                }
+                items.append(item)
+
+            logger.info(f"Fetched {len(items)} LinkedIn posts from API")
+            return items
 
         except Exception as e:
-            logger.error(f"Failed to fetch from LinkedIn MCP: {e}")
+            logger.error(f"Failed to fetch from LinkedIn API: {e}")
             self._create_remediation_task(
-                "LinkedIn MCP query failed",
-                f"Error: {e}\nCheck MCP server status and credentials."
+                "LinkedIn API query failed",
+                f"Error: {e}\n\nCheck:\n"
+                f"1. .secrets/linkedin_credentials.json exists with valid client_id/client_secret\n"
+                f"2. .secrets/linkedin_token.json exists with valid access_token\n"
+                f"3. Token hasn't expired (run linkedin_api_helper.py to refresh)\n"
+                f"4. Network connection is working\n\n"
+                f"See Docs/linkedin_real_setup.md for troubleshooting."
             )
             return []
 
@@ -381,18 +451,18 @@ comment_id: {comment_id}
 
 
 def main():
-    parser = argparse.ArgumentParser(description='LinkedIn Watcher - Perception-only (Gold Tier - G-M4)')
+    parser = argparse.ArgumentParser(description='LinkedIn Watcher - Perception-only (Gold Tier - Real Mode)')
     parser.add_argument('--once', action='store_true', default=True, help='Run once and exit (default)')
     parser.add_argument('--dry-run', action='store_true', help='Simulate run without creating files')
-    parser.add_argument('--mode', type=str, choices=['mock', 'mcp'], default='mock',
-                        help='Data source mode: mock (default, uses templates/mock_linkedin.json) or mcp (uses LinkedIn MCP QUERY tools)')
+    parser.add_argument('--mode', type=str, choices=['mock', 'real'], default='mock',
+                        help='Data source mode: mock (default, uses templates/mock_linkedin.json) or real (uses LinkedIn OAuth2 API)')
     parser.add_argument('--max-results', type=int, default=10, help='Maximum items to process (default: 10)')
     parser.add_argument('--reset-checkpoint', action='store_true', help='Reset checkpoint before running')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
 
     args = parser.parse_args()
 
-    # Determine mock vs MCP mode
+    # Determine mock vs real mode
     use_mock = (args.mode == 'mock')
 
     config = {
