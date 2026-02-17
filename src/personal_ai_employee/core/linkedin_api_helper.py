@@ -65,8 +65,9 @@ class LinkedInAPIHelper:
     TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
     USERINFO_URL = "https://api.linkedin.com/v2/userinfo"  # OpenID Connect userinfo endpoint
 
-    # LinkedIn API base URL
+    # LinkedIn API base URLs
     API_BASE = "https://api.linkedin.com/v2"
+    REST_BASE = "https://api.linkedin.com/rest"  # New versioned REST Posts API
 
     # Rate limiting defaults
     MAX_RETRIES = 3
@@ -761,7 +762,8 @@ class LinkedInAPIHelper:
 
         raise LinkedInAPIError(f"API request failed after {self.MAX_RETRIES} attempts")
 
-    def _api_request_raw(self, method: str, endpoint: str, **kwargs) -> requests.Response:
+    def _api_request_raw(self, method: str, endpoint: str, *, base: Optional[str] = None,
+                         **kwargs) -> requests.Response:
         """
         Make an authenticated API request and return the raw response WITHOUT raising.
 
@@ -771,6 +773,12 @@ class LinkedInAPIHelper:
 
         This exists so that callers that implement endpoint fallback logic can inspect
         the status code before deciding whether to try a secondary endpoint.
+
+        Args:
+            method: HTTP method (GET, POST, etc.)
+            endpoint: API endpoint path (e.g. "/posts")
+            base: Optional base URL override (default: self.API_BASE).
+                  Use self.REST_BASE for the new REST Posts API endpoints.
         """
         access_token = self.get_access_token()
         has_json = 'json' in kwargs
@@ -778,7 +786,8 @@ class LinkedInAPIHelper:
         caller_headers = kwargs.pop('headers', {})
         headers.update(caller_headers)
 
-        url = f"{self.API_BASE}{endpoint}" if endpoint.startswith('/') else f"{self.API_BASE}/{endpoint}"
+        api_base = base if base is not None else self.API_BASE
+        url = f"{api_base}{endpoint}" if endpoint.startswith('/') else f"{api_base}/{endpoint}"
 
         backoff = self.INITIAL_BACKOFF
         last_exc: Optional[Exception] = None
@@ -962,101 +971,171 @@ class LinkedInAPIHelper:
     # ACTION METHODS (Execution - Write Operations)
     # ============================================================================
 
+    def _log_post_action(self, post_urn: str, text: str, visibility: str) -> None:
+        """Append a JSON line to Logs/mcp_actions.log on successful post creation."""
+        try:
+            log_path = get_repo_root() / 'Logs' / 'mcp_actions.log'
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            entry = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'tool': 'linkedin.create_post',
+                'endpoint': 'rest/posts',
+                'post_urn': post_urn,
+                'visibility': visibility,
+                'text_length': len(text),
+                'status': 'success',
+            }
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry) + '\n')
+        except Exception as exc:
+            logger.warning(f"Could not write to mcp_actions.log: {exc}")
+
     def create_post(self, text: str, visibility: str = "PUBLIC") -> Dict[str, Any]:
         """
-        Create a LinkedIn post with automatic endpoint fallback.
+        Create a LinkedIn post using the official REST Posts API.
 
-        Tries in order:
-        1. POST /v2/ugcPosts   (preferred)
-        2. POST /v2/shares     (fallback if ugcPosts → 404 or 403)
+        Endpoint: POST https://api.linkedin.com/rest/posts
+
+        Required headers (all supplied by _build_headers):
+            Authorization: Bearer <token>
+            Content-Type: application/json
+            LinkedIn-Version: YYYYMM
+            X-Restli-Protocol-Version: 2.0.0
 
         Args:
-            text: Post text content
-            visibility: Visibility string — "PUBLIC" | "CONNECTIONS"
-                        (mapped per endpoint schema automatically)
+            text: Post text content (commentary)
+            visibility: "PUBLIC" (default) or "CONNECTIONS"
 
         Returns:
-            Created post dict with id and endpoint_used field
+            Dict with id (post URN), author, visibility, endpoint_used
 
         Raises:
-            LinkedInAPIError: If both endpoints fail
+            LinkedInAPIError: If posting fails (HTTP error or network error)
         """
         author_urn = self.get_person_urn()
 
-        # visibility mapping for /v2/shares
-        shares_visibility = "ANYONE" if visibility == "PUBLIC" else "CONNECTIONS_ONLY"
-
-        ugc_payload = {
+        payload = {
             "author": author_urn,
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": text},
-                    "shareMediaCategory": "NONE",
-                }
-            },
-            "visibility": {
-                "com.linkedin.ugc.MemberNetworkVisibility": visibility
-            },
-        }
-
-        shares_payload = {
-            "owner": author_urn,
-            "text": {"text": text},
+            "commentary": text,
+            "visibility": visibility,
             "distribution": {
-                "linkedInDistributionTarget": {
-                    "visibilityCode": shares_visibility
-                }
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
             },
+            "lifecycleState": "PUBLISHED",
+            "isReshareDisabledByAuthor": False,
         }
 
-        logger.info(f"Creating LinkedIn post (visibility={visibility}, text_length={len(text)})")
+        logger.info(
+            f"Creating LinkedIn post via REST Posts API "
+            f"(visibility={visibility}, text_length={len(text)})"
+        )
 
-        # --- Attempt 1: ugcPosts ---
         try:
-            resp = self._api_request_raw('POST', '/ugcPosts', json=ugc_payload)
-            logger.info(f"POST /ugcPosts → status={resp.status_code}")
-
-            if resp.status_code in (200, 201):
-                post_data = resp.json()
-                post_id = post_data.get('id', 'unknown')
-                logger.info(f"Post created via ugcPosts (id={post_id})")
-                post_data['endpoint_used'] = 'ugcPosts'
-                return post_data
-
-            if resp.status_code in (403, 404):
-                logger.warning(
-                    f"POST /ugcPosts → {resp.status_code} ({resp.text[:200]}). "
-                    "Falling back to /v2/shares."
-                )
-            else:
-                logger.warning(
-                    f"POST /ugcPosts → unexpected {resp.status_code} ({resp.text[:200]}). "
-                    "Falling back to /v2/shares."
-                )
-
-        except LinkedInAPIError as e:
-            logger.warning(f"POST /ugcPosts network error: {e}. Falling back to /v2/shares.")
-
-        # --- Attempt 2: shares ---
-        try:
-            resp = self._api_request_raw('POST', '/shares', json=shares_payload)
-            logger.info(f"POST /shares → status={resp.status_code}")
-
-            if resp.status_code in (200, 201):
-                post_data = resp.json()
-                post_id = post_data.get('id', 'unknown')
-                logger.info(f"Post created via shares (id={post_id})")
-                post_data['endpoint_used'] = 'shares'
-                return post_data
-
-            raise LinkedInAPIError(
-                f"POST /shares → {resp.status_code}: {resp.text[:300]}"
+            resp = self._api_request_raw(
+                'POST', '/posts',
+                base=self.REST_BASE,
+                json=payload,
             )
+            logger.info(f"POST rest/posts → status={resp.status_code}")
 
-        except LinkedInAPIError as e:
-            logger.error(f"Both ugcPosts and shares failed: {e}")
+            if resp.status_code in (200, 201):
+                # LinkedIn REST Posts API returns the post URN in x-restli-id header
+                post_urn = resp.headers.get('x-restli-id', '')
+                if not post_urn:
+                    # Fall back to response body
+                    try:
+                        post_urn = resp.json().get('id', 'unknown')
+                    except Exception:
+                        post_urn = 'unknown'
+
+                logger.info(f"Post created via REST Posts API (urn={redact_pii(post_urn)})")
+                self._log_post_action(post_urn=post_urn, text=text, visibility=visibility)
+
+                return {
+                    'id': post_urn,
+                    'author': author_urn,
+                    'commentary': text,
+                    'visibility': visibility,
+                    'endpoint_used': 'rest/posts',
+                }
+
+            # Non-2xx response — build structured error and raise
+            error_msg = (
+                f"POST rest/posts → HTTP {resp.status_code}: {resp.text[:300]}"
+            )
+            logger.error(error_msg)
+            raise LinkedInAPIError(error_msg)
+
+        except LinkedInAPIError:
             raise
+        except requests.exceptions.RequestException as exc:
+            error_msg = f"POST rest/posts → network error: {exc}"
+            logger.error(error_msg)
+            raise LinkedInAPIError(error_msg)
+
+    def check_read_access(self) -> Dict[str, Any]:
+        """
+        Probe whether LinkedIn post-read access is available.
+
+        Makes a minimal GET /v2/ugcPosts call.
+
+        Returns:
+            {
+                'available': bool,
+                'status':    int   (HTTP status code, -1 = network error, -2 = URN error),
+                'reason':    str   (human-readable explanation when available=False),
+            }
+        """
+        try:
+            author_urn = self.get_person_urn()
+        except LinkedInAuthError as exc:
+            return {'available': False, 'status': -2, 'reason': str(exc)}
+
+        try:
+            resp = self._api_request_raw(
+                'GET', '/ugcPosts',
+                params={'q': 'author', 'author': author_urn, 'count': 1},
+            )
+            if resp.status_code == 403:
+                return {
+                    'available': False,
+                    'status': 403,
+                    'reason': 'r_member_social not granted (LinkedIn requires special access approval)',
+                }
+            # 200 or 404 (no posts yet) — read access is available
+            return {'available': True, 'status': resp.status_code, 'reason': ''}
+        except Exception as exc:
+            return {'available': False, 'status': -1, 'reason': f'Network error: {exc}'}
+
+    def check_can_post(self) -> Dict[str, Any]:
+        """
+        Check whether posting (w_member_social) is available.
+
+        Verifies the scope is configured and a person URN can be resolved
+        (required for all posting endpoints).
+
+        Returns:
+            {'available': bool, 'reason': str}
+        """
+        try:
+            creds = self._load_credentials()
+            scopes = creds.get('scopes', [])
+            if not isinstance(scopes, list) or 'w_member_social' not in scopes:
+                return {
+                    'available': False,
+                    'reason': 'w_member_social scope not in configured scopes',
+                }
+        except Exception as exc:
+            return {'available': False, 'reason': f'Cannot load credentials: {exc}'}
+
+        # Scope is configured — verify person URN is resolvable (needed to post)
+        try:
+            self.get_person_urn()
+            return {'available': True, 'reason': ''}
+        except LinkedInAuthError as exc:
+            return {'available': False, 'reason': f'Person URN unavailable: {exc}'}
 
     def reply_comment(self, comment_id: str, text: str) -> Dict[str, Any]:
         """
@@ -1420,6 +1499,71 @@ def show_whoami():
     print("\n" + "=" * 70)
 
 
+def show_capabilities():
+    """
+    Test and display LinkedIn API capabilities.
+
+    Checks (no content is posted):
+    - Authenticated: OIDC userinfo reachable
+    - Can Post: w_member_social scope configured + person URN resolvable
+    - Can Read Posts: GET /v2/ugcPosts probe (403 → False)
+
+    Output example:
+        ----------------------------------------
+        LinkedIn Capabilities
+        ----------------------------------------
+        Authenticated: YES
+        Can Post:      YES
+        Can Read Posts: NO (r_member_social not granted)
+        ----------------------------------------
+    """
+    SEP = "-" * 40
+
+    print(SEP)
+    print("LinkedIn Capabilities")
+    print(SEP)
+
+    helper = LinkedInAPIHelper()
+
+    # --- Authenticated ---
+    try:
+        auth_result = helper.check_auth()
+        authenticated = auth_result.get('status') == 'authenticated'
+    except Exception:
+        authenticated = False
+
+    print(f"Authenticated: {'YES' if authenticated else 'NO'}")
+
+    if not authenticated:
+        print("Can Post:       UNKNOWN (not authenticated)")
+        print("Can Read Posts: UNKNOWN (not authenticated)")
+        print(SEP)
+        print(f"Run: python3 scripts/linkedin_oauth_helper.py --init")
+        return
+
+    # --- Can Post ---
+    post_result = helper.check_can_post()
+    can_post = post_result['available']
+    post_reason = post_result.get('reason', '')
+    if can_post:
+        print("Can Post:       YES")
+    else:
+        suffix = f" ({post_reason})" if post_reason else ""
+        print(f"Can Post:       NO{suffix}")
+
+    # --- Can Read Posts ---
+    read_result = helper.check_read_access()
+    can_read = read_result['available']
+    read_reason = read_result.get('reason', '')
+    if can_read:
+        print("Can Read Posts: YES")
+    else:
+        suffix = f" ({read_reason})" if read_reason else ""
+        print(f"Can Read Posts: NO{suffix}")
+
+    print(SEP)
+
+
 def show_status():
     """Show current LinkedIn OAuth status"""
     print("=" * 70)
@@ -1603,6 +1747,7 @@ def main():
         --check-auth      : Quick authentication check (alias for --status)
         --whoami          : Show identity details (sub, person_urn, method, scopes)
         --test-endpoints  : Test /v2/me, /v2/shares, /v2/ugcPosts with diagnostics
+        --capabilities    : Show LinkedIn API capabilities (post/read/auth)
 
     Usage:
         python3 scripts/linkedin_oauth_helper.py --init
@@ -1610,6 +1755,7 @@ def main():
         python3 scripts/linkedin_oauth_helper.py --check-auth
         python3 scripts/linkedin_oauth_helper.py --whoami
         python3 scripts/linkedin_oauth_helper.py --test-endpoints
+        python3 scripts/linkedin_oauth_helper.py --capabilities
     """
     import argparse
 
@@ -1623,6 +1769,9 @@ Examples:
 
   # Check if authenticated
   python3 scripts/linkedin_oauth_helper.py --status
+
+  # Show what the integration can and cannot do
+  python3 scripts/linkedin_oauth_helper.py --capabilities
 
   # Show identity details and person URN
   python3 scripts/linkedin_oauth_helper.py --whoami
@@ -1642,15 +1791,20 @@ Examples:
                         help='Show identity details: sub, person_urn, method, scopes')
     parser.add_argument('--test-endpoints', action='store_true',
                         help='Test /v2/me, /v2/shares, /v2/ugcPosts with labelled diagnostics')
+    parser.add_argument('--capabilities', action='store_true',
+                        help='Show LinkedIn API capabilities (authenticated/can-post/can-read)')
 
     args = parser.parse_args()
 
-    if not (args.init or args.status or args.check_auth or args.whoami or args.test_endpoints):
+    if not (args.init or args.status or args.check_auth or args.whoami
+            or args.test_endpoints or args.capabilities):
         parser.print_help()
         return
 
     if args.init:
         init_oauth()
+    elif args.capabilities:
+        show_capabilities()
     elif args.test_endpoints:
         test_endpoints()
     elif args.whoami:
