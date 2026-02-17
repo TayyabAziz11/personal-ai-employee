@@ -2,14 +2,19 @@
 Tests for LinkedInAPIHelper fallback logic.
 
 Covers:
-- get_person_id_v2_me(): /v2/me 200 → numeric member id
-- get_person_urn():
-    - /v2/me 200 → urn:li:person:<id>          (method=v2_me)
-    - /v2/me 403 → OIDC sub fallback           (method=oidc_sub, warns)
+- get_person_id_v2_me(): /v2/me 200 → numeric member id; 403 → None
+- get_person_urn() strict mode:
+    - /v2/me 200 → urn:li:person:<numeric>    (method=v2_me)
+    - /v2/me 403 → raises LinkedInAuthError   (NO oidc_sub fallback)
+    - /v2/me 401 → raises LinkedInAuthError
+    - cache method=v2_me → trusted (no network)
+    - cache method=oidc_sub → bypassed, /v2/me called fresh
 - list_posts():
-    - ugcPosts 200 → normalized posts returned  (no fallback needed)
-    - ugcPosts 404 → shares 200 → posts returned (fallback triggered)
-    - ugcPosts 404 → shares 404 → empty list    (both fail)
+    - ugcPosts 200 → normalized posts returned
+    - ugcPosts 404 → shares 200 → fallback succeeds
+    - ugcPosts 403 → shares 200 → fallback succeeds
+    - both fail → empty list returned
+    - ugcPosts 200 empty → warning logged
 - _normalize_post():
     - ugcPosts raw dict normalizes correctly
     - shares raw dict normalizes correctly
@@ -112,43 +117,68 @@ class TestGetPersonUrn:
 
         assert urn == "urn:li:person:NUM99"
 
-    def test_v2_me_403_falls_back_to_oidc_sub(self, tmp_path):
+    def test_v2_me_403_raises_auth_error(self, tmp_path):
+        """
+        Strict mode: /v2/me 403 must raise LinkedInAuthError, NOT fall back to OIDC sub.
+        OIDC sub is unreliable for sharing/UGC endpoints.
+        """
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from personal_ai_employee.core.linkedin_api_helper import LinkedInAuthError
+
         helper = _make_helper(tmp_path)
-
         me_403 = _mock_response(403, {"message": "ACCESS_DENIED"})
-        userinfo_200 = _mock_response(200, {"sub": "OIDC_SUB_XYZ", "name": "Jane"})
 
-        # /v2/me → 403, /v2/userinfo → 200
-        with patch("requests.get", side_effect=[me_403, userinfo_200]):
-            urn = helper.get_person_urn()
-
-        assert urn == "urn:li:person:OIDC_SUB_XYZ"
-
-    def test_v2_me_403_oidc_sub_fallback_warns(self, tmp_path, caplog):
-        helper = _make_helper(tmp_path)
-
-        me_403 = _mock_response(403, {"message": "ACCESS_DENIED"})
-        userinfo_200 = _mock_response(200, {"sub": "OIDC_SUB_WARN"})
-
-        import logging
-        with patch("requests.get", side_effect=[me_403, userinfo_200]):
-            with caplog.at_level(logging.WARNING, logger="personal_ai_employee.core.linkedin_api_helper"):
+        with patch("requests.get", return_value=me_403):
+            with pytest.raises(LinkedInAuthError) as exc_info:
                 helper.get_person_urn()
 
-        assert any("OIDC sub" in r.message for r in caplog.records)
+        assert "--init" in str(exc_info.value)  # actionable message present
 
-    def test_cached_urn_returned_without_network(self, tmp_path):
+    def test_v2_me_401_raises_auth_error(self, tmp_path):
+        """401 from /v2/me must also raise LinkedInAuthError."""
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from personal_ai_employee.core.linkedin_api_helper import LinkedInAuthError
+
+        helper = _make_helper(tmp_path)
+        me_401 = _mock_response(401, {"message": "Unauthorized"})
+
+        with patch("requests.get", return_value=me_401):
+            with pytest.raises(LinkedInAuthError):
+                helper.get_person_urn()
+
+    def test_cached_v2_me_urn_returned_without_network(self, tmp_path):
+        """Cache with method=v2_me is trusted — no network call needed."""
         helper = _make_helper(tmp_path)
 
-        # Pre-populate cache
         profile_file = tmp_path / ".secrets" / "linkedin_profile.json"
-        profile_file.write_text(json.dumps({"person_urn": "urn:li:person:CACHED"}))
+        profile_file.write_text(json.dumps({
+            "person_urn": "urn:li:person:CACHED_NUM",
+            "method": "v2_me",
+        }))
 
-        # No network call should happen
         with patch("requests.get", side_effect=Exception("should not be called")):
             urn = helper.get_person_urn()
 
-        assert urn == "urn:li:person:CACHED"
+        assert urn == "urn:li:person:CACHED_NUM"
+
+    def test_cached_oidc_sub_is_bypassed(self, tmp_path):
+        """Cache with method=oidc_sub must be bypassed; /v2/me is called fresh."""
+        helper = _make_helper(tmp_path)
+
+        profile_file = tmp_path / ".secrets" / "linkedin_profile.json"
+        profile_file.write_text(json.dumps({
+            "person_urn": "urn:li:person:OLD_OIDC_SUB",
+            "method": "oidc_sub",
+        }))
+
+        me_200 = _mock_response(200, {"id": "FRESH_NUM_ID"})
+        with patch("requests.get", return_value=me_200):
+            urn = helper.get_person_urn()
+
+        # Must return the fresh /v2/me result, not the stale oidc_sub URN
+        assert urn == "urn:li:person:FRESH_NUM_ID"
 
 
 # ---------------------------------------------------------------------------

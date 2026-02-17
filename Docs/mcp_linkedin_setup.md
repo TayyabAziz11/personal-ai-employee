@@ -229,48 +229,106 @@ The OIDC `/v2/userinfo` endpoint returns a `sub` field that is an **opaque subje
 
 ### Resolution Strategy (`get_person_urn()`)
 
-Our implementation resolves the person URN automatically:
+Our implementation resolves the person URN **strictly** via `/v2/me`:
 
-1. **Try `/v2/me`** — returns the numeric member ID → `urn:li:person:<id>` (most reliable)
-2. **Fallback to OIDC `sub`** — if `/v2/me` returns 403/401 (scope not granted)
-3. **Cache in `.secrets/linkedin_profile.json`** (gitignored) to avoid repeated lookups
+1. **Check in-memory + disk cache** (only if previously resolved via `/v2/me`)
+2. **Call `GET /v2/me`** — extracts numeric `id` → `urn:li:person:<id>`
+3. **Raise `LinkedInAuthError`** if `/v2/me` returns 401/403 — OIDC `sub` is NOT used
+   as a fallback for API endpoints (it is unreliable for sharing/UGC queries)
 
-### Diagnosing URN Resolution
+> **Why not OIDC sub?** LinkedIn's UGC and shares endpoints require the numeric member
+> ID from `/v2/me`.  The OIDC `sub` is an opaque identifier — it may be the same as the
+> member ID on some apps but is not guaranteed and has caused 404/403 errors in practice.
+
+### Verification Checklist
+
+After enabling LinkedIn products and re-running OAuth, follow this checklist:
+
+```
+□ Step 1 — Enable Products in LinkedIn Developer Console
+  Go to: https://www.linkedin.com/developers/apps → Your App → Products
+  ✔ Sign In with LinkedIn using OpenID Connect   (for profile scope + /v2/me)
+  ✔ Share on LinkedIn                            (for w_member_social + /v2/shares + /v2/ugcPosts)
+
+□ Step 2 — Re-run OAuth to get a fresh token with the enabled scopes
+  python3 scripts/linkedin_oauth_helper.py --init
+  (Existing tokens may have been issued before products were enabled)
+
+□ Step 3 — Verify /v2/me returns a numeric member id
+  python3 scripts/linkedin_oauth_helper.py --whoami
+  Expected:
+    person_urn : urn:li:person:<numeric_id>    ← must be numeric
+    method     : v2_me                         ← must be v2_me (not oidc_sub)
+
+□ Step 4 — Test all three API endpoints
+  python3 scripts/linkedin_oauth_helper.py --test-endpoints
+  Expected (after products enabled + fresh OAuth):
+    ✅ /v2/me          — id=<numeric_id>
+    ✅ /v2/shares      — 0 or more elements
+    ✅ /v2/ugcPosts    — 0 or more elements
+
+□ Step 5 — Run the real-mode watcher
+  python3 scripts/linkedin_watcher_skill.py --mode real --once --max-results 5
+  Expected: scanned > 0 OR empty + 0 errors (no posts yet is fine)
+```
+
+### Example `--whoami` Output (All Products Enabled)
 
 ```bash
-# Show sub, person_urn, method used, and scopes
 python3 scripts/linkedin_oauth_helper.py --whoami
 ```
 
-Example output:
 ```
 LinkedIn Identity & URN Resolution
 📋 OIDC Userinfo (OIDC):
-   sub     : 6A129M19xg
+   sub     : 123456789
    name    : Jane Doe
    email   : jane@example.com
 
 🔗 Person URN Resolution:
-   person_urn : urn:li:person:6A129M19xg
-   method     : v2_me
+   person_urn : urn:li:person:123456789
+   method     : v2_me              ← confirms /v2/me succeeded
 
 🔐 Scopes / Products Detected:
    Configured scopes: ['openid', 'profile', 'email', 'w_member_social']
 ```
 
+### Example `--test-endpoints` Output
+
+```bash
+python3 scripts/linkedin_oauth_helper.py --test-endpoints
+```
+
+```
+======================================================================
+LinkedIn API Endpoint Diagnostics (--test-endpoints)
+======================================================================
+
+[1/3] GET /v2/me
+  ✅ /v2/me: id=123456789  →  URN=urn:li:person:123456789
+
+[2/3] GET /v2/shares?q=owners&owners=<urn>&count=1
+  ✅ /v2/shares: 0 element(s) returned
+
+[3/3] GET /v2/ugcPosts?q=author&author=<urn>&count=1
+  ✅ /v2/ugcPosts: 0 element(s) returned
+```
+
 ### If `/v2/me` Returns 403
 
-This means the `profile` scope or the **Sign In with LinkedIn using OpenID Connect** product is not fully enabled. Steps:
+The token was issued before the **Sign In with LinkedIn using OpenID Connect** product was
+enabled and lacks the required `profile` scope.
 
+**Fix (in order):**
 1. Go to https://www.linkedin.com/developers/apps → Your App → Products
 2. Ensure **Sign In with LinkedIn using OpenID Connect** is approved
-3. Re-run OAuth init to get a fresh token with the right scopes:
+3. Re-run OAuth to get a fresh token:
    ```bash
    python3 scripts/linkedin_oauth_helper.py --init
    ```
-4. Verify URN resolution:
+4. Verify:
    ```bash
-   python3 scripts/linkedin_oauth_helper.py --whoami
+   python3 scripts/linkedin_oauth_helper.py --test-endpoints
    ```
 
 ---
