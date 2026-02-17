@@ -72,6 +72,13 @@ class LinkedInAPIHelper:
     MAX_RETRIES = 3
     INITIAL_BACKOFF = 1  # seconds
 
+    # Required API headers (LinkedIn enforces these on every call to api.linkedin.com)
+    # "LinkedIn-Version" must be a calendar version string (YYYYMM).
+    # Missing it causes: 403 "me.GET.NO_VERSION" / "Unsupported request version".
+    # Docs: https://learn.microsoft.com/en-us/linkedin/shared/api-guide/concepts/versioning
+    DEFAULT_LINKEDIN_VERSION = "202502"
+    RESTLI_PROTOCOL_VERSION = "2.0.0"
+
     def __init__(self, secrets_dir: Optional[Path] = None):
         """
         Initialize LinkedIn API helper.
@@ -91,6 +98,44 @@ class LinkedInAPIHelper:
         self._token = None
 
         logger.info(f"LinkedIn API helper initialized (secrets_dir={self.secrets_dir})")
+
+    def _build_headers(self, access_token: str, content_type: bool = False) -> Dict[str, str]:
+        """
+        Build the required headers for every LinkedIn API request.
+
+        LinkedIn requires ALL requests to api.linkedin.com to include:
+          Authorization: Bearer <token>
+          LinkedIn-Version: YYYYMM          ← missing this causes 403 NO_VERSION errors
+          X-Restli-Protocol-Version: 2.0.0
+
+        The ``LinkedIn-Version`` value comes from (in priority order):
+          1. ``linkedin_version`` key in .secrets/linkedin_credentials.json
+          2. Class constant ``DEFAULT_LINKEDIN_VERSION``
+
+        Args:
+            access_token: Valid OAuth2 access token.
+            content_type:  If True, adds ``Content-Type: application/json``.
+
+        Returns:
+            Dict of headers safe to pass directly to ``requests``.
+        """
+        # Resolve linkedin_version — allow override from credentials file
+        linkedin_version = self.DEFAULT_LINKEDIN_VERSION
+        try:
+            creds = self._load_credentials()
+            if creds.get('linkedin_version'):
+                linkedin_version = str(creds['linkedin_version'])
+        except Exception:
+            pass  # credentials may not exist yet; use default
+
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'LinkedIn-Version': linkedin_version,
+            'X-Restli-Protocol-Version': self.RESTLI_PROTOCOL_VERSION,
+        }
+        if content_type:
+            headers['Content-Type'] = 'application/json'
+        return headers
 
     def _load_credentials(self) -> Dict[str, str]:
         """
@@ -391,10 +436,7 @@ class LinkedInAPIHelper:
             Member ID string (e.g. "ABC123") or None if /v2/me returns 401/403/other error.
         """
         access_token = self.get_access_token()
-        headers = {
-            'Authorization': f'Bearer {access_token}',
-            'X-Restli-Protocol-Version': '2.0.0',
-        }
+        headers = self._build_headers(access_token)
 
         try:
             resp = requests.get(f"{self.API_BASE}/me", headers=headers, timeout=30)
@@ -589,10 +631,7 @@ class LinkedInAPIHelper:
         """
         try:
             access_token = self.get_access_token()
-
-            headers = {
-                'Authorization': f'Bearer {access_token}'
-            }
+            headers = self._build_headers(access_token)
 
             # Try OpenID Connect userinfo endpoint first (for OIDC tokens)
             try:
@@ -619,7 +658,7 @@ class LinkedInAPIHelper:
                 logger.warning(f"OIDC userinfo request failed: {e}, trying legacy /me endpoint")
 
             # Fall back to legacy /me endpoint (for old token scopes)
-            headers['X-Restli-Protocol-Version'] = '2.0.0'
+            # headers already contain all required fields from _build_headers()
 
             response = requests.get(
                 f"{self.API_BASE}/me",
@@ -677,15 +716,11 @@ class LinkedInAPIHelper:
             LinkedInAPIError: If request fails after retries
         """
         access_token = self.get_access_token()
-
-        headers = kwargs.pop('headers', {})
-        headers.update({
-            'Authorization': f'Bearer {access_token}',
-            'X-Restli-Protocol-Version': '2.0.0'
-        })
-
-        if 'json' in kwargs:
-            headers['Content-Type'] = 'application/json'
+        has_json = 'json' in kwargs
+        headers = self._build_headers(access_token, content_type=has_json)
+        # Allow caller-supplied header overrides (rare)
+        caller_headers = kwargs.pop('headers', {})
+        headers.update(caller_headers)
 
         url = f"{self.API_BASE}{endpoint}" if endpoint.startswith('/') else f"{self.API_BASE}/{endpoint}"
 
@@ -738,14 +773,10 @@ class LinkedInAPIHelper:
         the status code before deciding whether to try a secondary endpoint.
         """
         access_token = self.get_access_token()
-
-        headers = kwargs.pop('headers', {})
-        headers.update({
-            'Authorization': f'Bearer {access_token}',
-            'X-Restli-Protocol-Version': '2.0.0',
-        })
-        if 'json' in kwargs:
-            headers['Content-Type'] = 'application/json'
+        has_json = 'json' in kwargs
+        headers = self._build_headers(access_token, content_type=has_json)
+        caller_headers = kwargs.pop('headers', {})
+        headers.update(caller_headers)
 
         url = f"{self.API_BASE}{endpoint}" if endpoint.startswith('/') else f"{self.API_BASE}/{endpoint}"
 
@@ -1213,10 +1244,10 @@ def test_endpoints():
         print(f"\n{SEP}")
         return
 
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'X-Restli-Protocol-Version': '2.0.0',
-    }
+    headers = helper._build_headers(access_token)
+    linkedin_version_sent = headers.get('LinkedIn-Version', 'MISSING')
+    print(f"   LinkedIn-Version header applied : {linkedin_version_sent}")
+    print(f"   X-Restli-Protocol-Version       : {headers.get('X-Restli-Protocol-Version', 'MISSING')}")
 
     # ── 1. GET /v2/me ──────────────────────────────────────────────────────
     print("\n[1/3] GET /v2/me")

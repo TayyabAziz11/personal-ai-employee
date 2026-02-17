@@ -214,6 +214,54 @@ LinkedIn supports two authentication methods:
 
 ---
 
+## Required Headers: LinkedIn-Version + X-Restli-Protocol-Version
+
+Every request to `api.linkedin.com` must include **two mandatory headers** in addition to
+`Authorization`:
+
+| Header | Required Value | Notes |
+|---|---|---|
+| `LinkedIn-Version` | `YYYYMM` (e.g. `202502`) | Calendar-based API version. **Missing this causes `403 me.GET.NO_VERSION`** |
+| `X-Restli-Protocol-Version` | `2.0.0` | Rest.li wire protocol version |
+| `Authorization` | `Bearer <token>` | OAuth2 access token |
+
+### Why `me.GET.NO_VERSION` Happens
+
+If `LinkedIn-Version` is absent, LinkedIn's API gateway returns:
+
+```json
+{
+  "status": 403,
+  "code": "ACCESS_DENIED",
+  "message": "Not enough permissions to access: me.GET.NO_VERSION"
+}
+```
+
+This is **not** a permissions error — it's a missing header error. Adding
+`LinkedIn-Version: YYYYMM` resolves it immediately.
+
+### Where the Version is Set
+
+Our implementation centralises all header construction in `_build_headers()` inside
+`LinkedInAPIHelper`. The version defaults to `DEFAULT_LINKEDIN_VERSION = "202502"` and
+can be overridden per-deployment by adding `"linkedin_version": "202502"` to
+`.secrets/linkedin_credentials.json`:
+
+```json
+{
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_CLIENT_SECRET",
+  "redirect_uri": "http://localhost:8080/callback",
+  "scopes": ["openid", "profile", "email", "w_member_social"],
+  "linkedin_version": "202502"
+}
+```
+
+Every request — `/v2/me`, `/v2/ugcPosts`, `/v2/shares`, `/v2/userinfo` — goes through
+`_build_headers()`, so the headers are guaranteed to be present on all calls.
+
+---
+
 ## Person URN Requirement for Posting Endpoints
 
 ### Why OIDC Userinfo Is Not Enough
