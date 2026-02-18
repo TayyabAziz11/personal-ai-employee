@@ -242,6 +242,16 @@ class LinkedInAPIHelper:
             expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
             token['expires_at'] = expires_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
 
+        # Auto-populate granted_scopes from raw 'scope' field if not already parsed.
+        # This forward-fixes tokens created before exchange_code_for_token() added this logic.
+        if 'scope' in token and 'granted_scopes' not in token:
+            scope_str = token['scope']
+            if isinstance(scope_str, str) and scope_str.strip():
+                token['granted_scopes'] = [
+                    s.strip() for s in scope_str.replace(',', ' ').split() if s.strip()
+                ]
+                logger.info(f"Auto-populated granted_scopes from raw scope field: {token['granted_scopes']}")
+
         # Save token
         with open(self.token_file, 'w') as f:
             json.dump(token, f, indent=2)
@@ -506,26 +516,44 @@ class LinkedInAPIHelper:
 
     def _get_granted_scopes(self) -> List[str]:
         """
-        Return the list of OAuth scopes actually granted to this token.
+        Return the union of OAuth scopes from all available sources.
 
-        Priority:
-        1. token['granted_scopes'] — parsed from OAuth `scope` field at exchange time
-        2. credentials['scopes']   — configured scopes (fallback for pre-existing tokens)
-        3. []                      — if neither source is available
+        Sources (all merged — union wins so no configured scope is silently dropped):
+        1. token['granted_scopes']  — pre-parsed list (added by exchange_code_for_token)
+        2. token['scope']           — raw OAuth scope string returned by LinkedIn
+                                      (space or comma-separated; present even on older tokens)
+        3. credentials['scopes']    — configured scopes from .secrets/linkedin_credentials.json
+
+        Using the union of all sources is intentional: LinkedIn may not echo back every
+        requested scope in the token response's `scope` field (product-approval timing),
+        so we never silently drop scopes the user explicitly configured.
         """
+        result: set = set()
+
         token = self._load_token()
         if token:
+            # Source 1: pre-parsed list
             gs = token.get('granted_scopes')
-            if isinstance(gs, list) and gs:
-                return gs
+            if isinstance(gs, list):
+                result.update(gs)
+
+            # Source 2: raw 'scope' string from LinkedIn token response
+            scope_str = token.get('scope', '')
+            if scope_str and isinstance(scope_str, str):
+                result.update(
+                    s.strip() for s in scope_str.replace(',', ' ').split() if s.strip()
+                )
+
+        # Source 3: credentials configured scopes
         try:
             creds = self._load_credentials()
             scopes = creds.get('scopes', [])
             if isinstance(scopes, list):
-                return scopes
+                result.update(scopes)
         except Exception:
             pass
-        return []
+
+        return list(result)
 
     def get_author_urn(self) -> str:
         """

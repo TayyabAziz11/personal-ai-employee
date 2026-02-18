@@ -99,6 +99,42 @@ class TestGetGrantedScopes:
         scopes = helper._get_granted_scopes()
         assert isinstance(scopes, list)
 
+    def test_reads_raw_scope_field_when_granted_scopes_missing(self, tmp_path):
+        """Falls back to raw token['scope'] string when granted_scopes is absent."""
+        LinkedInAPIHelper, _ = _import()
+
+        secrets_dir = tmp_path / ".secrets"
+        secrets_dir.mkdir(exist_ok=True)
+
+        expires_at = (
+            (datetime.now(timezone.utc) + timedelta(days=60))
+            .strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
+        )
+        # Token has raw 'scope' field but NO 'granted_scopes' (pre-parse token)
+        token_data = {
+            "access_token": "tok",
+            "expires_at": expires_at,
+            "scope": "email,openid,profile,w_member_social",
+        }
+        token_file = secrets_dir / "linkedin_token.json"
+        token_file.write_text(json.dumps(token_data))
+        os.chmod(token_file, 0o600)
+
+        # Credentials file has NO 'scopes' field
+        creds_file = secrets_dir / "linkedin_credentials.json"
+        creds_file.write_text(json.dumps({
+            "client_id": "id", "client_secret": "sec",
+            "redirect_uri": "http://localhost:8080/callback",
+        }))
+        os.chmod(creds_file, 0o600)
+
+        helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+        scopes = helper._get_granted_scopes()
+
+        assert "w_member_social" in scopes, (
+            f"Expected w_member_social in scopes parsed from raw 'scope' field, got: {scopes}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Tests: check_can_post() — scope-only check, no network
