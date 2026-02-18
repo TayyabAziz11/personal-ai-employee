@@ -77,7 +77,7 @@ class LinkedInAPIHelper:
     # "LinkedIn-Version" must be a calendar version string (YYYYMM).
     # Missing it causes: 403 "me.GET.NO_VERSION" / "Unsupported request version".
     # Docs: https://learn.microsoft.com/en-us/linkedin/shared/api-guide/concepts/versioning
-    DEFAULT_LINKEDIN_VERSION = "202502"
+    DEFAULT_LINKEDIN_VERSION = "202501"  # January 2025 — known stable LinkedIn API version
     RESTLI_PROTOCOL_VERSION = "2.0.0"
 
     def __init__(self, secrets_dir: Optional[Path] = None):
