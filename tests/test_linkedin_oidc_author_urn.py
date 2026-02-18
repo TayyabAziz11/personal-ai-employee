@@ -418,3 +418,56 @@ class TestBuildHeadersVersionOverride:
         helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
         headers = helper._build_headers("testtoken")
         assert headers["LinkedIn-Version"] == "202502"
+
+
+# ---------------------------------------------------------------------------
+# Tests: _normalize_linkedin_version() — YYYYMMDD → YYYYMM truncation
+# ---------------------------------------------------------------------------
+
+class TestNormalizeLinkedinVersion:
+
+    def test_yyyymmdd_truncated_to_yyyymm(self):
+        """8-digit YYYYMMDD is silently truncated to 6-digit YYYYMM."""
+        LinkedInAPIHelper, _ = _import()
+        assert LinkedInAPIHelper._normalize_linkedin_version("20250201") == "202502"
+
+    def test_yyyymm_unchanged(self):
+        """6-digit YYYYMM is returned as-is."""
+        LinkedInAPIHelper, _ = _import()
+        assert LinkedInAPIHelper._normalize_linkedin_version("202502") == "202502"
+
+    def test_yyyymm_jan_unchanged(self):
+        """6-digit YYYYMM for January is returned as-is."""
+        LinkedInAPIHelper, _ = _import()
+        assert LinkedInAPIHelper._normalize_linkedin_version("202501") == "202501"
+
+    def test_build_headers_normalizes_yyyymmdd_api_version(self, tmp_path):
+        """api_version: '20250201' in credentials is normalised to '202502' in header."""
+        LinkedInAPIHelper, _ = _import()
+
+        secrets_dir = tmp_path / ".secrets"
+        secrets_dir.mkdir()
+
+        expires_at = (
+            (datetime.now(timezone.utc) + timedelta(days=60))
+            .strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
+        )
+        (secrets_dir / "linkedin_token.json").write_text(
+            json.dumps({"access_token": "tok", "expires_at": expires_at})
+        )
+        os.chmod(secrets_dir / "linkedin_token.json", 0o600)
+
+        # Simulates user who set api_version to YYYYMMDD format
+        (secrets_dir / "linkedin_credentials.json").write_text(json.dumps({
+            "client_id": "id", "client_secret": "sec",
+            "redirect_uri": "http://localhost:8080/callback",
+            "scopes": ["openid", "profile", "w_member_social"],
+            "api_version": "20250201",   # 8-digit — should be normalised to 202502
+        }))
+        os.chmod(secrets_dir / "linkedin_credentials.json", 0o600)
+
+        helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+        headers = helper._build_headers("testtoken")
+        assert headers["LinkedIn-Version"] == "202502", (
+            f"Expected normalised '202502', got: {headers['LinkedIn-Version']}"
+        )

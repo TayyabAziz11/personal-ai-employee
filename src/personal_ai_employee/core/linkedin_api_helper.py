@@ -100,19 +100,41 @@ class LinkedInAPIHelper:
 
         logger.info(f"LinkedIn API helper initialized (secrets_dir={self.secrets_dir})")
 
+    @staticmethod
+    def _normalize_linkedin_version(version: str) -> str:
+        """
+        Normalize a LinkedIn API version string to the required YYYYMM format.
+
+        LinkedIn requires exactly 6-digit YYYYMM versions. If a user specifies
+        YYYYMMDD (8 digits, e.g. "20250201"), silently strip the day portion.
+        Any other format is returned as-is and LinkedIn will reject it with 426.
+
+        Examples:
+            "20250201" → "202502"  (YYYYMMDD → YYYYMM)
+            "202502"   → "202502"  (already correct)
+            "202401"   → "202401"  (already correct)
+        """
+        v = version.strip()
+        if len(v) == 8 and v.isdigit():
+            return v[:6]
+        return v
+
     def _build_headers(self, access_token: str, content_type: bool = False) -> Dict[str, str]:
         """
         Build the required headers for every LinkedIn API request.
 
         LinkedIn requires ALL requests to api.linkedin.com to include:
           Authorization: Bearer <token>
-          LinkedIn-Version: YYYYMM          ← missing this causes 403 NO_VERSION errors
+          LinkedIn-Version: YYYYMM          ← must be 6-digit YYYYMM (not YYYYMMDD)
           X-Restli-Protocol-Version: 2.0.0
 
         The ``LinkedIn-Version`` value comes from (in priority order):
           1. ``linkedin_version`` key in .secrets/linkedin_credentials.json
           2. ``api_version`` key in .secrets/linkedin_credentials.json (alias)
           3. Class constant ``DEFAULT_LINKEDIN_VERSION``
+
+        In all cases the version is normalised via ``_normalize_linkedin_version()``
+        so that YYYYMMDD (8-digit) values are silently truncated to YYYYMM.
 
         Args:
             access_token: Valid OAuth2 access token.
@@ -132,6 +154,9 @@ class LinkedInAPIHelper:
                 linkedin_version = str(creds['api_version'])
         except Exception:
             pass  # credentials may not exist yet; use default
+
+        # Normalize: YYYYMMDD → YYYYMM (LinkedIn only accepts 6-digit versions)
+        linkedin_version = self._normalize_linkedin_version(linkedin_version)
 
         headers = {
             'Authorization': f'Bearer {access_token}',
