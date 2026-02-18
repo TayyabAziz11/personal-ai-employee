@@ -287,3 +287,98 @@ class TestGrantedScopesParsing:
             result = helper.exchange_code_for_token("authcode456")
 
         assert "w_member_social" in result["granted_scopes"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: _build_headers() version override — "api_version" and "linkedin_version" keys
+# ---------------------------------------------------------------------------
+
+class TestBuildHeadersVersionOverride:
+
+    def test_linkedin_version_key_overrides_default(self, tmp_path):
+        """'linkedin_version' in credentials overrides DEFAULT_LINKEDIN_VERSION."""
+        LinkedInAPIHelper, _ = _import()
+
+        secrets_dir = tmp_path / ".secrets"
+        secrets_dir.mkdir()
+
+        from datetime import timedelta
+        expires_at = (
+            (datetime.now(timezone.utc) + timedelta(days=60))
+            .strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
+        )
+        (secrets_dir / "linkedin_token.json").write_text(
+            json.dumps({"access_token": "tok", "expires_at": expires_at})
+        )
+        os.chmod(secrets_dir / "linkedin_token.json", 0o600)
+
+        (secrets_dir / "linkedin_credentials.json").write_text(json.dumps({
+            "client_id": "id", "client_secret": "sec",
+            "redirect_uri": "http://localhost:8080/callback",
+            "scopes": ["openid", "profile", "w_member_social"],
+            "linkedin_version": "202401",
+        }))
+        os.chmod(secrets_dir / "linkedin_credentials.json", 0o600)
+
+        helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+        headers = helper._build_headers("testtoken")
+        assert headers["LinkedIn-Version"] == "202401"
+
+    def test_api_version_key_overrides_default(self, tmp_path):
+        """'api_version' in credentials is an accepted alias for linkedin_version."""
+        LinkedInAPIHelper, _ = _import()
+
+        secrets_dir = tmp_path / ".secrets"
+        secrets_dir.mkdir()
+
+        from datetime import timedelta
+        expires_at = (
+            (datetime.now(timezone.utc) + timedelta(days=60))
+            .strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
+        )
+        (secrets_dir / "linkedin_token.json").write_text(
+            json.dumps({"access_token": "tok", "expires_at": expires_at})
+        )
+        os.chmod(secrets_dir / "linkedin_token.json", 0o600)
+
+        (secrets_dir / "linkedin_credentials.json").write_text(json.dumps({
+            "client_id": "id", "client_secret": "sec",
+            "redirect_uri": "http://localhost:8080/callback",
+            "scopes": ["openid", "profile", "w_member_social"],
+            "api_version": "202401",
+        }))
+        os.chmod(secrets_dir / "linkedin_credentials.json", 0o600)
+
+        helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+        headers = helper._build_headers("testtoken")
+        assert headers["LinkedIn-Version"] == "202401"
+
+    def test_linkedin_version_takes_priority_over_api_version(self, tmp_path):
+        """When both keys exist, 'linkedin_version' wins."""
+        LinkedInAPIHelper, _ = _import()
+
+        secrets_dir = tmp_path / ".secrets"
+        secrets_dir.mkdir()
+
+        from datetime import timedelta
+        expires_at = (
+            (datetime.now(timezone.utc) + timedelta(days=60))
+            .strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z'
+        )
+        (secrets_dir / "linkedin_token.json").write_text(
+            json.dumps({"access_token": "tok", "expires_at": expires_at})
+        )
+        os.chmod(secrets_dir / "linkedin_token.json", 0o600)
+
+        (secrets_dir / "linkedin_credentials.json").write_text(json.dumps({
+            "client_id": "id", "client_secret": "sec",
+            "redirect_uri": "http://localhost:8080/callback",
+            "scopes": ["openid", "profile", "w_member_social"],
+            "linkedin_version": "202502",
+            "api_version": "202401",   # linkedin_version should win
+        }))
+        os.chmod(secrets_dir / "linkedin_credentials.json", 0o600)
+
+        helper = LinkedInAPIHelper(secrets_dir=secrets_dir)
+        headers = helper._build_headers("testtoken")
+        assert headers["LinkedIn-Version"] == "202502"

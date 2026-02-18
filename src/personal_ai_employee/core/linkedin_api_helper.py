@@ -111,7 +111,8 @@ class LinkedInAPIHelper:
 
         The ``LinkedIn-Version`` value comes from (in priority order):
           1. ``linkedin_version`` key in .secrets/linkedin_credentials.json
-          2. Class constant ``DEFAULT_LINKEDIN_VERSION``
+          2. ``api_version`` key in .secrets/linkedin_credentials.json (alias)
+          3. Class constant ``DEFAULT_LINKEDIN_VERSION``
 
         Args:
             access_token: Valid OAuth2 access token.
@@ -121,11 +122,14 @@ class LinkedInAPIHelper:
             Dict of headers safe to pass directly to ``requests``.
         """
         # Resolve linkedin_version — allow override from credentials file
+        # Supports both "linkedin_version" and "api_version" keys (latter per user docs)
         linkedin_version = self.DEFAULT_LINKEDIN_VERSION
         try:
             creds = self._load_credentials()
             if creds.get('linkedin_version'):
                 linkedin_version = str(creds['linkedin_version'])
+            elif creds.get('api_version'):
+                linkedin_version = str(creds['api_version'])
         except Exception:
             pass  # credentials may not exist yet; use default
 
@@ -1497,16 +1501,17 @@ def test_endpoints(execute: bool = False):
     print(f"{SEP}\n")
 
 
-def post_test(text: str, execute: bool = False):
+def post_test(text: str, execute: bool = True):
     """
-    Test posting to LinkedIn.
+    Test posting to LinkedIn via REST Posts API.
 
     Args:
-        text:    Post text (used verbatim in dry-run; prefixed with [TEST POST] when execute=True)
-        execute: If True, actually send the post; if False (default), dry-run only.
+        text:    Post text content (prefixed with [TEST POST] + timestamp when execute=True)
+        execute: If True (default), send a real post; if False, dry-run validation only.
 
-    Dry-run validates: auth OK, author URN resolved, w_member_social scope present.
-    Execute: prepends "[TEST POST] " + timestamp to distinguish from real posts.
+    Always validates: auth OK, author URN resolved, w_member_social scope present.
+    When execute=True: sends to POST https://api.linkedin.com/rest/posts.
+    When execute=False: validates pipeline without sending (use --dry-run CLI flag).
     """
     SEP = "-" * 60
     print(SEP)
@@ -1887,14 +1892,15 @@ def main():
     LinkedIn OAuth2 CLI Helper
 
     Commands:
-        --init                   : Initialize OAuth flow (browser auto-open + local server)
-        --status                 : Check current authentication status
-        --check-auth             : Quick authentication check (alias for --status)
-        --whoami                 : Show identity details (sub, person_urn, method, scopes)
-        --test-endpoints         : 5-step diagnostic (OIDC, URN, dry-run, optional post, read)
-        --capabilities           : Show LinkedIn API capabilities (post/read/auth)
-        --post-test "TEXT"       : Validate posting pipeline (dry-run by default)
-        --post-test "TEXT" --execute : Send a real test post to LinkedIn
+        --init                        : Initialize OAuth flow (browser auto-open + local server)
+        --status                      : Check current authentication status
+        --check-auth                  : Quick authentication check (alias for --status)
+        --whoami                      : Show identity details (sub, person_urn, method, scopes)
+        --test-endpoints              : 5-step diagnostic (OIDC, URN, dry-run, optional post, read)
+        --capabilities                : Show LinkedIn API capabilities (post/read/auth)
+        --post-test "TEXT"            : Send a real test post to LinkedIn REST Posts API
+        --post-test "TEXT" --dry-run  : Validate pipeline only (no post sent)
+        --test-endpoints --execute    : Include a real post in the 5-step diagnostic
 
     Usage:
         python3 scripts/linkedin_oauth_helper.py --init
@@ -1903,7 +1909,7 @@ def main():
         python3 scripts/linkedin_oauth_helper.py --whoami
         python3 scripts/linkedin_oauth_helper.py --test-endpoints
         python3 scripts/linkedin_oauth_helper.py --post-test "Hello from AI"
-        python3 scripts/linkedin_oauth_helper.py --post-test "Hello from AI" --execute
+        python3 scripts/linkedin_oauth_helper.py --post-test "Hello from AI" --dry-run
     """
     import argparse
 
@@ -1928,11 +1934,11 @@ Examples:
   # 5-step endpoint diagnostic + real post
   python3 scripts/linkedin_oauth_helper.py --test-endpoints --execute
 
-  # Validate post pipeline without sending
+  # Send a real test post to LinkedIn (always executes)
   python3 scripts/linkedin_oauth_helper.py --post-test "My test post"
 
-  # Actually send a test post to LinkedIn
-  python3 scripts/linkedin_oauth_helper.py --post-test "My test post" --execute
+  # Validate pipeline without sending (dry-run opt-out)
+  python3 scripts/linkedin_oauth_helper.py --post-test "My test post" --dry-run
         """
     )
 
@@ -1949,9 +1955,11 @@ Examples:
     parser.add_argument('--capabilities', action='store_true',
                         help='Show LinkedIn API capabilities (authenticated/can-post/can-read)')
     parser.add_argument('--post-test', metavar='TEXT',
-                        help='Validate posting pipeline with TEXT (dry-run by default)')
+                        help='Send a real test post to LinkedIn REST Posts API')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='With --post-test: validate pipeline only, do not send post')
     parser.add_argument('--execute', action='store_true',
-                        help='With --post-test or --test-endpoints: actually send a real post')
+                        help='With --test-endpoints: include a real post in the 5-step diagnostic')
 
     args = parser.parse_args()
 
@@ -1965,7 +1973,8 @@ Examples:
     elif args.capabilities:
         show_capabilities()
     elif args.post_test:
-        post_test(args.post_test, execute=args.execute)
+        # --post-test always executes unless --dry-run is given
+        post_test(args.post_test, execute=not args.dry_run)
     elif args.test_endpoints:
         test_endpoints(execute=args.execute)
     elif args.whoami:
