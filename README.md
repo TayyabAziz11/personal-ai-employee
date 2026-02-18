@@ -394,6 +394,46 @@ python3 scripts/odoo_watcher_skill.py --mode mock --once
 
 ---
 
+## 🤖 AI Setup (OpenAI — Content Generation)
+
+> **Anthropic removed.** Content generation now uses OpenAI exclusively (GPT-4o for text, DALL-E 3 for images).
+
+### Create `.secrets/ai_credentials.json`
+
+```json
+{
+  "openai_api_key": "sk-..."
+}
+```
+
+> **Important:** `.secrets/` is gitignored. Never commit API keys.
+
+### Demo Commands
+
+```bash
+# Demo without spending any tokens (static placeholder content)
+python3 scripts/linkedin_professional_post.py --no-ai --dry-run
+
+# Generate real content via OpenAI, preview without posting
+python3 scripts/linkedin_professional_post.py --dry-run
+
+# Generate + post text only (no image upload)
+python3 scripts/linkedin_professional_post.py --content-only
+
+# Full pipeline: generate text + image, upload, post to LinkedIn
+python3 scripts/linkedin_professional_post.py
+```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Generate content/image but skip LinkedIn upload and post |
+| `--content-only` | Post text only; skip image generation and upload |
+| `--no-ai` | Skip OpenAI calls entirely; use static placeholder content |
+
+---
+
 ## 💻 Quick Start Commands
 
 ### 1. Perception (Watchers)
@@ -601,8 +641,9 @@ git checkout bronze-tier  # Bronze foundation
 - Git + GitHub (version control)
 
 **AI Engine:**
-- Claude Code CLI
-- Claude Sonnet 4.5
+- Claude Code CLI (development assistant)
+- OpenAI GPT-4o (LinkedIn post text generation)
+- OpenAI DALL-E 3 (LinkedIn image generation)
 
 ---
 
@@ -688,7 +729,8 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## 🎓 Built With
 
 - [Claude Code CLI](https://claude.com/claude-code) - AI-powered development assistant
-- [Claude Sonnet 4.5](https://anthropic.com) - Reasoning and execution engine
+- [OpenAI GPT-4o](https://openai.com) - LinkedIn post text generation
+- [OpenAI DALL-E 3](https://openai.com) - LinkedIn image generation
 - [Google Gmail API](https://developers.google.com/gmail/api) - Email integration
 - Python 3 - Skill implementation and automation
 - Markdown - Vault format and documentation
@@ -719,7 +761,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 **🎉 Hackathon 0 - Silver Tier Complete!**
 
-**Made with ❤️ using Claude Code | Powered by Claude Sonnet 4.5**
+**Made with ❤️ using Claude Code | Content powered by OpenAI GPT-4o + DALL-E 3**
 
 ---
 
