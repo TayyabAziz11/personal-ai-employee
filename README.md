@@ -1,10 +1,9 @@
 # Personal AI Employee — Hackathon 0
 
-> **Autonomous FTE with Real External Actions**
-> Bronze ✅ / Silver ✅ / Gold ⏳ / Platinum ⏳
+> **Autonomous Multi-Channel AI Employee with Real External Actions**
+> Bronze ✅ / Silver ✅ / Gold ✅ / Platinum ⏳
 
 **Repository:** https://github.com/TayyabAziz11/personal-ai-employee
-**Release:** [v0.2-silver](https://github.com/TayyabAziz11/personal-ai-employee/releases/tag/v0.2-silver)
 
 ---
 
@@ -13,11 +12,11 @@
 | Tier | Status | Description |
 |------|--------|-------------|
 | **Bronze** | ✅ **Complete** | Foundation + Execution (filesystem watcher, markdown vault, approval gates) |
-| **Silver** | ✅ **Complete** | MCP + Human-in-the-Loop Approvals + Real Gmail Actions (verified) |
-| **Gold** | ⏳ **Pending** | Multi-Agent Coordination + Advanced Scheduling |
-| **Platinum** | ⏳ **Pending** | Self-Improvement + Adaptive Learning |
+| **Silver** | ✅ **Complete** | MCP + Human-in-the-Loop Approvals + Real Gmail Actions (verified 2026-02-15) |
+| **Gold** | ✅ **Complete** | Multi-Channel Social (WhatsApp/LinkedIn/Twitter) + Odoo Accounting + CEO Briefing + Autonomous Orchestration (Ralph Loop) |
+| **Platinum** | ⏳ **Planned** | Cloud Deployment + Web UI + Vector DB + Multi-Agent Orchestration |
 
-**Current Focus:** Silver Tier operational with real external action capabilities via Gmail API.
+**Current Status:** Gold Tier complete with 5-channel perception (Gmail + WhatsApp + LinkedIn + Twitter + Odoo), executive reporting, and bounded autonomous orchestration. Ready for hackathon demo.
 
 ---
 
@@ -89,6 +88,44 @@ Perception → Plan → Approval → Action → Logging
 
 ---
 
+## ✨ What's New in Gold Tier
+
+### Multi-Channel Perception (4 New Watchers)
+- **WhatsApp Watcher** - WhatsApp Business API integration (mock + real mode)
+- **LinkedIn Watcher** - LinkedIn API for posts/messages/notifications
+- **Twitter Watcher** - Twitter API v2 for mentions/DMs/posts
+- **Odoo Watcher** - Odoo accounting monitoring (overdue/unpaid invoices)
+
+### Odoo Accounting Integration
+- **brain_odoo_query_with_mcp skill** - Revenue summaries, AR aging, unpaid invoices
+- **brain_execute_odoo_with_mcp skill** - Create invoices, post invoices, register payments
+- **Business Intelligence** - Real-time accounting data in CEO briefing
+
+### Executive Reporting
+- **CEO Briefing** - Weekly executive summary (8 sections: KPIs, Wins, Risks, Invoices, Social, Priorities, Approvals, Summary)
+- **Accounting Audit** - AR aging breakdown, unpaid invoice tracking
+- **Social Daily Summary** - Cross-channel social engagement metrics
+
+### Autonomous Orchestration (Ralph Loop)
+- **brain_ralph_loop_orchestrator skill** - Bounded autonomous decision-making
+- **Safety Controls** - Max iterations (10), max plans/iteration (5), 5-min timeout, halts if approval pending
+- **Decision Logic** - Prioritizes failure remediation > overdue invoices > social >24h > high AR%
+- **Dry-Run Default** - Never executes actions directly, creates plans only
+
+### MCP Integration & Reliability
+- **4 MCP Servers** - WhatsApp, LinkedIn, Twitter, Odoo (JSON-RPC)
+- **Tool Discovery** - brain_mcp_registry_refresh skill caches tool schemas
+- **Graceful Degradation** - One MCP server down → others continue + remediation task created
+- **Cross-Domain Vault** - Social/, Business/, MCP/ directories
+
+### Enhanced Architecture
+- **Package Structure** - Real implementations in `src/personal_ai_employee/`
+- **Entrypoint Wrappers** - Backwards-compatible wrappers in `scripts/`
+- **Mock Mode** - All skills support `--mode mock` for development/demo
+- **Automated Testing** - pytest-based E2E smoke tests (`tests/test_gold_e2e_smoke.py`)
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -97,21 +134,55 @@ personal-ai-employee/
 ├── 📋 CLAUDE.md                         # Project instructions for Claude Code
 ├── 📖 Company_Handbook.md               # Skills, governance, operating loops
 │
-├── 🔧 CORE SKILLS (Python)
+├── 🔧 scripts/                          # Entrypoint wrappers (backwards-compatible)
+│   ├── README.md                        # Wrapper documentation
+│   ├── scheduler_runner.py              # Task scheduler runner
+│   ├── gmail_api_helper.py              # Gmail API auth helper
+│   │
+│   ├── [Silver Tier Skills]
+│   ├── gmail_watcher_skill.py           # Gmail perception
 │   ├── brain_create_plan_skill.py       # Plan generation
 │   ├── brain_request_approval_skill.py  # Approval workflow
 │   ├── brain_monitor_approvals_skill.py # Approval processing
 │   ├── brain_execute_with_mcp_skill.py  # MCP action execution
-│   ├── brain_generate_daily_summary_skill.py # Daily reports
-│   ├── gmail_watcher_skill.py           # Gmail perception
-│   ├── gmail_api_helper.py              # Gmail OAuth2 + API wrapper
-│   └── scheduler_runner.py              # Task scheduler wrapper
+│   │
+│   └── [Gold Tier Skills - 13 total]
+│       ├── whatsapp_watcher_skill.py    # WhatsApp perception
+│       ├── linkedin_watcher_skill.py    # LinkedIn perception
+│       ├── twitter_watcher_skill.py     # Twitter perception
+│       ├── odoo_watcher_skill.py        # Odoo accounting perception
+│       ├── brain_execute_social_with_mcp_skill.py
+│       ├── brain_execute_odoo_with_mcp_skill.py
+│       ├── brain_generate_weekly_ceo_briefing_skill.py
+│       ├── brain_generate_accounting_audit_skill.py
+│       ├── brain_ralph_loop_orchestrator_skill.py
+│       └── ... (8 more Gold skills)
 │
-├── 📂 VAULT STRUCTURE
-│   ├── Inbox/                           # New items awaiting triage
-│   ├── Needs_Action/                    # Active tasks
+├── 📦 src/                              # Real implementations (package structure)
+│   └── personal_ai_employee/
+│       ├── core/                        # Core utilities
+│       │   ├── mcp_helpers.py           # MCP client + PII redaction
+│       │   └── gmail_api_helper.py      # Gmail API wrapper
+│       └── skills/                      # Agent skills by tier
+│           ├── silver/                  # Silver tier implementations
+│           └── gold/                    # Gold tier implementations
+│
+├── 📂 VAULT STRUCTURE (Data + Files)
+│   ├── Social/                          # Social channel data (Gold)
+│   │   ├── Inbox/                       # WhatsApp/LinkedIn/Twitter intake wrappers
+│   │   ├── Summaries/                   # Daily/weekly social summaries
+│   │   └── Analytics/                   # Social performance metrics
+│   ├── Business/                        # Business/accounting data (Gold)
+│   │   ├── Goals/                       # Strategic objectives
+│   │   ├── Briefings/                   # CEO weekly briefings
+│   │   ├── Accounting/                  # Odoo accounting data + reports
+│   │   ├── Clients/                     # Customer data
+│   │   └── Invoices/                    # Invoice records
+│   ├── Inbox/                           # Gmail intake wrappers (Silver)
+│   ├── Needs_Action/                    # Active tasks (all channels)
 │   ├── Done/                            # Completed tasks
 │   ├── Plans/                           # Planning documents
+│   ├── MCP/                             # MCP server configurations (Gold)
 │   │   ├── PLAN_silver_tier_implementation.md  # Silver Tier plan
 │   │   ├── completed/                   # Executed plans
 │   │   └── failed/                      # Failed executions
@@ -226,15 +297,140 @@ cp ~/Downloads/credentials.json .secrets/gmail_credentials.json
 **8. Authenticate (First-Time Only):**
 ```bash
 # Run authentication helper
-python3 gmail_api_helper.py --check-auth
+python3 scripts/gmail_api_helper.py --check-auth
 
 # Follow OAuth2 flow in browser
 # Token will be saved to .secrets/gmail_token.json
 
 # Verify authentication
-python3 gmail_api_helper.py --check-auth
+python3 scripts/gmail_api_helper.py --check-auth
 # Should output: ✓ Gmail API authenticated successfully
 ```
+
+---
+
+## 📁 Project Structure
+
+The codebase is organized as a Python package under `src/` with backwards-compatible root wrappers:
+
+```
+personal-ai-employee/
+├── src/personal_ai_employee/          # Main package
+│   ├── core/                          # Core utilities
+│   │   ├── mcp_helpers.py            # MCP utilities (PII redaction, rate limiting)
+│   │   ├── gmail_api_helper.py       # Gmail API authentication
+│   │   └── scheduler_runner.py       # Task scheduler runner
+│   ├── skills/                       # Skills organized by tier
+│   │   ├── silver/                   # Silver tier skills
+│   │   │   ├── gmail_watcher_skill.py
+│   │   │   ├── brain_create_plan_skill.py
+│   │   │   ├── brain_request_approval_skill.py
+│   │   │   ├── brain_monitor_approvals_skill.py
+│   │   │   └── brain_execute_with_mcp_skill.py
+│   │   └── gold/                     # Gold tier skills
+│   │       ├── whatsapp_watcher_skill.py
+│   │       ├── linkedin_watcher_skill.py
+│   │       ├── twitter_watcher_skill.py
+│   │       ├── odoo_watcher_skill.py
+│   │       ├── brain_execute_social_with_mcp_skill.py
+│   │       ├── brain_execute_odoo_with_mcp_skill.py
+│   │       ├── brain_ralph_loop_orchestrator_skill.py
+│   │       └── brain_generate_weekly_ceo_briefing_skill.py
+│   └── __init__.py
+├── scripts/                           # Backwards-compatible entrypoint wrappers
+│   ├── README.md                     # Wrapper documentation
+│   ├── gmail_watcher_skill.py        # Wrapper → silver/gmail_watcher_skill.py
+│   ├── brain_create_plan_skill.py    # Wrapper → silver/brain_create_plan_skill.py
+│   ├── brain_ralph_loop_orchestrator_skill.py  # Wrapper → gold/...
+│   └── ... (22 total wrappers)       # All skills + gmail_api_helper
+├── pyproject.toml                     # Package configuration
+└── requirements.txt                   # Dependencies
+```
+
+### Root Wrappers (Backwards Compatibility)
+
+All skill scripts in the root directory are **wrapper scripts** that maintain compatibility with:
+- Existing CLI commands (e.g., `python3 scripts/gmail_watcher_skill.py --once`)
+- Scheduled task XML files in `Scheduled/`
+- Documentation examples
+
+**How it works:**
+- Wrappers add `src/` to Python path
+- Import the actual implementation from `src/personal_ai_employee/skills/`
+- Call the skill's `main()` function
+
+**Example wrapper:**
+```python
+#!/usr/bin/env python3
+"""Backwards compatibility wrapper for gmail_watcher_skill.py"""
+import sys
+from pathlib import Path
+repo_root = Path(__file__).parent
+sys.path.insert(0, str(repo_root / 'src'))
+from personal_ai_employee.skills.silver.gmail_watcher_skill import main
+if __name__ == '__main__':
+    main()
+```
+
+### Development Setup (Recommended)
+
+For development, install the package in editable mode:
+
+```bash
+# From repo root
+pip install -e .
+
+# This allows:
+# - Direct imports: from personal_ai_employee.core import mcp_helpers
+# - Root wrappers work without manual path manipulation
+```
+
+**WSL Note:** The package structure works seamlessly in WSL. Continue using existing commands:
+```bash
+python3 scripts/gmail_watcher_skill.py --mock --once
+python3 scripts/brain_ralph_loop_orchestrator_skill.py --dry-run
+python3 scripts/odoo_watcher_skill.py --mode mock --once
+```
+
+---
+
+## 🤖 AI Setup (OpenAI — Content Generation)
+
+> **Anthropic removed.** Content generation now uses OpenAI exclusively (GPT-4o for text, DALL-E 3 for images).
+
+### Create `.secrets/ai_credentials.json`
+
+```json
+{
+  "openai_api_key": "sk-..."
+}
+```
+
+> **Important:** `.secrets/` is gitignored. Never commit API keys.
+
+### Demo Commands
+
+```bash
+# Demo without spending any tokens (static placeholder content)
+python3 scripts/linkedin_professional_post.py --no-ai --dry-run
+
+# Generate real content via OpenAI, preview without posting
+python3 scripts/linkedin_professional_post.py --dry-run
+
+# Generate + post text only (no image upload)
+python3 scripts/linkedin_professional_post.py --content-only
+
+# Full pipeline: generate text + image, upload, post to LinkedIn
+python3 scripts/linkedin_professional_post.py
+```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Generate content/image but skip LinkedIn upload and post |
+| `--content-only` | Post text only; skip image generation and upload |
+| `--no-ai` | Skip OpenAI calls entirely; use static placeholder content |
 
 ---
 
@@ -244,17 +440,17 @@ python3 gmail_api_helper.py --check-auth
 
 ```bash
 # Filesystem watcher (check Needs_Action/ folder)
-python3 filesystem_watcher_skill.py --once
+python3 scripts/filesystem_watcher_skill.py --once
 
 # Gmail watcher (check for new emails)
-python3 gmail_watcher_skill.py --dry-run --once
+python3 scripts/gmail_watcher_skill.py --dry-run --once
 ```
 
 ### 2. Create a Plan
 
 ```bash
 # Generate plan from a task file
-python3 brain_create_plan_skill.py \
+python3 scripts/brain_create_plan_skill.py \
   --task Needs_Action/your_task_file.md \
   --objective "Send email to confirm meeting" \
   --risk-level Low \
@@ -265,7 +461,7 @@ python3 brain_create_plan_skill.py \
 
 ```bash
 # Create approval request (creates ACTION file in Pending_Approval/)
-python3 brain_request_approval_skill.py \
+python3 scripts/brain_request_approval_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
 ```
 
@@ -277,14 +473,14 @@ python3 brain_request_approval_skill.py \
 # To: Approved/ACTION_*.md (or Rejected/)
 
 # STEP 2: Process the approval decision
-python3 brain_monitor_approvals_skill.py
+python3 scripts/brain_monitor_approvals_skill.py
 ```
 
 ### 5. Execute with Dry-Run
 
 ```bash
 # Dry-run is DEFAULT (no flag needed)
-python3 brain_execute_with_mcp_skill.py \
+python3 scripts/brain_execute_with_mcp_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md
 
 # Shows email preview without sending
@@ -294,7 +490,7 @@ python3 brain_execute_with_mcp_skill.py \
 
 ```bash
 # REQUIRES explicit --execute flag
-python3 brain_execute_with_mcp_skill.py \
+python3 scripts/brain_execute_with_mcp_skill.py \
   --plan Plans/PLAN_YYYYMMDD-HHMM__your_plan.md \
   --execute
 
@@ -352,10 +548,12 @@ cat Daily_Summaries/$(date +%Y-%m-%d).md
 - ✅ Applied to all logs (`mcp_actions.log`, `system_log.md`)
 - ✅ Applied to all documentation
 
-### Approval Gates
+### Approval Gates & Execution Safety
 - ✅ External actions require approved plan
 - ✅ Human-in-the-loop approval (file movement)
 - ✅ Cannot be bypassed programmatically
+- ✅ Dry-run mandatory default (all executors)
+- ✅ Explicit `--execute` flag required for real actions
 
 ### Audit Trail
 - ✅ All actions logged (JSON + Markdown)
@@ -443,8 +641,9 @@ git checkout bronze-tier  # Bronze foundation
 - Git + GitHub (version control)
 
 **AI Engine:**
-- Claude Code CLI
-- Claude Sonnet 4.5
+- Claude Code CLI (development assistant)
+- OpenAI GPT-4o (LinkedIn post text generation)
+- OpenAI DALL-E 3 (LinkedIn image generation)
 
 ---
 
@@ -530,7 +729,8 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## 🎓 Built With
 
 - [Claude Code CLI](https://claude.com/claude-code) - AI-powered development assistant
-- [Claude Sonnet 4.5](https://anthropic.com) - Reasoning and execution engine
+- [OpenAI GPT-4o](https://openai.com) - LinkedIn post text generation
+- [OpenAI DALL-E 3](https://openai.com) - LinkedIn image generation
 - [Google Gmail API](https://developers.google.com/gmail/api) - Email integration
 - Python 3 - Skill implementation and automation
 - Markdown - Vault format and documentation
@@ -561,7 +761,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 **🎉 Hackathon 0 - Silver Tier Complete!**
 
-**Made with ❤️ using Claude Code | Powered by Claude Sonnet 4.5**
+**Made with ❤️ using Claude Code | Content powered by OpenAI GPT-4o + DALL-E 3**
 
 ---
 

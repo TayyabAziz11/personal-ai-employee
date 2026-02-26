@@ -1,20 +1,22 @@
-# 🎯 Personal AI Employee — Silver Dashboard
+# 🎯 Personal AI Employee — Gold Tier Dashboard
 
-**Silver Tier (MCP-First with HITL Approval)**
+**Gold Tier (Multi-Channel Social + Odoo Accounting + CEO Briefing + Ralph Loop)**
 
 *Dual-interface system: VS Code (execution) + Obsidian (review/presentation)*
 *View in Obsidian Reading Mode for optimal panel-based UI*
 
 ---
 
-> [!tip] 🚀 Demo Start Here — Judge Evaluation
+> [!tip] 🚀 **GOLD TIER** Demo Start Here — Judge Evaluation
 >
-> **Silver Tier Personal AI Employee** — Autonomous FTE with Real External Actions
+> **Gold Tier Features**: Multi-channel perception (WhatsApp + LinkedIn + Twitter + Gmail), Odoo accounting, CEO briefing, autonomous orchestration (Ralph loop)
 >
-> **🎬 5-Minute Demo:**
-> - 📋 **Demo Script:** [Docs/demo_script_silver.md](Docs/demo_script_silver.md)
-> - ✅ **Completion Checklist:** [Docs/silver_completion_checklist.md](Docs/silver_completion_checklist.md)
-> - 📊 **Test Report:** [Docs/test_report_silver_e2e.md](Docs/test_report_silver_e2e.md)
+> **🎬 5-7 Minute Demo:**
+> - 📋 **Demo Script:** [Docs/gold_demo_script.md](Docs/gold_demo_script.md) — Complete walkthrough for judges
+> - ✅ **Completion Checklist:** [Docs/gold_completion_checklist.md](Docs/gold_completion_checklist.md) — All 52 FRs mapped
+> - 📊 **Test Report:** [Docs/test_report_gold_e2e.md](Docs/test_report_gold_e2e.md) — 18/18 ACs PASS
+> - 🏗️ **Architecture:** [Docs/architecture_gold.md](Docs/architecture_gold.md) — Updated system design
+> - 📚 **Lessons Learned:** [Docs/lessons_learned_gold.md](Docs/lessons_learned_gold.md) — Post-mortem insights
 >
 > **📧 Real Gmail Proof:**
 > - ✅ **Real Gmail Mode:** VERIFIED (email sent & received on 2026-02-15 03:58:05 UTC)
@@ -431,6 +433,261 @@
 
 ---
 
+> [!success] 🌟 Gold Tier Status
+>
+> **Gold Tier (Multi-Channel Social + Odoo + CEO Briefing + Ralph Loop)**
+>
+> **Progress:** G-M1 Complete (Vault Expansion + Templates) ✅
+>
+> **Objective:** Extend Personal AI Employee with multi-channel social (WhatsApp, LinkedIn, Twitter), Odoo accounting integration, weekly CEO briefing, and Ralph loop autonomous orchestration.
+>
+> ---
+>
+> ### 📱 Social Channel Status
+>
+> | Channel | Status | Last Check | Message Count | Latest Intake |
+> |---------|--------|------------|---------------|---------------|
+> | WhatsApp | Not configured | N/A | 0 | N/A |
+> | LinkedIn | Not configured | N/A | 0 | N/A |
+> | Twitter | Not configured | N/A | 0 | N/A |
+>
+> **Setup Required:** Social watchers will be implemented in G-M3. See `Docs/mcp_whatsapp_setup.md`, `Docs/mcp_linkedin_setup.md`, `Docs/mcp_twitter_setup.md` (created in G-M4).
+>
+> **Vault Locations:**
+> - **Intake Wrappers:** `Social/Inbox/` (format: `inbox__<channel>__YYYYMMDD-HHMM__<sender>.md`)
+> - **Daily/Weekly Summaries:** `Social/Summaries/`
+> - **Analytics:** `Social/Analytics/` (optional, if MCP analytics tools available)
+>
+> ---
+>
+> ### 💼 Accounting Status
+>
+> | Metric | Value | Status |
+> |--------|-------|--------|
+> | Odoo Connection | Mock mode ready | ✅ Configured (mock) |
+> | Unpaid Invoices Count | 4 (mock data) | - |
+> | Total AR Outstanding | $41,650.00 (mock) | - |
+> | AR Aging (90+ days) | $15,750.00 (mock) | - |
+> | Last Check | 2026-02-16 07:59 UTC | ✅ |
+> | Last Report | [accounting_audit__2026-02-16.md](Business/Accounting/Reports/accounting_audit__2026-02-16.md) | ✅ |
+>
+> **G-M5 Status:** ✅ **Complete** (Odoo MCP Integration)
+> **G-M6 Status:** ✅ **Complete** (CEO Briefing + Accounting Audit)
+>
+> **Completed Components:**
+> - ✅ `Docs/mcp_odoo_setup.md` - Complete setup documentation
+> - ✅ `odoo_watcher_skill.py` - Perception-only watcher (mock + mcp modes)
+> - ✅ `brain_odoo_query_with_mcp_skill.py` - Query operations (no approval needed)
+> - ✅ `brain_execute_odoo_with_mcp_skill.py` - Action executor (approval required)
+> - ✅ `templates/mock_odoo_invoices.json` - Mock fixture with 5 sample invoices
+> - ✅ `Approved/plan__demo_odoo__20260216-1000.md` - Example Odoo plan
+> - ✅ `Scheduled/odoo_watcher_task.xml` - Scheduling template
+>
+> **Pending Components:**
+> - ⏳ Company_Handbook.md updates - Next
+> - ⏳ End-to-end testing in mock mode - Next
+> - ⏳ Git commit (1-2 commits) - Final
+>
+> **Vault Locations:**
+> - **Intake Wrappers:** `Business/Accounting/` (format: `intake__odoo__YYYYMMDD-HHMM__<customer>.md`)
+> - **Query Reports:** `Business/Accounting/Reports/` (optional, generated with --report flag)
+>
+> **Available Operations:**
+> - **Query (no approval):** `list_unpaid_invoices`, `revenue_summary`, `ar_aging_summary`, `list_customers`
+> - **Action (approval required):** `create_customer`, `create_invoice`, `post_invoice`, `register_payment`, `create_credit_note`
+>
+> **Quick Start (Mock Mode):**
+> ```bash
+> # Run watcher (creates intake wrappers)
+> python3 odoo_watcher_skill.py --mode mock --once --max-results 3
+>
+> # Run query (generates report)
+> python3 brain_odoo_query_with_mcp_skill.py --operation list_unpaid_invoices --mode mock --report
+>
+> # Execute approved plan (dry-run)
+> python3 brain_execute_odoo_with_mcp_skill.py
+>
+> # Execute approved plan (real, simulated)
+> python3 brain_execute_odoo_with_mcp_skill.py --execute --mode mock
+> ```
+>
+> **Setup Guide:** See `Docs/mcp_odoo_setup.md` for credentials configuration and MCP mode instructions
+>
+> ---
+>
+> ### 🔧 MCP Registry Status
+>
+> | Server | Status | Last Refresh | Tool Count | Notes |
+> |--------|--------|--------------|------------|-------|
+> | mcp-whatsapp | Not configured | N/A | 0 | Setup: G-M4 |
+> | mcp-linkedin | Not configured | N/A | 0 | Setup: G-M4 |
+> | mcp-twitter | Not configured | N/A | 0 | Setup: G-M4 |
+> | mcp-odoo | Not configured | N/A | 0 | Setup: G-M5 |
+>
+> **Registry Refresh:** Implemented in G-M2 (`brain_mcp_registry_refresh` skill)
+>
+> **Tool Snapshots:** `Logs/mcp_tools_snapshot_<server>.json` (gitignored)
+>
+> **Graceful Degradation:** If one MCP server is down, system continues with other servers (failure logged + remediation task created).
+>
+> ---
+>
+> ### 📊 Latest Social Summary
+>
+> **Status:** No summaries generated yet (G-M6 required)
+>
+> **Location:** `Social/Summaries/`
+>
+> **Generation:**
+> - **Daily Summary:** Generated by `brain_social_generate_summary --period daily` (scheduled daily at 11 PM UTC)
+> - **Weekly Summary:** Generated by `brain_social_generate_summary --period weekly` (scheduled Sunday 11 PM UTC)
+>
+> **Next Summary:** Pending G-M6 implementation
+>
+> ---
+>
+> ### 📋 Latest CEO Briefing
+>
+> **Status:** ✅ Operational (G-M6 Complete)
+>
+> **Latest:** [CEO_Briefing__2026-W08.md](Business/Briefings/CEO_Briefing__2026-W08.md)
+> **Generated:** 2026-02-16 08:04 UTC
+> **Week:** Week 8, 2026 (Feb 16-22)
+>
+> **Format:** 8 required sections (KPIs, Wins, Risks, Outstanding Invoices + AR Aging, Social Performance, Next Week Priorities, Pending Approvals, Summary)
+>
+> **Data Confidence:** High (system_log + MCP actions), Medium (social + Odoo)
+>
+> **Generation:**
+> - Manual: `python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock`
+> - Scheduled: Weekly on Sunday at 23:59 UTC (via `Scheduled/weekly_ceo_briefing_task.xml`)
+>
+> **Next Briefing:** 2026-02-23 (Week 9, 2026)
+>
+> ---
+>
+> ### 🚀 Last External Action (Gold)
+>
+> **Status:** No Gold Tier external actions yet
+>
+> **Gold MCP Actions:**
+> - Social actions (WhatsApp, LinkedIn, Twitter) via `brain_execute_social_with_mcp` (G-M4)
+> - Accounting actions (Odoo) via `brain_execute_odoo_with_mcp` (G-M5)
+>
+> **Approval Requirements:**
+> - ALL social actions require approval (whatsapp.send_message, linkedin.create_post, twitter.create_post, etc.)
+> - ALL Odoo ACTION tools require approval (create_invoice, post_invoice, register_payment, etc.)
+> - Query tools (list_unpaid_invoices, revenue_summary) do NOT require approval
+>
+> **Dry-Run Default:** All Gold executors default to `--dry-run` mode. Explicit `--execute` flag required for real actions.
+>
+> **Execution Log:** `Logs/mcp_actions.log` (JSON format)
+>
+> ---
+>
+> ### 🔁 Ralph Loop Status
+>
+> **Status:** ✅ **Operational** (G-M7 Complete)
+>
+> **Last Run:** Not yet executed
+> **Iterations Used:** N/A
+> **Plans Created:** N/A
+> **Current Status:** Stopped
+>
+> **Purpose:** Autonomous multi-step task completion with bounded iterations, approval gates respected, and remediation task creation on failure.
+>
+> **Safety Features:**
+> - Bounded iterations (max 10 by default, configurable up to 50)
+> - Max plans per iteration (default 5, prevents runaway)
+> - MUST stop when approval required (cannot bypass HITL)
+> - Timeout per iteration (max 5 minutes)
+> - Creates remediation tasks on failure
+> - Never executes actions directly (only creates plans)
+>
+> **Usage:**
+> ```bash
+> # Dry-run (show decisions without creating plans)
+> python3 brain_ralph_loop_orchestrator_skill.py --dry-run
+>
+> # Execute (create plans, NOT execute actions)
+> python3 brain_ralph_loop_orchestrator_skill.py --execute
+>
+> # Custom limits
+> python3 brain_ralph_loop_orchestrator_skill.py --execute --max-iterations 5 --max-plans 3
+> ```
+>
+> **Decision Logic (Mock Heuristic):**
+> 1. Pending approval exists → HALT immediately (respects HITL)
+> 2. Failure remediation in Needs_Action → prioritize
+> 3. Overdue invoice wrapper → create follow-up plan
+> 4. Social intake > 24h old → create response plan
+> 5. High AR % (>40%) from CEO briefing → create review plan
+>
+> **Logs:**
+> - `Logs/ralph_loop.log` — Structured iteration logs
+> - `system_log.md` — Summary entries
+>
+> **Documentation:** See implementation details in `brain_ralph_loop_orchestrator_skill.py`
+>
+> ---
+>
+> ### 📁 Gold Tier Vault Structure
+>
+> ```
+> personal-ai-employee/
+> ├── Social/                      [G-M1: ✅ Created]
+> │   ├── Inbox/                  (Social intake wrappers - gitignored)
+> │   ├── Summaries/              (Daily/weekly summaries - gitignored)
+> │   └── Analytics/              (Optional MCP analytics - gitignored)
+> │
+> ├── Business/                    [G-M1: ✅ Created]
+> │   ├── Goals/                  (Strategic objectives - sample included)
+> │   ├── Briefings/              (Weekly CEO briefings - gitignored)
+> │   ├── Accounting/             (Odoo intake wrappers - gitignored)
+> │   ├── Clients/                (Optional client records - gitignored)
+> │   └── Invoices/               (Optional invoice records - gitignored)
+> │
+> ├── MCP/                         [G-M1: ✅ Created]
+> │   ├── README.md               (MCP server documentation)
+> │   └── <server>_notes.md       (Optional server-specific notes)
+> │
+> ├── templates/                   [G-M1: ✅ Updated]
+> │   ├── plan_template.md        (Silver)
+> │   ├── social_intake_wrapper_template.md   [G-M1: ✅ Created]
+> │   └── ceo_briefing_template.md            [G-M1: ✅ Created]
+> │
+> └── Logs/
+>     ├── mcp_tools_snapshot_<server>.json    (MCP tool registries - gitignored)
+>     ├── <channel>_watcher.log               (Social watchers - gitignored)
+>     ├── odoo_watcher.log                    (Odoo watcher - gitignored)
+>     ├── mcp_failures.log                    (MCP failure log - gitignored)
+>     └── ralph_loop.log                      (Ralph loop log - gitignored)
+> ```
+>
+> ---
+>
+> ### 🎯 Gold Tier Implementation Progress
+>
+> | Milestone | Status | Description |
+> |-----------|--------|-------------|
+> | **G-M1** | ✅ Complete | Vault + Domain Expansion (Social/, Business/, MCP/ + templates) |
+> | **G-M2** | ⏳ Pending | MCP Registry + Reliability Core (mcp_helpers, registry refresh, failure handling) |
+> | **G-M3** | ⏳ Pending | Social Watchers (WhatsApp, LinkedIn, Twitter with mock mode) |
+> | **G-M4** | ⏳ Pending | Social MCP Execution Layer (dry-run default, approval gates, multi-channel) |
+> | **G-M5** | ✅ Complete | Odoo MCP Integration (Query → Action with JSON-RPC) |
+> | **G-M6** | ✅ Complete | Weekly CEO Briefing + Accounting Audit (cross-domain synthesis) |
+> | **G-M7** | ✅ Complete | Ralph Loop Autonomous Orchestrator (bounded autonomy, safe multi-step) |
+> | **G-M8** | ⏳ Pending | End-to-End Testing + Demo Documentation (18 acceptance criteria) |
+>
+> **Total Estimated Duration:** 43-56 hours (realistic: 50h)
+> **Critical Path:** G-M1 → G-M2 → G-M3 → G-M4 → G-M6 → G-M8
+>
+> **Architecture:** Perception → Plan → Approval → Action → Logging (unchanged from Silver)
+>
+> ---
+
+---
+
 > [!info] 🎓 System Information
 >
 > **Version:** Silver Tier v1.0 (MCP-First + HITL Approval)
@@ -500,3 +757,53 @@
 
 *This dashboard is the single source of truth for Silver Tier system state (Bronze foundation + MCP/HITL).*
 *Last synchronized: 2026-02-11 16:30 UTC*
+
+
+**Last External Action (Gold)**: odoo.register_payment - success - 2026-02-16 07:14 UTC
+
+## MCP Registry Status
+
+| Server | Status | Last Refresh | Tool Count |
+|--------|--------|--------------|------------|
+| whatsapp | ✅ reachable | 2026-02-15 17:20 UTC | 2 |
+| linkedin | ✅ reachable | 2026-02-15 17:20 UTC | 2 |
+| twitter | ✅ reachable | 2026-02-15 17:20 UTC | 2 |
+| odoo | ✅ reachable | 2026-02-15 17:20 UTC | 2 |
+
+**Last Updated**: 2026-02-15 17:20 UTC
+
+
+## Social Channel Status
+
+| Channel | Status | Real Mode | Last Check | Message Count | Latest Intake |
+|---------|--------|-----------|------------|---------------|---------------|
+| WhatsApp | ✅ Operational (mock-ready) | ⏳ Pending | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__whatsapp__20260215-1705__15552345678.md |
+| LinkedIn | ✅ Operational (mock + real) | ✅ **Available** | 2026-02-17 10:00 UTC | 5 | Social/Inbox/inbox__linkedin__20260215-1705__alexchen.md |
+| Twitter | ✅ Operational (mock-ready) | ⏳ Pending | 2026-02-15 17:05 UTC | 5 | Social/Inbox/inbox__twitter__20260215-1705__techexpert_ai.md |
+
+**Last Updated**: 2026-02-17 10:00 UTC
+
+**LinkedIn Real Mode**: ✅ **ENABLED** (OAuth2 configured)
+- 📚 **Setup Guide**: [Docs/linkedin_real_setup.md](Docs/linkedin_real_setup.md)
+- 🔑 **Authentication**: OAuth2 (credentials in `.secrets/linkedin_credentials.json`, token in `.secrets/linkedin_token.json`)
+- ✅ **Watcher**: Fetches real LinkedIn posts via API (`--mode real`)
+- ✅ **Executor**: Posts to LinkedIn for real via approved plans (`--execute`)
+- 🔒 **Security**: PII redaction, dry-run default, approval required for all actions
+
+**Real Mode Commands**:
+```bash
+# Test authentication
+python3 src/personal_ai_employee/core/linkedin_api_helper.py --check-auth
+
+# Run watcher in real mode
+python3 scripts/linkedin_watcher_skill.py --mode real --once --max-results 5
+
+# Execute approved plan (dry-run first)
+python3 scripts/brain_execute_social_with_mcp_skill.py --dry-run
+
+# Execute approved plan (real posting - requires explicit flag)
+python3 scripts/brain_execute_social_with_mcp_skill.py --execute
+```
+
+**Note**: WhatsApp and Twitter watchers currently run in mock mode only. Switch to real mode after configuring MCP servers (see respective setup guides in `Docs/`).
+

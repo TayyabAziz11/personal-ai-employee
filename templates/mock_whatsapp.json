@@ -1,0 +1,52 @@
+[
+  {
+    "id": "whatsapp_msg_001",
+    "sender": "+1-555-234-5678",
+    "sender_name": "John Smith",
+    "body": "Hi! I'm interested in your services. Can you call me at +1-555-234-5678 or email me at john.smith@example.com?",
+    "timestamp": "2026-02-15T14:30:00Z",
+    "thread_id": "thread_john_001",
+    "type": "incoming",
+    "urgent": true
+  },
+  {
+    "id": "whatsapp_msg_002",
+    "sender": "+44-20-7946-0958",
+    "sender_name": "Sarah Johnson",
+    "body": "Thanks for the quick response yesterday! Just following up on the proposal you sent.",
+    "timestamp": "2026-02-15T10:15:00Z",
+    "thread_id": "thread_sarah_002",
+    "type": "incoming",
+    "urgent": false
+  },
+  {
+    "id": "whatsapp_msg_003",
+    "sender": "+91-98765-43210",
+    "sender_name": "Raj Kumar",
+    "body": "URGENT: Need help with invoice #INV-2024-456. Payment is overdue.",
+    "timestamp": "2026-02-15T08:45:00Z",
+    "thread_id": "thread_raj_003",
+    "type": "incoming",
+    "urgent": true
+  },
+  {
+    "id": "whatsapp_msg_004",
+    "sender": "+1-555-987-6543",
+    "sender_name": "Marketing Team",
+    "body": "FYI: Our campaign performance this week is looking great! 15% increase in engagement.",
+    "timestamp": "2026-02-15T12:00:00Z",
+    "thread_id": "thread_marketing_004",
+    "type": "incoming",
+    "urgent": false
+  },
+  {
+    "id": "whatsapp_msg_005",
+    "sender": "+33-1-42-86-82-00",
+    "sender_name": "Marie Dubois",
+    "body": "Bonjour! I'd like to schedule a demo. My email is marie.dubois@companyxyz.fr. Available next week?",
+    "timestamp": "2026-02-15T16:20:00Z",
+    "thread_id": "thread_marie_005",
+    "type": "incoming",
+    "urgent": false
+  }
+]

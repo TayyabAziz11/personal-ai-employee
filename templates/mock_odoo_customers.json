@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1001,
+    "name": "Acme Corporation",
+    "email": "accounts@acme.example.com",
+    "phone": "+1-555-0100",
+    "city": "New York",
+    "country": "United States",
+    "customer_rank": 5,
+    "active": true,
+    "credit_limit": 50000.00,
+    "total_invoiced": 75000.00,
+    "total_due": 15750.00,
+    "payment_terms": "Net 30"
+  },
+  {
+    "id": 1002,
+    "name": "Tech Solutions Inc",
+    "email": "billing@techsol.example.com",
+    "phone": "+1-555-0200",
+    "city": "San Francisco",
+    "country": "United States",
+    "customer_rank": 3,
+    "active": true,
+    "credit_limit": 30000.00,
+    "total_invoiced": 42000.00,
+    "total_due": 8900.00,
+    "payment_terms": "Net 15"
+  },
+  {
+    "id": 1003,
+    "name": "Global Industries LLC",
+    "email": "finance@globalinc.example.com",
+    "phone": "+1-555-0300",
+    "city": "Chicago",
+    "country": "United States",
+    "customer_rank": 8,
+    "active": true,
+    "credit_limit": 100000.00,
+    "total_invoiced": 210000.00,
+    "total_due": 11200.00,
+    "payment_terms": "Net 45"
+  },
+  {
+    "id": 1004,
+    "name": "Startup Ventures",
+    "email": "cfo@startupventures.example.com",
+    "phone": "+1-555-0400",
+    "city": "Austin",
+    "country": "United States",
+    "customer_rank": 1,
+    "active": true,
+    "credit_limit": 15000.00,
+    "total_invoiced": 5250.00,
+    "total_due": 5250.00,
+    "payment_terms": "Due on Receipt"
+  },
+  {
+    "id": 1005,
+    "name": "Enterprise Systems Corp",
+    "email": "payments@esc.example.com",
+    "phone": "+1-555-0500",
+    "city": "Seattle",
+    "country": "United States",
+    "customer_rank": 10,
+    "active": true,
+    "credit_limit": 200000.00,
+    "total_invoiced": 350000.00,
+    "total_due": 0.00,
+    "payment_terms": "Net 30"
+  }
+]

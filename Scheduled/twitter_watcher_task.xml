@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+Personal AI Employee - Twitter Watcher Scheduled Task
+Gold Tier - G-M3-T07
+
+Purpose: Periodic Twitter mention/DM checking (every 10 minutes)
+Tier: Gold
+Task ID: PAI_Twitter_Watcher
+
+IMPORT INSTRUCTIONS:
+1. Update <Command> path to match your Python installation
+2. Update <WorkingDirectory> to your vault root
+3. Import: schtasks /Create /XML "Scheduled\twitter_watcher_task.xml" /TN "PAI_Twitter_Watcher"
+4. Verify: schtasks /Query /TN "PAI_Twitter_Watcher" /V /FO LIST
+5. Test run: schtasks /Run /TN "PAI_Twitter_Watcher"
+6. Delete: schtasks /Delete /TN "PAI_Twitter_Watcher" /F
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>2026-02-15T00:00:00</Date>
+    <Author>Personal AI Employee</Author>
+    <Description>Twitter watcher - checks for new mentions/DMs every 10 minutes</Description>
+    <URI>\Personal AI Employee\PAI_Twitter_Watcher</URI>
+  </RegistrationInfo>
+
+  <Triggers>
+    <CalendarTrigger>
+      <Repetition>
+        <Interval>PT10M</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+      <StartBoundary>2026-02-15T00:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+
+  <Actions Context="Author">
+    <Exec>
+      <Command>python</Command>
+      <Arguments>twitter_watcher_skill.py --mock --once</Arguments>
+      <WorkingDirectory>E:\Certified Cloud Native Generative and Agentic AI Engineer\Q4 part 2\Q4 part 2\Hackathon-0\Personal AI Employee</WorkingDirectory>
+    </Exec>
+  </Actions>
+
+  <Logging>
+    <Enabled>true</Enabled>
+  </Logging>
+</Task>

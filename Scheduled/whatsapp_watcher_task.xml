@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+Personal AI Employee - WhatsApp Watcher Scheduled Task
+Gold Tier - G-M3-T07
+
+Purpose: Periodic WhatsApp message checking (every 5 minutes)
+Tier: Gold
+Task ID: PAI_WhatsApp_Watcher
+
+IMPORT INSTRUCTIONS:
+1. Update <Command> path to match your Python installation
+2. Update <WorkingDirectory> to your vault root
+3. Import with:
+   schtasks /Create /XML "Scheduled\whatsapp_watcher_task.xml" /TN "PAI_WhatsApp_Watcher"
+
+4. Verify import:
+   schtasks /Query /TN "PAI_WhatsApp_Watcher" /V /FO LIST
+
+5. Test run:
+   schtasks /Run /TN "PAI_WhatsApp_Watcher"
+
+6. View logs:
+   cat Logs\whatsapp_watcher.log
+   cat system_log.md
+
+DELETE TASK:
+   schtasks /Delete /TN "PAI_WhatsApp_Watcher" /F
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>2026-02-15T00:00:00</Date>
+    <Author>Personal AI Employee</Author>
+    <Description>WhatsApp watcher - checks for new messages every 5 minutes (perception-only)</Description>
+    <URI>\Personal AI Employee\PAI_WhatsApp_Watcher</URI>
+  </RegistrationInfo>
+
+  <Triggers>
+    <!-- Repeat every 5 minutes indefinitely -->
+    <CalendarTrigger>
+      <Repetition>
+        <Interval>PT5M</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+      <StartBoundary>2026-02-15T00:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+
+  <Actions Context="Author">
+    <Exec>
+      <!-- UPDATE THIS PATH to your Python installation -->
+      <Command>python</Command>
+
+      <!-- Arguments: run whatsapp_watcher with mock mode -->
+      <Arguments>whatsapp_watcher_skill.py --mock --once</Arguments>
+
+      <!-- UPDATE THIS PATH to your vault root directory -->
+      <WorkingDirectory>E:\Certified Cloud Native Generative and Agentic AI Engineer\Q4 part 2\Q4 part 2\Hackathon-0\Personal AI Employee</WorkingDirectory>
+    </Exec>
+  </Actions>
+
+  <Logging>
+    <Enabled>true</Enabled>
+  </Logging>
+</Task>

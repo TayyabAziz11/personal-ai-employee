@@ -431,6 +431,446 @@ ls Plans/PLAN_*.md
 
 ---
 
+## 2.3 GOLD TIER AGENT SKILLS (Multi-Channel + Accounting + Reliability)
+
+**Gold Skills Pack Location:** `.claude/skills/` + vault root
+
+The Gold Tier extends Silver with multi-channel social integration (WhatsApp, LinkedIn, Twitter), Odoo accounting integration, MCP registry management, and autonomous orchestration.
+
+### Gold Tier Architecture
+
+**Core Principle:** Perception → Plan → Approval → Action → Logging (unchanged from Silver)
+
+**New Capabilities:**
+- Multi-channel social media monitoring + actions (WhatsApp, LinkedIn, Twitter/X)
+- Odoo Community accounting integration (invoices, payments, AR aging)
+- Weekly CEO briefing generation (cross-domain synthesis)
+- MCP registry management (tool discovery + graceful degradation)
+- Ralph Wiggum loop (bounded autonomous multi-step orchestration)
+
+### Gold Skills Reference Table (G-M2 + G-M5 + G-M6: MCP Registry + Odoo + Reporting)
+
+| Skill # | Skill Name | Implementation | Purpose |
+|---------|------------|----------------|---------|
+| **G-M2-H1** | mcp_helpers | `mcp_helpers.py` | PII redaction, rate limiting, disk space checks |
+| **G-M2-T04** | brain_mcp_registry_refresh | `brain_mcp_registry_refresh_skill.py` | MCP tool discovery + snapshot caching |
+| **G-M2-T06** | brain_handle_mcp_failure | `brain_handle_mcp_failure_skill.py` | Graceful degradation + remediation tasks |
+| **G-M5-T02** | odoo_watcher | `odoo_watcher_skill.py` | Odoo accounting perception (invoices, payments) |
+| **G-M5-T03** | brain_odoo_query_with_mcp | `brain_odoo_query_with_mcp_skill.py` | Read-only Odoo queries (no approval) |
+| **G-M5-T04** | brain_execute_odoo_with_mcp | `brain_execute_odoo_with_mcp_skill.py` | Odoo action execution (approval required) |
+| **G-M6-T01** | brain_generate_weekly_ceo_briefing | `brain_generate_weekly_ceo_briefing_skill.py` | Weekly executive briefing (8 sections) |
+| **G-M6-T02** | brain_generate_accounting_audit | `brain_generate_accounting_audit_skill.py` | Accounting audit report (AR aging + anomalies) |
+
+### Operational Details: mcp_helpers (G-M2-H1)
+
+**Purpose:** Utility library for MCP operations (privacy, reliability, safety)
+
+**Implementation:** `mcp_helpers.py` (vault root)
+
+**Functions:**
+1. **redact_pii(text):**
+   - Redacts email addresses → `[EMAIL_REDACTED]`
+   - Redacts phone numbers → `[PHONE_REDACTED]`
+   - Used in all social intake wrappers and logs
+   - Regex-based, handles multiple PII instances
+
+2. **rate_limit_and_backoff(max_retries=4):**
+   - Decorator for HTTP 429 handling
+   - Exponential backoff: 1s, 2s, 4s, 8s
+   - Logs retry attempts
+   - Raises exception after max retries
+
+3. **check_disk_space(min_free_mb=100):**
+   - Verifies sufficient disk space before file operations
+   - Uses shutil.disk_usage() for cross-platform compatibility
+   - Returns True if space sufficient, False otherwise
+
+**Test Coverage:** `tests/test_mcp_helpers.py`
+
+---
+
+### Operational Details: brain_mcp_registry_refresh (G-M2-T04)
+
+**Purpose:** Discover and cache MCP server tool lists for reliability and offline reference
+
+**Implementation:** `brain_mcp_registry_refresh_skill.py` (vault root)
+
+**CLI Flags:**
+- `--dry-run` — Simulate refresh without writing files
+- `--once` — Run once and exit (default behavior)
+- `--list-servers` — List configured MCP servers and exit
+- `--server <name>` — Refresh specific server only
+- `--mock` — Use mock data for testing (default: True until servers configured)
+
+**Configured MCP Servers:**
+1. whatsapp (WhatsApp integration)
+2. linkedin (LinkedIn integration)
+3. twitter (Twitter/X integration)
+4. odoo (Odoo accounting integration)
+
+**Outputs:**
+- `Logs/mcp_tools_snapshot_<server>.json` — Tool registry snapshot per server
+- `Logs/mcp_registry.log` — Refresh operation log
+- `system_log.md` — Summary entry appended
+- `Dashboard.md` — MCP Registry Status section updated
+
+**Snapshot Format:** See `Docs/mcp_tools_snapshot_example.json`
+
+**Graceful Degradation:**
+- If server unreachable → log error + continue to next server
+- Dashboard shows "Unreachable" status for failed servers
+- Operations continue (no total failure if one server down)
+
+**Scheduled Execution:** Daily at 2:00 AM UTC via `Scheduled/mcp_registry_refresh_task.xml`
+
+**Example Usage:**
+```bash
+# List configured servers
+python3 brain_mcp_registry_refresh_skill.py --list-servers
+
+# Dry-run (no files written)
+python3 brain_mcp_registry_refresh_skill.py --dry-run --mock
+
+# Refresh all servers (mock mode)
+python3 brain_mcp_registry_refresh_skill.py --mock --once
+
+# Refresh specific server
+python3 brain_mcp_registry_refresh_skill.py --server whatsapp --mock
+```
+
+**Definition of Done:**
+- [ ] Snapshot files created for all reachable servers
+- [ ] Dashboard.md MCP Registry Status table updated
+- [ ] system_log.md entry appended
+- [ ] Logging Requirements: mcp_registry.log + system_log.md
+
+---
+
+### Operational Details: brain_handle_mcp_failure (G-M2-T06)
+
+**Purpose:** Standard MCP failure handling - log, create remediation task, continue operations
+
+**Implementation:** `brain_handle_mcp_failure_skill.py` (vault root)
+
+**CLI Flags:**
+- `--failure-type <type>` — Required: connection_timeout | auth_failure | rate_limit | server_error
+- `--server-name <name>` — Required: Name of failed MCP server
+- `--error-message <msg>` — Required: Error message details
+
+**Supported Failure Types:**
+1. **connection_timeout** — Server unreachable or network timeout
+2. **auth_failure** — Authentication/credentials invalid or expired
+3. **rate_limit** — HTTP 429 rate limit exceeded
+4. **server_error** — Server error (5xx status codes)
+
+**Outputs:**
+- `Logs/mcp_failures.log` — JSON failure log (append-only)
+- `Needs_Action/remediation__mcp__<server>__YYYYMMDD-HHMM.md` — Remediation task
+- `system_log.md` — Failure entry appended
+
+**Remediation Task Format:**
+```yaml
+---
+id: remediation_mcp_<server>_<timestamp>
+source: mcp_failure_handler
+failure_type: <type>
+server_name: <server>
+status: pending
+priority: high
+plan_required: false
+---
+```
+
+**CRITICAL Failure Handling Rule:**
+- NEVER claim success when MCP failed
+- Create remediation task + log error + continue operations
+- Human intervention required to resolve
+- Test fix with: `python3 brain_mcp_registry_refresh_skill.py --server <name>`
+
+**Example Usage:**
+```bash
+# Handle connection timeout
+python3 brain_handle_mcp_failure_skill.py \
+  --failure-type connection_timeout \
+  --server-name whatsapp \
+  --error-message "Connection timeout after 30s"
+
+# Handle auth failure
+python3 brain_handle_mcp_failure_skill.py \
+  --failure-type auth_failure \
+  --server-name odoo \
+  --error-message "Invalid API key"
+```
+
+**Definition of Done:**
+- [ ] Failure logged to Logs/mcp_failures.log (JSON format)
+- [ ] Remediation task created in Needs_Action/
+- [ ] system_log.md entry appended
+- [ ] Recommended actions included based on failure type
+- [ ] Logging Requirements: mcp_failures.log + system_log.md
+
+---
+
+### Operational Details: odoo_watcher (G-M5-T02)
+
+**Purpose:** Perception-only Odoo accounting watcher - detects overdue invoices and accounting alerts
+
+**Implementation:** `odoo_watcher_skill.py` (vault root)
+
+**Type:** PERCEPTION ONLY (creates intake wrappers, never executes actions)
+
+**CLI Flags:**
+- `--once` — Run once and exit (default)
+- `--dry-run` — Simulate run without creating files
+- `--mode <mock|mcp>` — Data source: mock (default) or mcp (requires credentials)
+- `--max-results <n>` — Maximum invoices to process (default: 10)
+- `--reset-checkpoint` — Reset checkpoint before running
+- `--verbose` — Enable verbose logging
+
+**Data Sources:**
+- **Mock Mode:** `templates/mock_odoo_invoices.json` (5 sample invoices)
+- **MCP Mode:** Odoo JSON-RPC via query tools (list_unpaid_invoices)
+
+**Outputs:**
+- **Intake Wrappers:** `Business/Accounting/intake__odoo__YYYYMMDD-HHMM__<customer>.md`
+- **Checkpoint:** `Logs/odoo_watcher_checkpoint.json` (last 500 processed IDs)
+- **Logs:** `Logs/odoo_watcher.log` + `system_log.md`
+
+**Example Usage:**
+```bash
+# Dry-run in mock mode
+python3 odoo_watcher_skill.py --mode mock --once --dry-run --max-results 3
+
+# Real run in mock mode (creates intake wrappers)
+python3 odoo_watcher_skill.py --mode mock --once --max-results 5
+```
+
+**Scheduled Execution:** Hourly via `Scheduled/odoo_watcher_task.xml`
+
+**Definition of Done:**
+- [ ] Intake wrappers created in Business/Accounting/
+- [ ] Checkpoint updated with processed invoice IDs
+- [ ] Logs updated (odoo_watcher.log + system_log.md)
+- [ ] PII redacted in excerpts
+- [ ] No Odoo actions executed (perception-only verified)
+
+---
+
+### Operational Details: brain_odoo_query_with_mcp (G-M5-T03)
+
+**Purpose:** Read-only Odoo queries via MCP or mock (NO approval required)
+
+**Implementation:** `brain_odoo_query_with_mcp_skill.py` (vault root)
+
+**Type:** QUERY ONLY (read-only, no approval gates)
+
+**CLI Flags:**
+- `--operation <operation>` — Required: Query operation to execute
+- `--mode <mock|mcp>` — Data source: mock (default) or mcp (requires credentials)
+- `--report` — Generate markdown report in Business/Accounting/Reports/
+- `--verbose` — Enable verbose logging
+
+**Supported Operations:**
+1. **list_unpaid_invoices** — List all unpaid/partially paid invoices
+2. **revenue_summary** — Total invoiced, paid, outstanding
+3. **ar_aging_summary** — Accounts receivable aging breakdown
+4. **list_customers** — Customer list with invoice totals
+
+**Example Usage:**
+```bash
+# Query unpaid invoices (mock mode)
+python3 brain_odoo_query_with_mcp_skill.py --operation list_unpaid_invoices --mode mock
+
+# Generate revenue summary with report
+python3 brain_odoo_query_with_mcp_skill.py --operation revenue_summary --mode mock --report
+```
+
+**Definition of Done:**
+- [ ] Query executed successfully (mock or MCP)
+- [ ] Result printed to console (JSON format)
+- [ ] Optional report generated in Business/Accounting/Reports/
+- [ ] Query logged to Logs/mcp_actions.log with mode=query
+- [ ] PII redacted in logs
+
+---
+
+### Operational Details: brain_execute_odoo_with_mcp (G-M5-T04)
+
+**Purpose:** Execute approved Odoo actions via MCP or mock (APPROVAL REQUIRED)
+
+**Implementation:** `brain_execute_odoo_with_mcp_skill.py` (vault root)
+
+**Type:** ACTION LAYER (approval mandatory, dry-run default)
+
+**CLI Flags:**
+- `--execute` — Execute actions (default is dry-run)
+- `--mode <mock|mcp>` — Execution mode: mock (default) or mcp (requires credentials)
+- `--verbose` — Enable verbose logging
+
+**Supported Actions (Approval Required):**
+1. **create_customer** — Create new customer record
+2. **create_invoice** — Create invoice (draft state)
+3. **post_invoice** — Post invoice (validate and make official)
+4. **register_payment** — Register customer payment
+5. **create_credit_note** — Create credit note for returns/adjustments
+
+**Example Usage:**
+```bash
+# Dry-run (preview only, default)
+python3 brain_execute_odoo_with_mcp_skill.py
+
+# Execute approved plan (simulated, mock mode)
+python3 brain_execute_odoo_with_mcp_skill.py --execute --mode mock
+```
+
+**Definition of Done:**
+- [ ] Approved plan found and parsed successfully
+- [ ] All actions validated (required fields, constraints)
+- [ ] Dry-run preview shows detailed action info
+- [ ] Execute mode logs to mcp_actions.log (JSON)
+- [ ] Plan moved to completed/ or failed/
+- [ ] Dashboard "Last External Action (Gold)" updated
+- [ ] Remediation task created on failure
+- [ ] Logging Requirements: mcp_actions.log + system_log.md
+
+---
+
+### Operational Details: brain_generate_weekly_ceo_briefing (G-M6-T01)
+
+**Purpose:** Generate weekly executive briefing (cross-domain synthesis)
+
+**Implementation:** `brain_generate_weekly_ceo_briefing_skill.py` (vault root)
+
+**Type:** REPORT-ONLY (no approval gates, no external actions)
+
+**CLI Flags:**
+- `--week-start YYYY-MM-DD` — Week start date (default: current week Monday)
+- `--mode <mock|live>` — Data gathering mode (default: mock)
+- `--output <path>` — Optional output path override
+- `--verbose` — Enable verbose logging
+
+**Output:** `Business/Briefings/CEO_Briefing__YYYY-WW.md`
+
+**8 Required Sections:**
+1. KPIs - System health metrics
+2. Wins - Recent accomplishments
+3. Risks - Identified issues
+4. Outstanding Invoices + AR Aging - Financial status
+5. Social Performance - Social media activity
+6. Next Week Priorities - Goals and focus areas
+7. Pending Approvals - Action queue
+8. Summary - Executive overview
+
+**Data Sources (Graceful Degradation):**
+- `system_log.md` — Primary timeline
+- `Logs/mcp_actions.log` — MCP statistics
+- `Social/Summaries/` or `Social/Inbox/` — Social metrics
+- `Business/Goals/` — Strategic goals
+- `Business/Accounting/Reports/` — Odoo metrics
+- `Pending_Approval/` — Approval queue
+
+**Data Confidence Scoring:**
+- **High:** Data source exists and parsed successfully
+- **Medium:** Data source exists but incomplete or estimated
+- **Low:** Data source missing or unavailable
+
+**Example Usage:**
+```bash
+# Generate briefing for current week (mock mode)
+python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock
+
+# Generate briefing for specific week
+python3 brain_generate_weekly_ceo_briefing_skill.py --week-start 2026-02-10 --mode mock
+
+# Generate in live mode (real data gathering)
+python3 brain_generate_weekly_ceo_briefing_skill.py --mode live
+```
+
+**Scheduled Execution:** Weekly on Sunday at 23:59 UTC via `Scheduled/weekly_ceo_briefing_task.xml`
+
+**Definition of Done:**
+- [ ] Briefing generated with all 8 sections
+- [ ] Data confidence score included per section
+- [ ] Output file in Business/Briefings/
+- [ ] system_log.md updated
+- [ ] NO external actions executed
+
+---
+
+### Operational Details: brain_generate_accounting_audit (G-M6-T02)
+
+**Purpose:** Generate comprehensive accounting audit report
+
+**Implementation:** `brain_generate_accounting_audit_skill.py` (vault root)
+
+**Type:** REPORT-ONLY (no approval gates, no external actions)
+
+**CLI Flags:**
+- `--as-of YYYY-MM-DD` — As-of date for audit (default: today)
+- `--mode <mock|mcp>` — Data source mode (default: mock)
+- `--verbose` — Enable verbose logging
+
+**Output:** `Business/Accounting/Reports/accounting_audit__YYYY-MM-DD.md`
+
+**Report Includes:**
+- **AR Aging Summary:** Buckets (0-30, 31-60, 61-90, 90+ days)
+- **Top Unpaid Invoices:** Top 10 by amount
+- **Anomalies Detection:**
+  - Invoices overdue > 90 days
+  - Outstanding % > 40%
+  - Sudden jump in overdue count
+- **Recommended Actions:** (NOT executed, suggestions only)
+
+**Example Usage:**
+```bash
+# Generate audit for today (mock mode)
+python3 brain_generate_accounting_audit_skill.py --mode mock
+
+# Generate audit for specific date
+python3 brain_generate_accounting_audit_skill.py --as-of 2026-02-15 --mode mock
+
+# Generate in MCP mode (requires Odoo configured)
+python3 brain_generate_accounting_audit_skill.py --mode mcp
+```
+
+**Definition of Done:**
+- [ ] AR aging summary calculated
+- [ ] Top 10 unpaid invoices listed
+- [ ] Anomalies detected and reported
+- [ ] Recommended actions included (NOT executed)
+- [ ] Output file in Business/Accounting/Reports/
+- [ ] system_log.md updated
+- [ ] PII redacted in logs
+
+---
+
+### Gold Tier Vault Extensions
+
+**New Directories (G-M1):**
+- `Social/Inbox/` — Social media intake wrappers (WhatsApp, LinkedIn, Twitter)
+- `Social/Summaries/` — Daily/weekly social summaries
+- `Social/Analytics/` — Social performance metrics
+- `Business/Goals/` — Strategic goals and OKRs
+- `Business/Briefings/` — Weekly CEO briefings
+- `Business/Accounting/` — Accounting audit reports
+- `Business/Clients/` — Client information
+- `Business/Invoices/` — Invoice tracking
+- `MCP/` — MCP registry snapshots and server notes
+
+**New Templates (G-M1):**
+- `templates/social_intake_wrapper_template.md` — Social media intake format (9 YAML fields)
+- `templates/ceo_briefing_template.md` — Weekly CEO briefing format (8 sections)
+
+**Privacy Protection (.gitignored):**
+- All social intake wrappers (PII redacted in excerpts, full content gitignored)
+- All business content (goals, briefings, accounting, clients, invoices)
+- MCP tool snapshots (contain server capabilities)
+- Watcher checkpoint files
+
+**For complete Gold Tier specification, see:** `specs/001-gold-tier-full/spec.md`
+
+---
+
 ## 3. WATCHER SYSTEM
 
 ### Bronze Tier: Filesystem Watcher (watcher_skill)
@@ -1160,6 +1600,43 @@ The AI Employee operates in this cycle:
 - Updated Section 3 (Watcher System) with new flags documentation
 - All existing functionality preserved (100% backward compatible)
 - Standard library only (no external dependencies)
+
+**2026-02-15 (21:50 UTC):** Gold Tier - G-M2: MCP Registry + Reliability Core:
+- Implemented mcp_helpers.py with PII redaction, rate limiting, disk space checks
+- Created brain_mcp_registry_refresh_skill.py (MCP tool discovery + snapshot caching)
+- Created brain_handle_mcp_failure_skill.py (graceful degradation + remediation tasks)
+- Added MCP tools snapshot example: Docs/mcp_tools_snapshot_example.json
+- Created Windows Task Scheduler XML: Scheduled/mcp_registry_refresh_task.xml
+- Added comprehensive test suite: tests/test_mcp_helpers.py (100% passing)
+- Updated Dashboard.md with MCP Registry Status section
+- Added Section 2.3: Gold Tier Agent Skills documentation
+- Mock mode support for testing without real MCP server connections
+- Configured 4 MCP servers: whatsapp, linkedin, twitter, odoo
+- All G-M2 tasks completed (8/8) - ready for G-M3 watchers
+
+**2026-02-16 (07:15 UTC):** Gold Tier - G-M5: Odoo MCP Integration (Query → Action):
+- Created Docs/mcp_odoo_setup.md (comprehensive Odoo setup documentation)
+- Implemented odoo_watcher_skill.py (perception-only watcher with --mode mock|mcp)
+- Implemented brain_odoo_query_with_mcp_skill.py (read-only queries, no approval)
+- Implemented brain_execute_odoo_with_mcp_skill.py (action executor, approval required)
+- Created templates/mock_odoo_invoices.json (5 sample invoices for testing)
+- Created Approved/plan__demo_odoo__20260216-1000.md (example Odoo plan)
+- Created Scheduled/odoo_watcher_task.xml (hourly scheduling template)
+- Updated Dashboard.md with Accounting Status section (detailed G-M5 progress)
+- Updated Company_Handbook.md Section 2.3 with G-M5 skills documentation
+- End-to-end testing complete: watcher (2 intake wrappers), query (1 report), executor (dry-run + execute)
+- All G-M5 deliverables complete (7/7) - ready for G-M6 briefing generation
+
+**2026-02-16 (08:10 UTC):** Gold Tier - G-M6: Weekly CEO Briefing + Accounting Audit:
+- Created brain_generate_weekly_ceo_briefing_skill.py (8-section executive briefing)
+- Created brain_generate_accounting_audit_skill.py (AR aging + anomaly detection)
+- Created Scheduled/weekly_ceo_briefing_task.xml (weekly Sunday 23:59 UTC)
+- Updated Dashboard.md with Latest CEO Briefing and Accounting Audit links
+- Updated Company_Handbook.md Section 2.3 with G-M6 skills documentation
+- Features: Data confidence scoring, graceful degradation, cross-domain synthesis
+- Reports: Business/Briefings/CEO_Briefing__YYYY-WW.md + Business/Accounting/Reports/accounting_audit__YYYY-MM-DD.md
+- Testing complete: Both skills generate reports successfully in mock mode
+- All G-M6 deliverables complete (5/5) - ready for G-M7 Ralph loop orchestrator
 
 ---
 

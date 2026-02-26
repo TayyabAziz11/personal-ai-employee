@@ -60,6 +60,58 @@ token.json
 *.secret*
 Logs/gmail_checkpoint.json
 
+# Gold Tier - MCP snapshots and checkpoints
+Logs/mcp_tools_snapshot_*.json
+Logs/*_watcher_checkpoint.json
+Logs/*_checkpoint.json
+Logs/*.pid
+Logs/wa_auto_reply_checkpoint.json
+
+# Gold Tier - nested skills runtime artifacts
+src/personal_ai_employee/skills/gold/Logs/
+**/ralph_loop.log
+
+# Next.js build artifacts
+apps/web/.next/
+apps/web/tsconfig.tsbuildinfo
+apps/web/tsconfig*.tsbuildinfo
+
+# Node modules
+node_modules/
+apps/web/node_modules/
+
+# Gold Tier - Social intake wrappers (privacy)
+Social/Inbox/*
+!Social/Inbox/README.md
+!Social/Inbox/.gitkeep
+Social/Summaries/*
+!Social/Summaries/README.md
+!Social/Summaries/.gitkeep
+Social/Analytics/*
+!Social/Analytics/README.md
+!Social/Analytics/.gitkeep
+
+# Gold Tier - Business content (privacy)
+Business/Goals/*
+!Business/Goals/README.md
+!Business/Goals/.gitkeep
+!Business/Goals/2026_Q1_goals.md
+Business/Briefings/*
+!Business/Briefings/README.md
+!Business/Briefings/.gitkeep
+Business/Accounting/*
+!Business/Accounting/README.md
+!Business/Accounting/.gitkeep
+Business/Clients/*
+!Business/Clients/README.md
+!Business/Clients/.gitkeep
+Business/Invoices/*
+!Business/Invoices/README.md
+!Business/Invoices/.gitkeep
+
+# Gold Tier - MCP notes (tracked)
+# MCP/*.md files are tracked for configuration notes
+
 # Backup files
 *.bak
 *.backup
@@ -80,3 +132,8 @@ Daily_Summaries/*.md
 # Completed/failed plans (user-specific)
 Plans/completed/
 Plans/failed/
+
+# WhatsApp Web session data (contains auth cookies — never commit)
+.secrets/whatsapp_session/
+.secrets/whatsapp_session_meta.json
+~/.personal_ai_employee/whatsapp_session/

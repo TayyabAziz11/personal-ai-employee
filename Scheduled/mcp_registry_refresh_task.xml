@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+Personal AI Employee - MCP Registry Refresh Scheduled Task
+Gold Tier - G-M2-T08
+
+Purpose: Daily MCP tool registry refresh at 2:00 AM UTC
+Tier: Gold
+Task ID: PAI_MCP_Registry_Refresh
+
+IMPORT INSTRUCTIONS:
+1. Update <Command> path to match your Python installation
+2. Update <WorkingDirectory> to your vault root
+3. Import with:
+   schtasks /Create /XML "Scheduled\mcp_registry_refresh_task.xml" /TN "PAI_MCP_Registry_Refresh"
+
+4. Verify import:
+   schtasks /Query /TN "PAI_MCP_Registry_Refresh" /V /FO LIST
+
+5. Test run:
+   schtasks /Run /TN "PAI_MCP_Registry_Refresh"
+
+6. View logs:
+   cat Logs\mcp_registry.log
+   cat system_log.md
+
+DELETE TASK:
+   schtasks /Delete /TN "PAI_MCP_Registry_Refresh" /F
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>2026-02-15T00:00:00</Date>
+    <Author>Personal AI Employee</Author>
+    <Description>Daily MCP registry refresh - discovers available tools from all MCP servers</Description>
+    <URI>\Personal AI Employee\PAI_MCP_Registry_Refresh</URI>
+  </RegistrationInfo>
+
+  <Triggers>
+    <!-- Daily at 2:00 AM UTC -->
+    <CalendarTrigger>
+      <StartBoundary>2026-02-15T02:00:00Z</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+
+  <Actions Context="Author">
+    <Exec>
+      <!-- UPDATE THIS PATH to your Python installation -->
+      <Command>python</Command>
+
+      <!-- Arguments: run brain_mcp_registry_refresh with mock mode -->
+      <Arguments>brain_mcp_registry_refresh_skill.py --mock --once</Arguments>
+
+      <!-- UPDATE THIS PATH to your vault root directory -->
+      <WorkingDirectory>E:\Certified Cloud Native Generative and Agentic AI Engineer\Q4 part 2\Q4 part 2\Hackathon-0\Personal AI Employee</WorkingDirectory>
+    </Exec>
+  </Actions>
+
+  <!-- Logging Configuration -->
+  <Logging>
+    <Enabled>true</Enabled>
+  </Logging>
+</Task>

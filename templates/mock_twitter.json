@@ -1,0 +1,54 @@
+[
+  {
+    "id": "twitter_mention_001",
+    "type": "mention",
+    "handle": "@techexpert_ai",
+    "sender_name": "Tech Expert",
+    "text": "@youraccount Your recent post on AI agents was spot-on! Would love to collaborate. DM me at techexpert@innovation.com",
+    "timestamp": "2026-02-15T10:30:00Z",
+    "tweet_id": "1234567890123456789",
+    "in_reply_to_tweet_id": "1234567890123456780",
+    "urgent": false
+  },
+  {
+    "id": "twitter_dm_002",
+    "type": "dm",
+    "handle": "@startup_founder",
+    "sender_name": "Startup Founder",
+    "text": "Hi! Saw your work on automation. We need help ASAP with our customer support system. Can we talk? +1-650-555-9876",
+    "timestamp": "2026-02-15T12:15:00Z",
+    "conversation_id": "dm_conv_12345",
+    "urgent": true
+  },
+  {
+    "id": "twitter_mention_003",
+    "type": "mention",
+    "handle": "@data_scientist_pro",
+    "sender_name": "Data Scientist Pro",
+    "text": "@youraccount Great thread on MCP! This is exactly what we need for our ML pipelines. Following for more insights.",
+    "timestamp": "2026-02-15T08:00:00Z",
+    "tweet_id": "1234567890123456790",
+    "urgent": false
+  },
+  {
+    "id": "twitter_search_004",
+    "type": "keyword_match",
+    "handle": "@enterprise_cto",
+    "sender_name": "Enterprise CTO",
+    "text": "Looking for AI automation consultants. Anyone have recommendations for multi-agent systems? #AIautomation #consulting",
+    "timestamp": "2026-02-15T14:45:00Z",
+    "tweet_id": "1234567890123456791",
+    "matched_keywords": ["AI automation", "consulting"],
+    "urgent": false
+  },
+  {
+    "id": "twitter_dm_005",
+    "type": "dm",
+    "handle": "@agency_director",
+    "sender_name": "Agency Director",
+    "text": "URGENT: Client project deadline approaching. Need AI integration support this week. Please respond ASAP. Email: director@agency.com",
+    "timestamp": "2026-02-15T16:00:00Z",
+    "conversation_id": "dm_conv_67890",
+    "urgent": true
+  }
+]

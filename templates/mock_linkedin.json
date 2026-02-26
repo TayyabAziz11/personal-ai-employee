@@ -1,0 +1,52 @@
+[
+  {
+    "id": "linkedin_notif_001",
+    "type": "comment",
+    "sender": "https://linkedin.com/in/alexchen",
+    "sender_name": "Alex Chen",
+    "body": "Great insights on AI automation! We should discuss how this applies to our industry. Can you email me at alex.chen@techcorp.com?",
+    "timestamp": "2026-02-15T11:30:00Z",
+    "post_id": "post_12345",
+    "comment_id": "comment_67890",
+    "urgent": false
+  },
+  {
+    "id": "linkedin_msg_002",
+    "type": "message",
+    "sender": "https://linkedin.com/in/emilywang",
+    "sender_name": "Emily Wang",
+    "body": "Hi! I saw your profile and think you'd be perfect for a consulting project we have. Are you available for a quick call this week?",
+    "timestamp": "2026-02-15T09:45:00Z",
+    "thread_id": "dm_emily_001",
+    "urgent": true
+  },
+  {
+    "id": "linkedin_post_003",
+    "type": "mention",
+    "sender": "https://linkedin.com/in/davidlee",
+    "sender_name": "David Lee",
+    "body": "@yourprofile check out this article on multi-agent systems: https://example.com/article. Thought you might find it interesting!",
+    "timestamp": "2026-02-15T14:00:00Z",
+    "post_id": "post_23456",
+    "urgent": false
+  },
+  {
+    "id": "linkedin_notif_004",
+    "type": "connection_request",
+    "sender": "https://linkedin.com/in/sophiamartinez",
+    "sender_name": "Sophia Martinez",
+    "body": "I'd like to connect. I'm interested in AI solutions for enterprise automation.",
+    "timestamp": "2026-02-15T13:15:00Z",
+    "urgent": false
+  },
+  {
+    "id": "linkedin_msg_005",
+    "type": "message",
+    "sender": "https://linkedin.com/in/michaelbrown",
+    "sender_name": "Michael Brown",
+    "body": "URGENT: Our team needs help with a critical integration issue. Can you provide support? Contact: michael.brown@startup.io or +1-415-555-0123",
+    "timestamp": "2026-02-15T15:50:00Z",
+    "thread_id": "dm_michael_002",
+    "urgent": true
+  }
+]

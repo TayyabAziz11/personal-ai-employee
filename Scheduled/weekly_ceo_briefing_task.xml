@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Weekly CEO Briefing Scheduled Task
+Gold Tier - G-M6: Weekly CEO Briefing + Accounting Audit
+
+Purpose: Generate weekly executive briefing every Sunday at 23:59 UTC
+Tier: Gold
+Skill ID: G-M6-T03
+
+IMPORTANT: This is a TEMPLATE. Do not auto-execute.
+Follow Company_Handbook.md for scheduler setup instructions.
+-->
+
+<ScheduledTask version="1.0">
+  <Metadata>
+    <Name>Weekly CEO Briefing</Name>
+    <Description>Generate weekly executive summary (system health + social + accounting + goals)</Description>
+    <Tier>Gold</Tier>
+    <SkillID>G-M6-T03</SkillID>
+    <Created>2026-02-16T07:30:00Z</Created>
+    <LastModified>2026-02-16T07:30:00Z</LastModified>
+  </Metadata>
+
+  <Schedule>
+    <!-- Weekly: Every Sunday at 23:59 UTC -->
+    <Frequency>weekly</Frequency>
+    <CronExpression>59 23 * * 0</CronExpression>
+    <Description>Run weekly on Sunday at 23:59 UTC (end of week)</Description>
+
+    <!-- Alternative: Monday morning for week-ahead planning -->
+    <!-- Uncomment to use Monday 00:01 UTC instead:
+    <Frequency>weekly</Frequency>
+    <CronExpression>1 0 * * 1</CronExpression>
+    <Description>Run weekly on Monday at 00:01 UTC (start of week)</Description>
+    -->
+  </Schedule>
+
+  <Execution>
+    <Command>python3</Command>
+    <Script>scripts/scheduler_runner.py</Script>
+    <Arguments>
+      <Argument>--task</Argument>
+      <Argument>weekly_ceo_briefing</Argument>
+    </Arguments>
+    <WorkingDirectory>.</WorkingDirectory>
+    <Timeout>600</Timeout>  <!-- 10 minutes -->
+  </Execution>
+
+  <Configuration>
+    <Mode>mock</Mode>  <!-- Change to 'live' when social/Odoo systems fully operational -->
+    <AutoWeekDetect>true</AutoWeekDetect>  <!-- Auto-detect current week start -->
+
+    <!-- Data Sources (graceful if missing) -->
+    <DataSources>
+      <Source>system_log.md</Source>
+      <Source>Logs/mcp_actions.log</Source>
+      <Source>Social/Summaries/ or Social/Inbox/</Source>
+      <Source>Business/Goals/</Source>
+      <Source>Business/Accounting/Reports/</Source>
+      <Source>Pending_Approval/</Source>
+    </DataSources>
+
+    <!-- Output -->
+    <OutputDirectory>Business/Briefings</OutputDirectory>
+    <OutputFormat>CEO_Briefing__YYYY-WW.md</OutputFormat>
+    <LogFile>Logs/scheduler.log</LogFile>
+  </Configuration>
+
+  <Scheduler_Runner_Integration>
+    <!-- Ensure scheduler_runner.py handles 'weekly_ceo_briefing' task -->
+    <TaskName>weekly_ceo_briefing</TaskName>
+    <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
+    <Description>Generates executive briefing with 8 sections and confidence scoring</Description>
+    <NoApprovalRequired>true</NoApprovalRequired>
+    <ReportOnly>true</ReportOnly>
+  </Scheduler_Runner_Integration>
+
+  <Notifications>
+    <!-- Optional: Create notification on success -->
+    <OnSuccess>
+      <Action>append_to_log</Action>
+      <Destination>system_log.md</Destination>
+    </OnSuccess>
+
+    <!-- Optional: Create notification on error -->
+    <OnError>
+      <Action>append_to_log</Action>
+      <Destination>system_log.md</Destination>
+      <Message>CEO briefing generation failed - check Logs/scheduler.log</Message>
+    </OnError>
+  </Notifications>
+
+  <Setup>
+    <Prerequisites>
+      <Item>brain_generate_weekly_ceo_briefing_skill.py exists</Item>
+      <Item>scheduler_runner.py configured to handle 'weekly_ceo_briefing' task</Item>
+      <Item>Business/Briefings/ directory exists</Item>
+      <Item>system_log.md exists (primary data source)</Item>
+    </Prerequisites>
+
+    <SetupSteps>
+      <Step order="1">Review Company_Handbook.md Section 2.3 (Gold Skills)</Step>
+      <Step order="2">Test manually: python3 brain_generate_weekly_ceo_briefing_skill.py --mode mock</Step>
+      <Step order="3">Verify output in Business/Briefings/CEO_Briefing__YYYY-WW.md</Step>
+      <Step order="4">Update scheduler_runner.py to handle 'weekly_ceo_briefing' task</Step>
+      <Step order="5">Configure scheduler (cron/systemd/Task Scheduler) using cron expression above</Step>
+      <Step order="6">Monitor Logs/scheduler.log for execution confirmation</Step>
+    </SetupSteps>
+  </Setup>
+
+  <Examples>
+    <!-- Manual runs for testing -->
+    <Example>
+      <Description>Generate briefing for current week (mock mode)</Description>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode mock</Command>
+    </Example>
+
+    <Example>
+      <Description>Generate briefing for specific week (mock mode)</Description>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --week-start 2026-02-10 --mode mock</Command>
+    </Example>
+
+    <Example>
+      <Description>Generate briefing in live mode (real data gathering)</Description>
+      <Command>python3 scripts/brain_generate_weekly_ceo_briefing_skill.py --mode live</Command>
+    </Example>
+
+    <Example>
+      <Description>Run via scheduler_runner</Description>
+      <Command>python3 scripts/scheduler_runner.py --task weekly_ceo_briefing</Command>
+    </Example>
+  </Examples>
+
+  <Monitoring>
+    <Metrics>
+      <Metric>Briefing generated successfully (true/false)</Metric>
+      <Metric>Data confidence scores per section (high/medium/low)</Metric>
+      <Metric>Execution duration</Metric>
+      <Metric>Data sources accessed</Metric>
+    </Metrics>
+
+    <Logs>
+      <Log>Logs/scheduler.log</Log>
+      <Log>system_log.md</Log>
+      <Log>Business/Briefings/CEO_Briefing__YYYY-WW.md (output)</Log>
+    </Logs>
+
+    <Alerts>
+      <Alert condition="generation_failed">Check Logs/scheduler.log for errors</Alert>
+      <Alert condition="data_confidence_all_low">Verify data sources exist and are accessible</Alert>
+      <Alert condition="execution_timeout">Increase timeout or reduce data gathering scope</Alert>
+    </Alerts>
+  </Monitoring>
+
+  <References>
+    <Document>Company_Handbook.md (Section 2.3: Gold Skills)</Document>
+    <Document>templates/ceo_briefing_template.md</Document>
+    <Document>Dashboard.md (Latest CEO Briefing link)</Document>
+  </References>
+</ScheduledTask>

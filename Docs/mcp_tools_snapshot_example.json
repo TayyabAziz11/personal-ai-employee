@@ -1,0 +1,150 @@
+{
+  "server_name": "whatsapp",
+  "status": "reachable",
+  "snapshot_timestamp": "2026-02-15T14:30:00Z",
+  "version": "1.0",
+  "tool_count": 5,
+  "tools": [
+    {
+      "name": "whatsapp.send_message",
+      "description": "Send a WhatsApp message to a contact or group",
+      "category": "action",
+      "approval_required": true,
+      "parameters": {
+        "to": {
+          "type": "string",
+          "required": true,
+          "description": "Phone number or contact ID"
+        },
+        "message": {
+          "type": "string",
+          "required": true,
+          "description": "Message content (max 4096 characters)"
+        },
+        "media_url": {
+          "type": "string",
+          "required": false,
+          "description": "Optional media attachment URL"
+        }
+      },
+      "returns": {
+        "type": "object",
+        "fields": {
+          "message_id": "string",
+          "status": "string",
+          "timestamp": "string"
+        }
+      }
+    },
+    {
+      "name": "whatsapp.reply_message",
+      "description": "Reply to a specific WhatsApp message",
+      "category": "action",
+      "approval_required": true,
+      "parameters": {
+        "message_id": {
+          "type": "string",
+          "required": true,
+          "description": "ID of message to reply to"
+        },
+        "reply": {
+          "type": "string",
+          "required": true,
+          "description": "Reply message content"
+        }
+      },
+      "returns": {
+        "type": "object",
+        "fields": {
+          "message_id": "string",
+          "status": "string"
+        }
+      }
+    },
+    {
+      "name": "whatsapp.list_messages",
+      "description": "List recent WhatsApp messages",
+      "category": "query",
+      "approval_required": false,
+      "parameters": {
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 10,
+          "description": "Number of messages to retrieve (max 100)"
+        },
+        "since": {
+          "type": "string",
+          "required": false,
+          "description": "ISO timestamp - only messages after this time"
+        }
+      },
+      "returns": {
+        "type": "array",
+        "items": {
+          "message_id": "string",
+          "from": "string",
+          "timestamp": "string",
+          "preview": "string"
+        }
+      }
+    },
+    {
+      "name": "whatsapp.get_message",
+      "description": "Get full details of a specific message",
+      "category": "query",
+      "approval_required": false,
+      "parameters": {
+        "message_id": {
+          "type": "string",
+          "required": true,
+          "description": "Message ID to retrieve"
+        }
+      },
+      "returns": {
+        "type": "object",
+        "fields": {
+          "message_id": "string",
+          "from": "string",
+          "to": "string",
+          "timestamp": "string",
+          "content": "string",
+          "media_url": "string or null",
+          "status": "string"
+        }
+      }
+    },
+    {
+      "name": "whatsapp.broadcast_message",
+      "description": "Send message to multiple contacts (broadcast list)",
+      "category": "action",
+      "approval_required": true,
+      "parameters": {
+        "contacts": {
+          "type": "array",
+          "required": true,
+          "description": "Array of phone numbers or contact IDs"
+        },
+        "message": {
+          "type": "string",
+          "required": true,
+          "description": "Broadcast message content"
+        }
+      },
+      "returns": {
+        "type": "object",
+        "fields": {
+          "broadcast_id": "string",
+          "sent_count": "integer",
+          "failed_count": "integer"
+        }
+      }
+    }
+  ],
+  "notes": [
+    "All 'action' category tools require human-in-the-loop approval",
+    "Query tools can be called directly for read-only operations",
+    "Tool discovery runs daily via brain_mcp_registry_refresh skill",
+    "Snapshot format version 1.0 (Gold Tier - G-M2)"
+  ]
+}

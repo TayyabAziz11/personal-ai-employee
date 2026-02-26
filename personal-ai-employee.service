@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Personal AI Employee — systemd user service (auto-start on login / WSL boot)
+#
+# Install (run once):
+#   mkdir -p ~/.config/systemd/user
+#   cp personal-ai-employee.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable personal-ai-employee
+#   systemctl --user start personal-ai-employee
+#
+# Day-to-day commands:
+#   systemctl --user status  personal-ai-employee
+#   systemctl --user stop    personal-ai-employee
+#   systemctl --user restart personal-ai-employee
+#   journalctl --user -u personal-ai-employee -f   # follow logs
+# ─────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=Personal AI Employee — 24/7 Agent Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# ── Change this to your actual repo path ─────────────────────────────────────
+WorkingDirectory=/mnt/e/Certified Cloud Native Generative and Agentic AI Engineer/Q4 part 2/Q4 part 2/Hackathon-0/Personal AI Employee
+
+ExecStart=/usr/bin/python3 /mnt/e/Certified Cloud Native Generative and Agentic AI Engineer/Q4 part 2/Q4 part 2/Hackathon-0/Personal AI Employee/scripts/agent_daemon.py
+
+# Restart automatically if it crashes (back off 10 s between retries)
+Restart=on-failure
+RestartSec=10s
+
+# Log to journald (also mirrors to Logs/agent_daemon.log via the daemon itself)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=personal-ai-employee
+
+# Give the process up to 30 s to shut down cleanly on SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
