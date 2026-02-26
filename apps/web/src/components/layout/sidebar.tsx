@@ -12,6 +12,13 @@ import {
   LogOut,
   Bot,
   Zap,
+  Cpu,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Home,
+  Newspaper,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,15 +26,9 @@ interface NavItem {
   href: string
   label: string
   icon: React.ElementType
+  exact?: boolean
+  badge?: number
 }
-
-const nav: NavItem[] = [
-  { href: '/app', label: 'Command Center', icon: LayoutDashboard },
-  { href: '/app/inbox', label: 'Inbox', icon: Inbox },
-  { href: '/app/plans', label: 'Plans', icon: FileText },
-  { href: '/app/logs', label: 'Logs', icon: ScrollText },
-  { href: '/app/settings', label: 'Settings', icon: Settings },
-]
 
 interface SidebarProps {
   user: {
@@ -35,29 +36,107 @@ interface SidebarProps {
     email?: string | null
     image?: string | null
   }
+  pendingApprovals?: number
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, pendingApprovals = 0 }: SidebarProps) {
   const pathname = usePathname()
+
+  const nav: NavItem[] = [
+    { href: '/app', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    { href: '/app/command-center', label: 'Command Center', icon: Cpu },
+    { href: '/app/approvals', label: 'Approvals', icon: Clock, badge: pendingApprovals > 0 ? pendingApprovals : undefined },
+    { href: '/app/approved', label: 'Approved', icon: CheckCircle2 },
+    { href: '/app/executed', label: 'Executed', icon: Zap },
+    { href: '/app/rejected', label: 'Rejected', icon: XCircle },
+    { href: '/app/inbox', label: 'Inbox', icon: Inbox },
+    { href: '/app/plans', label: 'All Plans', icon: FileText },
+    { href: '/app/briefings', label: 'CEO Briefings', icon: Newspaper },
+    { href: '/app/logs', label: 'Audit & Logs', icon: ShieldCheck },
+    { href: '/app/settings', label: 'Settings', icon: Settings },
+  ]
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col border-r border-white/[0.06] bg-[#080810]">
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 border-b border-white/[0.06] px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 ring-1 ring-accent/30">
+        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-accent/10 ring-1 ring-accent/30">
           <Bot className="h-4 w-4 text-accent" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold tracking-wide text-zinc-100">PersonalAI</p>
           <p className="text-[10px] text-zinc-600">Employee</p>
         </div>
+        <Link
+          href="/"
+          title="Back to homepage"
+          className="flex-shrink-0 rounded-md p-1 text-zinc-600 hover:bg-white/[0.06] hover:text-zinc-300 transition-colors"
+        >
+          <Home className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-4">
+        {/* Main group */}
+        <div className="mb-4 space-y-0.5">
+          {nav.slice(0, 2).map(({ href, label, icon: Icon, exact }) => {
+            const isActive = exact ? pathname === href : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  isActive
+                    ? 'bg-accent/10 text-accent font-medium'
+                    : 'text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200'
+                )}
+              >
+                <Icon className={cn('h-4 w-4 flex-shrink-0', isActive ? 'text-accent' : '')} />
+                {label}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Plans group */}
+        <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
+          Plans
+        </p>
+        <div className="mb-4 space-y-0.5">
+          {nav.slice(2, 6).map(({ href, label, icon: Icon, exact, badge }) => {
+            const isActive = exact ? pathname === href : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  isActive
+                    ? 'bg-accent/10 text-accent font-medium'
+                    : 'text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200'
+                )}
+              >
+                <Icon className={cn('h-4 w-4 flex-shrink-0', isActive ? 'text-accent' : '')} />
+                <span className="flex-1">{label}</span>
+                {badge !== undefined && badge > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Other group */}
+        <p className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
+          Data
+        </p>
         <div className="space-y-0.5">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const isActive = href === '/app' ? pathname === '/app' : pathname.startsWith(href)
+          {nav.slice(6).map(({ href, label, icon: Icon, exact }) => {
+            const isActive = exact ? pathname === href : pathname.startsWith(href)
             return (
               <Link
                 key={href}

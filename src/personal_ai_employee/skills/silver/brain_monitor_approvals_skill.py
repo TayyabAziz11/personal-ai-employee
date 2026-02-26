@@ -20,6 +20,11 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 
+def get_repo_root() -> Path:
+    """Return the repository root (4 levels up from this file's location)."""
+    return Path(__file__).parent.parent.parent.parent.resolve()
+
+
 class ApprovalMonitor:
     """Monitor approval folders and update plan status."""
 

@@ -293,7 +293,7 @@ class GmailAPIHelper:
                 return {'success': False, 'error': 'Authentication failed'}
 
         try:
-            message = MIMEText(body)
+            message = MIMEText(body, 'plain', 'utf-8')
             message['to'] = to
             message['subject'] = subject
 

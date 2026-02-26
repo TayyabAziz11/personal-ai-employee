@@ -49,6 +49,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  userConnections UserConnection[]
+  webPlans        WebPlan[]
 }
 
 model VerificationToken {
@@ -117,6 +119,7 @@ model InboxItem {
   @@index([receivedAt(sort: Desc)])
 }
 
+// Legacy Plan model (for filesystem-synced plans from watcher scripts)
 model Plan {
   id        String   @id @default(cuid())
   title     String
@@ -128,4 +131,60 @@ model Plan {
 
   @@index([status])
   @@index([createdAt(sort: Desc)])
+}
+
+// ── Web Control Plane — user-created plans via command center ────────────────
+
+// Per-user integration connection (oauth status, no secrets stored)
+model UserConnection {
+  id          String   @id @default(cuid())
+  userId      String
+  provider    String   // linkedin | gmail | whatsapp | twitter
+  connected   Boolean  @default(false)
+  displayName String?  // e.g. profile name from OAuth
+  profileUrl  String?
+  metadata    Json?    // Non-secret display fields only (e.g. follower count)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+// Web-created action plans (wizard → approve → execute)
+model WebPlan {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  channel     String         // linkedin | gmail | whatsapp | twitter
+  actionType  String         // post_text | post_image | draft_email | send_email | send_message | view_recent
+  payload     Json           // Normalized action payload (content, tone, hashtags, etc.)
+  status      String         @default("draft")
+  // draft | pending_approval | approved | rejected | executed | failed | scheduled
+  scheduledAt DateTime?
+  filePath    String?        // Path to markdown plan file (local only)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  metadata    Json?
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executionLogs ExecutionLog2[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([channel])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ExecutionLog2 {
+  id        String   @id @default(cuid())
+  planId    String
+  status    String   // running | success | failed
+  result    Json?
+  stdout    String?  @db.Text
+  stderr    String?  @db.Text
+  createdAt DateTime @default(now())
+  plan      WebPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
 }

@@ -1363,3 +1363,819 @@ Total calls logged: 5
 **[2026-02-16T14:14:52.276085+00:00]** Remediation task created: Approved plan not found
 
 **[2026-02-16T14:16:41.010044+00:00]** Odoo watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.00s
+
+**[2026-02-16T15:23:57.096855+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-16T15:24:05.070181+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-16T15:24:12.207869+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-16T15:24:21.952614+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-16T15:29:53.047707+00:00]** Weekly CEO briefing generated: Week 8, 2026 (8 MCP actions, 0 pending approvals)
+
+**[2026-02-16T15:31:41.902136+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-17T11:09:43.385769+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T11:54:23.715848+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.07s
+
+**[2026-02-17T12:05:24.761017+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.87s
+
+**[2026-02-17T12:13:45.147463+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.96s
+
+**[2026-02-17T12:25:24.878533+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.83s
+
+**[2026-02-17T12:27:36.110141+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.36s
+
+**[2026-02-17T12:50:01.618769+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.83s
+
+**[2026-02-17T15:40:07.043545+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.40s
+
+**[2026-02-17T16:08:16.272990+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.284563+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.312437+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.333586+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.352490+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.371879+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.385763+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:16.398845+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:37.028276+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-17T16:08:37.508906+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-17T16:08:37.820625+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-17T16:08:38.102043+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-17T16:08:39.368137+00:00]** Weekly CEO briefing generated: Week 8, 2026 (21 MCP actions, 0 pending approvals)
+
+**[2026-02-17T16:08:39.622516+00:00]** Weekly CEO briefing generated: Week 8, 2026 (21 MCP actions, 0 pending approvals)
+
+**[2026-02-17T16:08:39.998565+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-17T16:08:43.690776+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-17T16:08:44.092300+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.02s
+
+**[2026-02-17T16:08:44.436766+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.181532+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.192572+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.220238+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.248200+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.261807+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.277632+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.293598+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T16:08:45.315274+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.221188+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.237100+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.251970+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.266431+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.286152+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.301745+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.320328+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:25.344545+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:36.542711+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:36.894393+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.02s
+
+**[2026-02-17T17:06:37.118777+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:37.304868+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:38.099965+00:00]** Weekly CEO briefing generated: Week 8, 2026 (45 MCP actions, 0 pending approvals)
+
+**[2026-02-17T17:06:38.302242+00:00]** Weekly CEO briefing generated: Week 8, 2026 (45 MCP actions, 0 pending approvals)
+
+**[2026-02-17T17:06:38.502071+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-17T17:06:42.791500+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:43.152228+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.02s
+
+**[2026-02-17T17:06:43.509986+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.316985+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.326555+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.353926+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.377152+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.397117+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.419809+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.439584+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-17T17:06:44.457457+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:49:59.025875+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.03s
+
+**[2026-02-18T04:50:00.199578+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.06s
+
+**[2026-02-18T04:50:01.058305+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.04s
+
+**[2026-02-18T04:50:01.826913+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.05s
+
+**[2026-02-18T04:50:04.714285+00:00]** Weekly CEO briefing generated: Week 8, 2026 (58 MCP actions, 0 pending approvals)
+
+**[2026-02-18T04:50:05.305034+00:00]** Weekly CEO briefing generated: Week 8, 2026 (58 MCP actions, 0 pending approvals)
+
+**[2026-02-18T04:50:05.940285+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-18T04:50:16.298418+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:50:17.345110+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.06s
+
+**[2026-02-18T04:50:18.417079+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.02s
+
+**[2026-02-18T04:50:20.274338+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.292627+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.319091+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.340709+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.361016+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.389680+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.427331+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:50:20.444749+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:38.151298+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:53:39.360576+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.04s
+
+**[2026-02-18T04:53:40.049602+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:53:40.573259+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:53:42.710578+00:00]** Weekly CEO briefing generated: Week 8, 2026 (71 MCP actions, 0 pending approvals)
+
+**[2026-02-18T04:53:43.552255+00:00]** Weekly CEO briefing generated: Week 8, 2026 (71 MCP actions, 0 pending approvals)
+
+**[2026-02-18T04:53:44.251961+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-18T04:53:52.978169+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:53:53.856352+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.03s
+
+**[2026-02-18T04:53:54.571098+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.01s
+
+**[2026-02-18T04:53:56.551265+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.564311+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.586373+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.610237+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.630218+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.651233+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.666898+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:53:56.685317+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T04:56:17.830752+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.92s
+
+**[2026-02-18T05:04:40.522414+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:04:41.740042+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.05s
+
+**[2026-02-18T05:04:42.219822+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:04:42.850028+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:04:44.928998+00:00]** Weekly CEO briefing generated: Week 8, 2026 (84 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:04:45.372511+00:00]** Weekly CEO briefing generated: Week 8, 2026 (84 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:04:45.937580+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-18T05:04:54.053455+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:04:54.963433+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.05s
+
+**[2026-02-18T05:04:55.944636+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:04:57.980811+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:57.993276+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.092050+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.115612+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.138418+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.160270+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.183609+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:04:58.203991+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:18.884129+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:12:20.066430+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.05s
+
+**[2026-02-18T05:12:21.012190+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:12:21.787602+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:12:25.075770+00:00]** Weekly CEO briefing generated: Week 8, 2026 (97 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:12:26.019748+00:00]** Weekly CEO briefing generated: Week 8, 2026 (97 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:12:26.110421+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-18T05:12:38.217880+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-18T05:12:39.634769+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.05s
+
+**[2026-02-18T05:12:41.000341+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.02s
+
+**[2026-02-18T05:12:44.002842+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.024124+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.062938+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.092965+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.132868+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.168998+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.207600+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:12:44.250683+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:21.380865+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:25:22.351492+00:00]** LinkedIn watcher complete: 2 scanned, 1 created, 1 skipped, 0 errors, 0.04s
+
+**[2026-02-18T05:25:23.081088+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:25:23.723231+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:25:26.685593+00:00]** Weekly CEO briefing generated: Week 8, 2026 (110 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:25:27.440834+00:00]** Weekly CEO briefing generated: Week 8, 2026 (110 MCP actions, 0 pending approvals)
+
+**[2026-02-18T05:25:28.294815+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-18T05:25:38.198434+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-18T05:25:39.219002+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.03s
+
+**[2026-02-18T05:25:40.414155+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.01s
+
+**[2026-02-18T05:25:43.156293+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.183803+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.231410+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.269797+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.301437+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.356165+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.395970+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-18T05:25:43.440174+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-19T06:53:09.992917+00:00]** LinkedIn watcher complete: 5 scanned, 4 created, 1 skipped, 0 errors, 0.10s
+
+**[2026-02-19T06:53:11.146670+00:00]** Odoo watcher complete: 5 scanned, 3 created, 2 skipped, 0 errors, 0.05s
+
+**[2026-02-19T06:53:12.371031+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-19T06:53:13.619118+00:00]** Weekly CEO briefing generated: Week 8, 2026 (132 MCP actions, 0 pending approvals)
+
+**[2026-02-19T14:50:24.224359+00:00]** LinkedIn watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.06s
+
+**[2026-02-19T14:50:26.099564+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.04s
+
+**[2026-02-19T14:50:27.141038+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-19T14:50:28.362303+00:00]** Weekly CEO briefing generated: Week 8, 2026 (140 MCP actions, 0 pending approvals)
+
+**[2026-02-19T15:09:43.506184+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.01s
+
+**[2026-02-19T15:18:40.980464+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.51s
+
+**[2026-02-19T15:23:02.158955+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.14s
+
+**[2026-02-19T15:33:22.697343+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.66s
+
+**[2026-02-19T15:43:46.020750+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.71s
+
+**[2026-02-19T15:54:06.156198+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.38s
+
+**[2026-02-19T18:07:23.876939+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 12.73s
+
+**[2026-02-19T18:17:27.173464+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.29s
+
+**[2026-02-19T18:27:57.076735+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.69s
+
+**[2026-02-20T00:09:03.844443+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.14s
+
+**[2026-02-20T00:19:05.570138+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.14s
+
+**[2026-02-20T00:29:26.801627+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.98s
+
+**[2026-02-20T00:39:45.927850+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.43s
+
+**[2026-02-20T06:05:19.565557+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.27s
+
+**[2026-02-20T06:15:34.976327+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.43s
+
+**[2026-02-20T06:25:45.372645+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.73s
+
+**[2026-02-20T06:35:48.220017+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.60s
+
+**[2026-02-20T06:45:50.674818+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.65s
+
+**[2026-02-20T06:54:57.716367+00:00]** WhatsApp watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.07s
+
+**[2026-02-20T06:56:16.577860+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.96s
+
+**[2026-02-20T06:55:38.827157+00:00]** WhatsApp watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 52.68s
+
+**[2026-02-20T07:00:04.928951+00:00]** WhatsApp watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 39.90s
+
+**[2026-02-20T07:06:16.929481+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.88s
+
+**[2026-02-20T07:16:19.975024+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.21s
+
+**[2026-02-20T07:26:45.608790+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.73s
+
+**[2026-02-20T07:30:42.930711+00:00]** WhatsApp watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 26.90s
+
+**[2026-02-20T07:36:47.471427+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.78s
+
+**[2026-02-20T07:46:50.035776+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.73s
+
+**[2026-02-20T07:54:40.532977+00:00]** WhatsApp watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 24.05s
+
+**[2026-02-20T07:57:15.427602+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.36s
+
+**[2026-02-20T09:39:21.294163+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.89s
+
+**[2026-02-20T09:49:34.981086+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 8.22s
+
+**[2026-02-20T11:05:27.815084+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.16s
+
+**[2026-02-20T11:15:52.560389+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.09s
+
+**[2026-02-20T11:26:12.545591+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.83s
+
+**[2026-02-20T11:36:28.549487+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.33s
+
+**[2026-02-20T11:46:46.615998+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.84s
+
+**[2026-02-20T11:57:02.237757+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.33s
+
+**[2026-02-20T12:07:19.059682+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.04s
+
+**[2026-02-20T12:17:30.659114+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.89s
+
+**[2026-02-20T12:27:41.913054+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.26s
+
+**[2026-02-20T12:37:49.392617+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.20s
+
+**[2026-02-20T13:16:25.271842+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.46s
+
+**[2026-02-20T13:26:42.225361+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.54s
+
+**[2026-02-21T07:14:16.813897+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.86s
+
+**[2026-02-21T09:04:36.979093+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 57.41s
+
+**[2026-02-21T09:14:51.888991+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.15s
+
+**[2026-02-21T09:25:03.008038+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.27s
+
+**[2026-02-21T09:35:13.501018+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.08s
+
+**[2026-02-21T09:35:19.643852+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.61s
+
+**[2026-02-21T09:45:22.674972+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.09s
+
+**[2026-02-21T09:45:28.878418+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.98s
+
+**[2026-02-21T09:55:31.419811+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.43s
+
+**[2026-02-21T09:55:39.910968+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.23s
+
+**[2026-02-21T10:05:41.271548+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.43s
+
+**[2026-02-21T10:05:47.451542+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.79s
+
+**[2026-02-21T10:15:49.045418+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.11s
+
+**[2026-02-21T10:15:57.463731+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.57s
+
+**[2026-02-21T10:26:04.816107+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.53s
+
+**[2026-02-21T10:26:10.696014+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.09s
+
+**[2026-02-21T10:33:18.288057+00:00]** Weekly CEO briefing generated: Week 8, 2026 (145 MCP actions, 0 pending approvals)
+
+**[2026-02-21T10:33:18.996089+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-21T10:33:17.887699+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 7.40s
+
+**[2026-02-21T10:36:12.614004+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.31s
+
+**[2026-02-21T10:43:27.785022+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.21s
+
+**[2026-02-21T10:46:22.939117+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.98s
+
+**[2026-02-21T10:53:37.872057+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.40s
+
+**[2026-02-21T10:56:33.199903+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.50s
+
+**[2026-02-21T13:23:29.631344+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 7.21s
+
+**[2026-02-21T13:23:39.346985+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.30s
+
+**[2026-02-21T13:33:49.874409+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.55s
+
+**[2026-02-21T13:44:01.837861+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.49s
+
+**[2026-02-21T13:54:33.568974+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.23s
+
+**[2026-02-21T14:04:47.384006+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.90s
+
+**[2026-02-21T14:14:56.437394+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.36s
+
+**[2026-02-21T14:25:05.708218+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 8.23s
+
+**[2026-02-21T14:35:14.833606+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.69s
+
+**[2026-02-21T14:45:25.205879+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 7.18s
+
+**[2026-02-21T14:55:39.525310+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.37s
+
+**[2026-02-21T15:05:49.751012+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.67s
+
+**[2026-02-21T15:08:39.949059+00:00]** Weekly CEO briefing generated: Week 8, 2026 (145 MCP actions, 0 pending approvals)
+
+**[2026-02-21T15:08:40.188457+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-21T15:08:39.917224+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.95s
+
+**[2026-02-21T15:16:00.134003+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.45s
+
+**[2026-02-21T15:49:10.255973+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.98s
+
+**[2026-02-22T05:56:37.652712+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.10s
+
+**[2026-02-22T06:06:49.825389+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.45s
+
+**[2026-02-22T06:16:59.820163+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.32s
+
+**[2026-02-22T06:27:07.919669+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.56s
+
+**[2026-02-22T06:31:51.028472+00:00]** Weekly CEO briefing generated: Week 8, 2026 (145 MCP actions, 0 pending approvals)
+
+**[2026-02-22T06:31:51.699251+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-22T06:31:50.745099+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.38s
+
+**[2026-02-22T06:37:18.240201+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.35s
+
+**[2026-02-22T06:47:28.486973+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.79s
+
+**[2026-02-22T06:57:38.608133+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.86s
+
+**[2026-02-22T07:07:46.650490+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.21s
+
+**[2026-02-22T07:17:57.808313+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.36s
+
+**[2026-02-22T07:28:08.296875+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.99s
+
+**[2026-02-22T07:38:16.134646+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.58s
+
+**[2026-02-22T07:48:26.610176+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.41s
+
+**[2026-02-22T07:58:37.963981+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.17s
+
+**[2026-02-22T08:08:46.327470+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.11s
+
+**[2026-02-22T08:18:57.741183+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.15s
+
+**[2026-02-22T08:29:08.404219+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.90s
+
+**[2026-02-22T08:39:36.887673+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.10s
+
+**[2026-02-22T10:53:26.848102+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.64s
+
+**[2026-02-22T11:03:40.250933+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.83s
+
+**[2026-02-22T11:13:48.053252+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.43s
+
+**[2026-02-22T11:23:58.656828+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.24s
+
+**[2026-02-22T11:34:09.195722+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.23s
+
+**[2026-02-22T11:44:16.982161+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.63s
+
+**[2026-02-22T11:54:31.829338+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.37s
+
+**[2026-02-22T12:04:42.438021+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.60s
+
+**[2026-02-22T12:14:50.544960+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.46s
+
+**[2026-02-22T12:17:05.179885+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.32s
+
+**[2026-02-22T12:25:00.633382+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.39s
+
+**[2026-02-22T12:35:11.114922+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.61s
+
+**[2026-02-22T12:45:21.162123+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.45s
+
+**[2026-02-22T12:55:34.080967+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.05s
+
+**[2026-02-22T12:56:34.918501+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.926363+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.939483+00:00]** Odoo watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.950846+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.960502+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.969444+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:56:34.975984+00:00]** Odoo watcher complete: 5 scanned, 5 created, 5 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.535005+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.543786+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.557255+00:00]** Odoo watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.568250+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.580958+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.595124+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:19.601092+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:26.471248+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:57:31.153850+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.03s
+
+**[2026-02-22T12:58:37.491294+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.498917+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.517450+00:00]** Odoo watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.528356+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.543059+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.555820+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-22T12:58:37.564451+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.00s
+
+**[2026-02-22T13:05:44.337700+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.98s
+
+**[2026-02-22T13:15:55.178862+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.47s
+
+**[2026-02-22T13:26:04.417342+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.88s
+
+**[2026-02-23T13:16:10.761158+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.64s
+
+**[2026-02-23T13:26:24.876997+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.29s
+
+**[2026-02-24T06:44:56.965115+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.21s
+
+**[2026-02-24T06:55:12.244035+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.66s
+
+**[2026-02-24T07:05:19.048443+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.61s
+
+**[2026-02-24T07:06:00.541618+00:00]** Weekly CEO briefing generated: Week 9, 2026 (146 MCP actions, 0 pending approvals)
+
+**[2026-02-24T13:09:20.554648+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 28.88s
+
+**[2026-02-24T13:19:48.444655+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.99s
+
+**[2026-02-24T13:30:14.344005+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.22s
+
+**[2026-02-24T13:40:23.632287+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.00s
+
+**[2026-02-24T13:50:24.748258+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.43s
+
+**[2026-02-24T14:00:32.287130+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 1.93s
+
+**[2026-02-24T14:10:50.027005+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.52s
+
+**[2026-02-24T14:21:09.500964+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 16.07s
+
+**[2026-02-24T14:31:13.253147+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 16.15s
+
+**[2026-02-24T14:41:42.525172+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 12.78s
+
+**[2026-02-24T14:52:10.925276+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 12.87s
+
+**[2026-02-24T15:02:30.682764+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 19.48s
+
+**[2026-02-24T15:23:40.727809+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 8.00s
+
+**[2026-02-24T15:34:00.269775+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 18.18s
+
+**[2026-02-24T15:44:05.849109+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.24s
+
+**[2026-02-24T15:54:34.465312+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 17.36s
+
+**[2026-02-24T16:04:59.850055+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 9.08s
+
+**[2026-02-24T16:15:20.636184+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 7.83s
+
+**[2026-02-24T16:25:22.939282+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 36.24s
+
+**[2026-02-24T16:35:43.820666+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 8.26s
+
+**[2026-02-25T04:51:01.232113+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.19s
+
+**[2026-02-25T05:01:27.169335+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.78s
+
+**[2026-02-25T10:05:34.628195+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.64s
+
+**[2026-02-25T12:03:12.773710+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.44s
+
+**[2026-02-25T12:13:34.093099+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.24s
+
+**[2026-02-25T12:23:38.563902+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.51s
+
+**[2026-02-25T12:33:39.482790+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.34s
+
+**[2026-02-25T12:43:40.023930+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 9.58s
+
+**[2026-02-25T12:53:40.347741+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.12s
+
+**[2026-02-25T13:03:46.452677+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, -1.69s
+
+**[2026-02-25T13:09:20.107466+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.128414+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.173520+00:00]** Odoo watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.224823+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.270638+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.316118+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:09:20.348799+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.01s
+
+**[2026-02-25T13:10:38.909770+00:00]** Weekly CEO briefing generated: Week 9, 2026 (146 MCP actions, 0 pending approvals)
+
+**[2026-02-25T13:13:40.626998+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.72s
+
+**[2026-02-25T13:23:41.355928+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.91s
+
+**[2026-02-25T13:33:41.781757+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.75s
+
+**[2026-02-25T13:43:42.327975+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.07s
+
+**[2026-02-25T13:53:43.585244+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.93s
+
+**[2026-02-25T14:03:43.435065+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 5.23s
+
+**[2026-02-25T14:13:55.202477+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.95s
+
+**[2026-02-25T14:23:56.474369+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 19.01s
+
+**[2026-02-25T15:33:06.902921+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 6.97s
+
+**[2026-02-25T17:09:36.655623+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.90s
+
+**[2026-02-25T17:19:43.633659+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, -0.91s
+
+**[2026-02-25T17:29:38.405525+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.07s
+
+**[2026-02-25T17:39:39.793019+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.15s
+
+**[2026-02-25T17:49:41.595938+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 10.48s
+
+**[2026-02-25T18:00:09.617776+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.73s
+
+**[2026-02-25T18:10:17.264973+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.74s
+
+**[2026-02-26T11:20:12.370159+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.32s
+
+**[2026-02-26T12:27:50.713676+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.52s
+
+**[2026-02-26T12:38:05.122116+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.34s
+
+**[2026-02-26T12:38:54.622739+00:00]** Weekly CEO briefing generated: Week 9, 2026 (146 MCP actions, 0 pending approvals)
+
+**[2026-02-26T12:38:54.844704+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-26T12:48:23.088605+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.14s
+
+**[2026-02-26T12:58:41.779465+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.28s
+
+**[2026-02-26T13:09:03.151052+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.34s
+
+**[2026-02-26T13:19:23.290625+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.17s
+
+**[2026-02-26T13:29:46.341896+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.28s
+
+**[2026-02-26T13:40:10.043091+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 3.13s
+
+**[2026-02-26T13:50:32.254260+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 4.97s
+
+**[2026-02-26T14:00:46.854769+00:00]** WhatsApp watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.03s
+
+**[2026-02-26T14:00:47.490668+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.04s
+
+**[2026-02-26T14:00:47.959414+00:00]** Twitter watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.02s
+
+**[2026-02-26T14:00:48.334916+00:00]** Odoo watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:00:58.202307+00:00]** Weekly CEO briefing generated: Week 9, 2026 (154 MCP actions, 0 pending approvals)
+
+**[2026-02-26T14:00:55.929600+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 2.77s
+
+**[2026-02-26T14:01:07.729718+00:00]** Weekly CEO briefing generated: Week 9, 2026 (154 MCP actions, 0 pending approvals)
+
+**[2026-02-26T14:01:08.342537+00:00]** Accounting audit generated: 4 unpaid invoices, $41,100.00 outstanding
+
+**[2026-02-26T14:01:14.387737+00:00]** LinkedIn watcher complete: 2 scanned, 0 created, 2 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:14.936499+00:00]** LinkedIn watcher complete: 1 scanned, 1 created, 0 skipped, 0 errors, 0.02s
+
+**[2026-02-26T14:01:15.382341+00:00]** LinkedIn watcher complete: 1 scanned, 0 created, 1 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:01:16.672692+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.686531+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.706119+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.720415+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.736847+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.750281+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.768343+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:16.782026+00:00]** LinkedIn watcher complete: 0 scanned, 0 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:17.306726+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:01:17.324764+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:01:17.341536+00:00]** Odoo watcher complete: 5 scanned, 0 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:01:17.357387+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.01s
+
+**[2026-02-26T14:01:17.371029+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:17.383585+00:00]** Odoo watcher complete: 5 scanned, 5 created, 0 skipped, 0 errors, 0.00s
+
+**[2026-02-26T14:01:17.392588+00:00]** Odoo watcher complete: 5 scanned, 0 created, 5 skipped, 0 errors, 0.00s

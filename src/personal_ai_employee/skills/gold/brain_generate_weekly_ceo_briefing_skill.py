@@ -193,75 +193,170 @@ class WeeklyCEOBriefingGenerator:
             return {'goals': [], 'confidence': 'low'}
 
     def _get_odoo_metrics(self, mode: str) -> Dict:
-        """Get Odoo accounting metrics"""
-        reports_dir = Path(self.config['base_dir']) / 'Business' / 'Accounting' / 'Reports'
+        """Get full Odoo accounting metrics including revenue, AR aging, late invoices."""
+        base_dir = Path(self.config['base_dir'])
+        reports_dir = base_dir / 'Business' / 'Accounting' / 'Reports'
 
-        # Try to find latest audit or revenue summary
+        # ── Try direct OdooAPIHelper (most accurate) ──────────────────────────
+        try:
+            import sys
+            sys.path.insert(0, str(base_dir / 'src'))
+            from personal_ai_employee.core.odoo_api_helper import OdooAPIHelper
+
+            creds_path = base_dir / '.secrets' / 'odoo_credentials.json'
+            helper = OdooAPIHelper(
+                credentials_path=str(creds_path) if creds_path.exists() else None,
+            )
+            if not helper.load_credentials():
+                helper._mock = True
+
+            rev = helper.revenue_summary()
+            aging_result = helper.ar_aging_summary()
+            inv_result = helper.list_invoices(status_filter='unpaid', limit=100)
+
+            if rev.get('success'):
+                invoices = inv_result.get('invoices', []) if inv_result.get('success') else []
+                late_invoices = [i for i in invoices if i.get('days_overdue', 0) > 30]
+                aging = aging_result.get('aging', {}) if aging_result.get('success') else {}
+
+                return {
+                    'total_invoiced': rev.get('total_invoiced', 0),
+                    'total_paid': rev.get('total_paid', 0),
+                    'total_outstanding': rev.get('total_outstanding', 0),
+                    'invoice_count': rev.get('invoice_count', 0),
+                    'unpaid_count': len(invoices),
+                    'late_count': len(late_invoices),
+                    'late_invoices': late_invoices[:5],  # top 5 for briefing
+                    'aging': aging,
+                    'source': 'odoo_api_helper',
+                    'mock': helper.is_mock,
+                    'confidence': 'high',
+                }
+        except Exception as e:
+            logger.warning(f"OdooAPIHelper direct call failed: {e}")
+
+        # ── Fallback: parse latest report file ────────────────────────────────
         if reports_dir.exists():
             audits = sorted(reports_dir.glob('accounting_audit__*.md'), reverse=True)
             revenue_reports = sorted(reports_dir.glob('odoo_query__revenue_summary__*.md'), reverse=True)
-
-            latest = None
-            if audits:
-                latest = audits[0]
-            elif revenue_reports:
-                latest = revenue_reports[0]
+            latest = (audits or revenue_reports or [None])[0]
 
             if latest:
                 try:
                     content = latest.read_text(encoding='utf-8')
-                    # Basic extraction
                     unpaid_count = 0
-                    total_outstanding = 0
-
+                    total_outstanding = 0.0
                     for line in content.split('\n'):
                         if 'unpaid_count:' in line.lower():
-                            unpaid_count = int(line.split(':')[1].strip())
+                            try:
+                                unpaid_count = int(line.split(':')[1].strip())
+                            except ValueError:
+                                pass
                         if 'total_outstanding:' in line.lower():
-                            total_outstanding = float(line.split(':')[1].strip())
+                            try:
+                                total_outstanding = float(line.split(':')[1].strip())
+                            except ValueError:
+                                pass
                         if 'Total Outstanding' in line and '$' in line:
-                            # Parse from table row
                             parts = line.split('$')
                             if len(parts) > 1:
-                                total_outstanding = float(parts[1].replace(',', '').split()[0])
-
+                                try:
+                                    total_outstanding = float(parts[1].replace(',', '').split()[0])
+                                except ValueError:
+                                    pass
                     return {
                         'unpaid_count': unpaid_count,
                         'total_outstanding': total_outstanding,
                         'source': latest.name,
-                        'confidence': 'high'
+                        'confidence': 'medium',
                     }
-
                 except Exception as e:
                     logger.warning(f"Failed to parse Odoo report: {e}")
 
-        # Fallback: Try to run query skill
-        if mode == 'live':
+        return {
+            'total_invoiced': 0, 'total_paid': 0, 'total_outstanding': 0,
+            'unpaid_count': 0, 'late_count': 0, 'late_invoices': [],
+            'aging': {}, 'confidence': 'low',
+        }
+
+    def _get_business_goals_data(self) -> Dict:
+        """Parse Business_Goals.md for revenue target and MTD progress."""
+        base_dir = Path(self.config['base_dir'])
+
+        # Try Business/Goals/Business_Goals.md first, then any .md in Goals/
+        candidates = [
+            base_dir / 'Business' / 'Goals' / 'Business_Goals.md',
+        ]
+        goals_dir = base_dir / 'Business' / 'Goals'
+        if goals_dir.exists():
+            candidates += list(goals_dir.glob('*.md'))
+
+        for path in candidates:
+            if not path.exists():
+                continue
             try:
-                import subprocess
-                result = subprocess.run(
-                    ['python3', 'brain_odoo_query_with_mcp_skill.py', '--operation', 'revenue_summary', '--mode', 'mock'],
-                    capture_output=True,
-                    text=True,
-                    cwd=self.config['base_dir'],
-                    timeout=30
-                )
+                content = path.read_text(encoding='utf-8')
+                monthly_goal = 0.0
+                current_mtd = 0.0
 
-                if result.returncode == 0:
-                    # Parse JSON output
-                    for line in result.stdout.strip().split('\n'):
-                        if line.startswith('{'):
-                            data = json.loads(line)
-                            return {
-                                'total_outstanding': data.get('total_outstanding', 0),
-                                'source': 'odoo_query_skill',
-                                'confidence': 'medium'
-                            }
+                for line in content.split('\n'):
+                    if 'monthly goal' in line.lower() and '$' in line:
+                        try:
+                            monthly_goal = float(line.split('$')[1].replace(',', '').split()[0])
+                        except (IndexError, ValueError):
+                            pass
+                    if 'current mtd' in line.lower() and '$' in line:
+                        try:
+                            current_mtd = float(line.split('$')[1].replace(',', '').split()[0])
+                        except (IndexError, ValueError):
+                            pass
 
+                if monthly_goal > 0:
+                    pct = round((current_mtd / monthly_goal) * 100, 1)
+                    return {
+                        'monthly_goal': monthly_goal,
+                        'current_mtd': current_mtd,
+                        'pct_to_target': pct,
+                        'source': path.name,
+                        'confidence': 'high',
+                    }
             except Exception as e:
-                logger.warning(f"Failed to run Odoo query: {e}")
+                logger.warning(f"Failed to parse Business_Goals: {e}")
 
-        return {'unpaid_count': 0, 'total_outstanding': 0, 'confidence': 'low'}
+        return {'monthly_goal': 0, 'current_mtd': 0, 'pct_to_target': 0, 'confidence': 'low'}
+
+    def _get_bottlenecks(self) -> Dict:
+        """Find bottlenecks: plans older than 3 days still in Plans/ folder."""
+        base_dir = Path(self.config['base_dir'])
+        plans_dir = base_dir / 'Business' / 'Plans'
+
+        if not plans_dir.exists():
+            # Fallback: check root-level Plans/
+            plans_dir = base_dir / 'Plans'
+
+        if not plans_dir.exists():
+            return {'bottlenecks': [], 'confidence': 'low'}
+
+        try:
+            now = datetime.now(timezone.utc)
+            bottlenecks = []
+
+            for plan_file in plans_dir.glob('*.md'):
+                try:
+                    age_days = (now.timestamp() - plan_file.stat().st_mtime) / 86400
+                    if age_days > 3:
+                        bottlenecks.append({
+                            'file': plan_file.name,
+                            'age_days': round(age_days, 1),
+                        })
+                except Exception:
+                    continue
+
+            bottlenecks.sort(key=lambda x: x['age_days'], reverse=True)
+            return {'bottlenecks': bottlenecks[:5], 'confidence': 'high' if bottlenecks else 'medium'}
+        except Exception as e:
+            logger.error(f"Failed to find bottlenecks: {e}")
+            return {'bottlenecks': [], 'confidence': 'low'}
 
     def _get_pending_approvals(self) -> Dict:
         """Get pending approvals count"""
@@ -278,7 +373,7 @@ class WeeklyCEOBriefingGenerator:
             return {'count': 0, 'confidence': 'low'}
 
     def generate_briefing(self, mode: str = 'mock') -> str:
-        """Generate weekly CEO briefing"""
+        """Generate weekly CEO briefing — hackathon compliant (8 sections + proactive suggestions)"""
         logger.info(f"Generating CEO briefing (mode={mode}, week_start={self.week_start.date()})")
 
         # Gather data from all sources
@@ -286,8 +381,10 @@ class WeeklyCEOBriefingGenerator:
         mcp_stats = self._parse_mcp_actions_log()
         social = self._get_social_performance()
         goals = self._get_business_goals()
+        goals_data = self._get_business_goals_data()
         odoo = self._get_odoo_metrics(mode)
         approvals = self._get_pending_approvals()
+        bottlenecks_data = self._get_bottlenecks()
 
         # Calculate week number
         week_num = self.week_start.isocalendar()[1]
@@ -372,26 +469,50 @@ class WeeklyCEOBriefingGenerator:
         if not risks_found:
             briefing_content += "- ✅ No significant risks identified\n"
 
+        # Revenue + MTD section
+        mtd_pct = goals_data.get('pct_to_target', 0)
+        monthly_goal = goals_data.get('monthly_goal', 0)
+        current_mtd = goals_data.get('current_mtd', odoo.get('total_paid', 0))
+        revenue_this_week = odoo.get('total_paid', 0)  # approximation from mock data
+
         briefing_content += f"""
 ---
 
-## 4. Outstanding Invoices + AR Aging
+## 4. Revenue & AR Aging
 
 **Data Confidence:** {odoo['confidence']}
 
-**Summary:**
-- Unpaid Invoices: {odoo.get('unpaid_count', 'N/A')}
-- Total Outstanding AR: ${odoo.get('total_outstanding', 0):,.2f}
-- Data Source: {odoo.get('source', 'No recent audit')}
+**Revenue Summary:**
+| Metric | Value |
+|--------|-------|
+| Total Invoiced (YTD) | ${odoo.get('total_invoiced', 0):,.2f} |
+| Total Paid (YTD) | ${odoo.get('total_paid', revenue_this_week):,.2f} |
+| Total Outstanding AR | ${odoo.get('total_outstanding', 0):,.2f} |
+| Monthly Target | ${monthly_goal:,.2f} |
+| MTD Revenue | ${current_mtd:,.2f} |
+| % to Target | {mtd_pct:.1f}% |
 
-**Recommended Review:**
+**AR Aging Buckets:**
 """
-
-        if odoo.get('total_outstanding', 0) > 0:
-            briefing_content += f"- Review latest accounting audit for AR aging breakdown\n"
-            briefing_content += f"- Consider payment follow-up for overdue invoices\n"
+        aging = odoo.get('aging', {})
+        if aging:
+            for bucket, label in [('current', 'Current (not due)'), ('1_30', '1–30 days'), ('31_60', '31–60 days'), ('61_90', '61–90 days'), ('over_90', '90+ days')]:
+                amt = aging.get(bucket, 0)
+                flag = ' ⚠️' if bucket in ('61_90', 'over_90') and amt > 0 else ''
+                briefing_content += f"- {label}: ${amt:,.2f}{flag}\n"
         else:
-            briefing_content += "- Run accounting audit to get current AR status\n"
+            briefing_content += f"- Total Outstanding: ${odoo.get('total_outstanding', 0):,.2f}\n"
+            briefing_content += f"- Run `get_aging_report` via Odoo MCP for full breakdown\n"
+
+        # Late invoices > 30 days
+        late_invoices = odoo.get('late_invoices', [])
+        late_count = odoo.get('late_count', 0)
+        if late_count > 0:
+            briefing_content += f"\n**Late Invoices (>30 days overdue): {late_count}**\n"
+            for inv in late_invoices[:5]:
+                briefing_content += f"- {inv.get('invoice_number', '?')} | {inv.get('customer_name', '?')} | ${inv.get('amount_total', 0):,.2f} | {inv.get('days_overdue', 0)} days\n"
+        else:
+            briefing_content += f"\n**Late Invoices (>30 days):** {late_count} — ✅ None\n"
 
         briefing_content += f"""
 ---
@@ -417,21 +538,29 @@ class WeeklyCEOBriefingGenerator:
         briefing_content += f"""
 ---
 
-## 6. Next Week Priorities
+## 6. Next Week Priorities & Bottlenecks
 
 **Data Confidence:** {goals['confidence']}
 
 """
-
         if goals['goals']:
             briefing_content += "**Active Goals:**\n"
             for goal in goals['goals']:
                 briefing_content += f"- {goal}\n"
         else:
             briefing_content += "**Suggested Priorities:**\n"
-            briefing_content += "- Review and update Business/Goals/\n"
+            briefing_content += "- Review and update Business/Goals/Business_Goals.md\n"
             briefing_content += "- Process pending approvals\n"
             briefing_content += "- Run accounting audit if needed\n"
+
+        # Bottlenecks
+        bottlenecks = bottlenecks_data.get('bottlenecks', [])
+        if bottlenecks:
+            briefing_content += f"\n**Bottlenecks (Plans > 3 days old):**\n"
+            for b in bottlenecks:
+                briefing_content += f"- ⏳ {b['file']} — {b['age_days']} days old\n"
+        else:
+            briefing_content += "\n**Bottlenecks:** ✅ None detected\n"
 
         briefing_content += f"""
 ---
@@ -451,17 +580,87 @@ class WeeklyCEOBriefingGenerator:
         else:
             briefing_content += "- ✅ No pending approvals\n"
 
+        # ── Proactive Suggestions (subscription anomalies + cost optimization) ─
+        briefing_content += "\n---\n\n## 8. Proactive Suggestions\n\n"
+        suggestions = []
+
+        # Subscription anomaly detection
+        try:
+            import sys
+            sys.path.insert(0, str(Path(self.config['base_dir']) / 'src'))
+            from personal_ai_employee.core.odoo_api_helper import OdooAPIHelper  # type: ignore
+
+            creds_path = Path(self.config['base_dir']) / '.secrets' / 'odoo_credentials.json'
+            helper = OdooAPIHelper(
+                credentials_path=str(creds_path) if creds_path.exists() else None,
+            )
+            if not helper.load_credentials():
+                helper._mock = True
+
+            inv_all = helper.list_invoices(status_filter='all', limit=200)
+            if inv_all.get('success'):
+                invoices_all = inv_all.get('invoices', [])
+                by_customer: Dict[str, list] = {}
+                for inv in invoices_all:
+                    cname = inv.get('customer_name', 'Unknown')
+                    by_customer.setdefault(cname, []).append(inv)
+
+                for cname, invs in by_customer.items():
+                    if len(invs) >= 2:
+                        latest_amt = invs[0].get('amount_total', 0)
+                        prev_amt = invs[1].get('amount_total', 0)
+                        if prev_amt > 0:
+                            change_pct = ((latest_amt - prev_amt) / prev_amt) * 100
+                            if change_pct > 20:
+                                suggestions.append(
+                                    f"💡 **Cost increase detected** — {cname}: "
+                                    f"${prev_amt:,.2f} → ${latest_amt:,.2f} (+{change_pct:.0f}%). "
+                                    f"Review subscription terms. [ACTION] Move to /Pending_Approval if cancellation needed."
+                                )
+        except Exception as e:
+            logger.warning(f"Subscription anomaly check failed: {e}")
+
+        # AR collection suggestions
+        if odoo.get('late_count', 0) > 0:
+            suggestions.append(
+                f"📬 **AR follow-up needed** — {odoo['late_count']} invoice(s) >30 days overdue "
+                f"(${odoo.get('total_outstanding', 0):,.2f} total). Send payment reminder emails."
+            )
+
+        # Target pace suggestion
+        if goals_data.get('monthly_goal', 0) > 0 and goals_data.get('pct_to_target', 100) < 50:
+            suggestions.append(
+                f"📊 **Revenue pace alert** — MTD at {goals_data['pct_to_target']:.0f}% of "
+                f"${goals_data['monthly_goal']:,.2f} monthly target. "
+                f"Consider accelerating invoicing or following up on pending deals."
+            )
+
+        # Approvals backlog
+        if approvals['count'] > 3:
+            suggestions.append(
+                f"⚡ **Approvals backlog** — {approvals['count']} actions waiting. "
+                f"Review Pending_Approval/ to unblock the agent."
+            )
+
+        if suggestions:
+            for suggestion in suggestions:
+                briefing_content += f"{suggestion}\n\n"
+        else:
+            briefing_content += "✅ No urgent suggestions — system running well.\n\n"
+
         briefing_content += f"""
 ---
 
-## 8. Summary
+## 9. Summary
 
 **Overall System Health:** {"✅ Healthy" if mcp_stats['failures'] == 0 else "⚠️ Needs Attention"}
 
 **Key Takeaways:**
 - MCP operations: {mcp_stats['total']} actions executed
+- Revenue: ${odoo.get('total_paid', 0):,.2f} paid | ${odoo.get('total_outstanding', 0):,.2f} outstanding
+- MTD vs target: {goals_data.get('pct_to_target', 0):.1f}% of ${goals_data.get('monthly_goal', 0):,.2f}
+- Late invoices: {odoo.get('late_count', 0)} (>30 days)
 - Social engagement: {social.get('total', 0)} interactions tracked
-- Accounting: ${odoo.get('total_outstanding', 0):,.2f} AR outstanding
 - Governance: {approvals['count']} pending approvals
 
 **Recommended Focus:**
@@ -471,14 +670,17 @@ class WeeklyCEOBriefingGenerator:
         if approvals['count'] > 0:
             briefing_content += f"1. Process {approvals['count']} pending approvals\n"
 
+        if odoo.get('late_count', 0) > 0:
+            briefing_content += f"2. Follow up on {odoo['late_count']} late invoice(s)\n"
+
         if odoo.get('total_outstanding', 0) > 10000:
-            briefing_content += f"2. Review AR aging and collections strategy\n"
+            briefing_content += f"3. Review AR aging and collections strategy\n"
 
         if mcp_stats['failures'] > 0:
-            briefing_content += f"3. Investigate {mcp_stats['failures']} MCP failures\n"
+            briefing_content += f"4. Investigate {mcp_stats['failures']} MCP failures\n"
 
         if social.get('total', 0) == 0:
-            briefing_content += f"4. Complete social watcher implementation (G-M3)\n"
+            briefing_content += f"5. Complete social watcher implementation (G-M3)\n"
 
         briefing_content += f"""
 ---

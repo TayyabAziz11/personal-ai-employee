@@ -11,11 +11,17 @@ type Mode = 'signin' | 'signup'
 function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/app'
+  const initialMode = searchParams.get('mode') === 'email' ? 'email' : 'github'
+  const authError = searchParams.get('error')
 
-  const [tab, setTab] = useState<Tab>('github')
+  const [tab, setTab] = useState<Tab>(initialMode as Tab)
   const [mode, setMode] = useState<Mode>('signin')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    authError === 'OAuthCallback' ? 'OAuth sign-in failed. Please try again.' :
+    authError === 'OAuthAccountNotLinked' ? 'This email is already linked to another sign-in method.' :
+    authError ? 'Sign-in failed. Please try again.' : null
+  )
   const [success, setSuccess] = useState<string | null>(null)
 
   // Email form state
@@ -26,6 +32,7 @@ function LoginForm() {
   async function handleGithubSignIn() {
     setLoading(true)
     setError(null)
+    setSuccess('Redirecting to GitHub…')
     await signIn('github', { callbackUrl })
   }
 
@@ -68,6 +75,7 @@ function LoginForm() {
     if (result?.error) {
       setError('Invalid email or password.')
     } else if (result?.url) {
+      setSuccess(mode === 'signup' ? 'Account created! Taking you to your dashboard…' : 'Signed in! Taking you to your dashboard…')
       window.location.href = result.url
     }
   }
@@ -117,10 +125,15 @@ function LoginForm() {
                 className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/[0.07] border border-white/[0.10] py-3 text-sm font-medium text-zinc-200 transition-all hover:bg-white/[0.12] hover:text-white disabled:opacity-50"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
-                {loading ? 'Signing in…' : 'Continue with GitHub'}
+                {loading ? 'Redirecting to GitHub…' : 'Continue with GitHub'}
               </button>
+              {success && (
+                <p className="mt-3 rounded-lg bg-teal-500/10 border border-teal-500/20 px-3 py-2 text-xs text-teal-400 text-center">
+                  {success}
+                </p>
+              )}
               <p className="mt-5 text-center text-[11px] leading-relaxed text-zinc-600">
-                Only authorized GitHub accounts can access this dashboard.
+                Sign in with your GitHub account to access the dashboard.
               </p>
             </div>
           )}

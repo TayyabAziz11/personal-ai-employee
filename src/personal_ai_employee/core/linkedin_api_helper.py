@@ -1286,6 +1286,207 @@ class LinkedInAPIHelper:
             }
         return {'available': True, 'reason': ''}
 
+    def upload_image(self, image_bytes: bytes, mime_type: str = 'image/jpeg') -> str:
+        """
+        Upload an image to LinkedIn via the REST Images API.
+
+        Two-step upload:
+        1. POST /rest/images?action=initializeUpload → get uploadUrl + image URN
+        2. PUT <uploadUrl> with image bytes → 201
+
+        Args:
+            image_bytes: Raw image bytes (JPEG recommended)
+            mime_type:   MIME type for the upload (default: image/jpeg)
+
+        Returns:
+            LinkedIn image URN (e.g. "urn:li:image:xxx")
+
+        Raises:
+            LinkedInAPIError: If initialization or upload fails
+        """
+        author_urn = self.get_author_urn()
+
+        # Step 1: Initialize upload
+        init_payload = {
+            "initializeUploadRequest": {
+                "owner": author_urn,
+            }
+        }
+
+        logger.info("Initializing LinkedIn image upload...")
+        init_resp = self._api_request_raw(
+            'POST',
+            '/images?action=initializeUpload',
+            base=self.REST_BASE,
+            json=init_payload,
+        )
+
+        if init_resp.status_code not in (200, 201):
+            raise LinkedInAPIError(
+                f"Image upload initialization failed: HTTP {init_resp.status_code}: "
+                f"{init_resp.text[:300]}"
+            )
+
+        init_data = init_resp.json()
+        value = init_data.get('value', {})
+        upload_url = value.get('uploadUrl', '')
+        image_urn = value.get('image', '')
+
+        if not upload_url or not image_urn:
+            raise LinkedInAPIError(
+                f"Image upload initialization returned unexpected response: {init_data}"
+            )
+
+        logger.info(f"Image upload initialized (urn={redact_pii(image_urn)})")
+
+        # Step 2: PUT image bytes to upload URL
+        access_token = self.get_access_token()
+        put_headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': mime_type,
+        }
+
+        put_resp = requests.put(
+            upload_url,
+            headers=put_headers,
+            data=image_bytes,
+            timeout=60,
+        )
+
+        if put_resp.status_code not in (200, 201):
+            raise LinkedInAPIError(
+                f"Image PUT upload failed: HTTP {put_resp.status_code}: {put_resp.text[:300]}"
+            )
+
+        logger.info(f"Image uploaded successfully (urn={redact_pii(image_urn)})")
+
+        # Log the upload action
+        try:
+            log_path = get_repo_root() / 'Logs' / 'mcp_actions.log'
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            entry = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'tool': 'linkedin.upload_image',
+                'endpoint': 'rest/images',
+                'image_urn': image_urn,
+                'mime_type': mime_type,
+                'size_bytes': len(image_bytes),
+                'status': 'success',
+            }
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry) + '\n')
+        except Exception as exc:
+            logger.warning(f"Could not write image upload to mcp_actions.log: {exc}")
+
+        return image_urn
+
+    def create_post_with_image(
+        self,
+        text: str,
+        image_urn: str,
+        image_title: str = '',
+        visibility: str = 'PUBLIC',
+    ) -> Dict[str, Any]:
+        """
+        Create a LinkedIn post with an embedded image.
+
+        Uses the REST Posts API with a content.media block.
+
+        Args:
+            text:        Post commentary text
+            image_urn:   LinkedIn image URN (from upload_image())
+            image_title: Optional alt-text / title for the image
+            visibility:  "PUBLIC" (default) or "CONNECTIONS"
+
+        Returns:
+            Dict with id (post URN), author, visibility, image_urn, endpoint_used
+
+        Raises:
+            LinkedInAPIError: If posting fails
+        """
+        author_urn = self.get_author_urn()
+
+        payload = {
+            "author": author_urn,
+            "commentary": text,
+            "visibility": visibility,
+            "distribution": {
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
+            },
+            "content": {
+                "media": {
+                    "id": image_urn,
+                    "title": image_title,
+                }
+            },
+            "lifecycleState": "PUBLISHED",
+            "isReshareDisabledByAuthor": False,
+        }
+
+        logger.info(
+            f"Creating LinkedIn post with image via REST Posts API "
+            f"(visibility={visibility}, text_length={len(text)}, image_urn={redact_pii(image_urn)})"
+        )
+
+        try:
+            resp = self._api_request_raw(
+                'POST', '/posts',
+                base=self.REST_BASE,
+                json=payload,
+            )
+            logger.info(f"POST rest/posts+image → status={resp.status_code}")
+
+            if resp.status_code in (200, 201):
+                post_urn = resp.headers.get('x-restli-id', '')
+                if not post_urn:
+                    try:
+                        post_urn = resp.json().get('id', 'unknown')
+                    except Exception:
+                        post_urn = 'unknown'
+
+                logger.info(f"Post with image created (urn={redact_pii(post_urn)})")
+
+                # Log action
+                try:
+                    log_path = get_repo_root() / 'Logs' / 'mcp_actions.log'
+                    log_path.parent.mkdir(parents=True, exist_ok=True)
+                    entry = {
+                        'timestamp': datetime.now(timezone.utc).isoformat(),
+                        'tool': 'linkedin.create_post_with_image',
+                        'endpoint': 'rest/posts+image',
+                        'post_urn': post_urn,
+                        'image_urn': image_urn,
+                        'visibility': visibility,
+                        'text_length': len(text),
+                        'status': 'success',
+                    }
+                    with open(log_path, 'a', encoding='utf-8') as f:
+                        f.write(json.dumps(entry) + '\n')
+                except Exception as exc:
+                    logger.warning(f"Could not write to mcp_actions.log: {exc}")
+
+                return {
+                    'id': post_urn,
+                    'author': author_urn,
+                    'commentary': text,
+                    'visibility': visibility,
+                    'image_urn': image_urn,
+                    'endpoint_used': 'rest/posts+image',
+                }
+
+            error_msg = f"POST rest/posts+image → HTTP {resp.status_code}: {resp.text[:300]}"
+            logger.error(error_msg)
+            raise LinkedInAPIError(error_msg)
+
+        except LinkedInAPIError:
+            raise
+        except requests.exceptions.RequestException as exc:
+            error_msg = f"POST rest/posts+image → network error: {exc}"
+            logger.error(error_msg)
+            raise LinkedInAPIError(error_msg)
+
     def reply_comment(self, comment_id: str, text: str) -> Dict[str, Any]:
         """
         Reply to a comment (if API supports it).

@@ -258,11 +258,48 @@ export interface WatcherStatus {
   lastMessage: string
 }
 
+// ── Agent Activity Stats ──────────────────────────────────────────────────────
+
+export interface AgentActivityStats {
+  total: number
+  approved: number
+  rejected: number
+  byChannel: Record<string, number>
+  byAction: Record<string, number>
+}
+
+export function readAgentStats(): AgentActivityStats {
+  const root = getRepoRoot()
+  const stats: AgentActivityStats = { total: 0, approved: 0, rejected: 0, byChannel: {}, byAction: {} }
+
+  const countDir = (dir: string, kind: 'approved' | 'rejected') => {
+    const files = safeReadDir(path.join(root, dir)).filter(
+      (f) => f.startsWith('WEBPLAN_') && f.endsWith('.md')
+    )
+    for (const f of files) {
+      // WEBPLAN_YYYYMMDDHHII_Channel_ActionType_desc.md
+      const parts = f.replace('.md', '').split('_')
+      const channel = (parts[2] ?? 'unknown').toLowerCase()
+      const action = [parts[3], parts[4]].filter(Boolean).join('_').toLowerCase()
+      stats.byChannel[channel] = (stats.byChannel[channel] ?? 0) + 1
+      stats.byAction[action] = (stats.byAction[action] ?? 0) + 1
+      stats.total++
+      if (kind === 'approved') stats.approved++
+      else stats.rejected++
+    }
+  }
+
+  countDir('Approved', 'approved')
+  countDir('Rejected', 'rejected')
+  return stats
+}
+
 export function readWatcherStatuses(): WatcherStatus[] {
   const root = getRepoRoot()
   const watchers = [
     { name: 'linkedin', displayName: 'LinkedIn', log: 'linkedin_watcher.log', cp: 'linkedin_watcher_checkpoint.json' },
     { name: 'gmail', displayName: 'Gmail', log: 'gmail_watcher.log', cp: 'gmail_checkpoint.json' },
+    { name: 'instagram', displayName: 'Instagram', log: 'instagram_watcher.log', cp: 'instagram_watcher_checkpoint.json' },
     { name: 'odoo', displayName: 'Odoo', log: 'odoo_watcher.log', cp: 'odoo_watcher_checkpoint.json' },
     { name: 'twitter', displayName: 'Twitter', log: 'twitter_watcher.log', cp: 'twitter_watcher_checkpoint.json' },
     { name: 'whatsapp', displayName: 'WhatsApp', log: 'whatsapp_watcher.log', cp: 'whatsapp_watcher_checkpoint.json' },
@@ -279,24 +316,26 @@ export function readWatcherStatuses(): WatcherStatus[] {
     let lastRun: Date | null = null
     let lastMessage = 'No data'
 
+    // Checkpoint = source of truth: healthy / log-only = degraded (ran but no checkpoint) / nothing = offline
     if (cpContent) {
       try {
         const cp = JSON.parse(cpContent)
         lastRun = cp.last_run ? new Date(cp.last_run) : cp.timestamp ? new Date(cp.timestamp) : null
         status = 'healthy'
-      } catch { /* ignore */ }
+      } catch {
+        status = 'degraded'
+      }
+    } else if (logContent) {
+      // Has log activity but never completed to a checkpoint — degraded
+      status = 'degraded'
+    } else {
+      status = 'offline'
     }
 
     if (logContent) {
       const lines = logContent.split('\n').filter(Boolean)
-      const lastLine = lines[lines.length - 1] || ''
-      lastMessage = redactPii(lastLine.slice(0, 120))
-      if (lastLine.toLowerCase().includes('error')) status = 'degraded'
-      else if (lastLine.toLowerCase().includes('warning')) status = 'degraded'
-      else if (logContent.length > 0) status = status === 'unknown' ? 'healthy' : status
+      lastMessage = redactPii((lines[lines.length - 1] || '').slice(0, 120))
     }
-
-    if (!logContent && !cpContent) status = 'offline'
 
     return {
       name,

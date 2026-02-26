@@ -574,7 +574,63 @@ plan_reference: {plan_path}
                     'error': str(e)
                 }
 
-        # For other platforms (WhatsApp, Twitter): simulated for now
+        # WhatsApp real execution via WhatsAppWebClient
+        elif server == 'whatsapp':
+            try:
+                from personal_ai_employee.core.whatsapp_web_helper import WhatsAppWebClient
+
+                client = WhatsAppWebClient(headless=True)
+                client.start()
+
+                if not client.is_logged_in():
+                    raise Exception(
+                        "WhatsApp Web not logged in. Run: python3 scripts/wa_setup.py"
+                    )
+
+                if tool == 'send_message':
+                    to = params.get('to', '')
+                    message = params.get('message', params.get('text', ''))
+                    if not to or not message:
+                        raise ValueError("WhatsApp send_message requires 'to' and 'message' params")
+                    success = client.send_message(to=to, text=message)
+                    client.stop()
+
+                    if not success:
+                        raise Exception("send_message returned False — check WhatsApp Web session")
+
+                    action_log['status'] = 'success'
+                    action_log['result'] = f"WhatsApp message sent to {to[:5]}****"
+                    print(f"     ✅ WhatsApp message sent successfully")
+
+                else:
+                    client.stop()
+                    raise ValueError(f"Unsupported WhatsApp tool: {tool}")
+
+                self._log_action(action_log)
+
+                return {
+                    'success': True,
+                    'server': server,
+                    'tool': tool,
+                    'result': action_log['result'],
+                }
+
+            except Exception as e:
+                logger.error(f"WhatsApp execution failed: {e}")
+                print(f"     ❌ Execution failed: {e}")
+
+                action_log['status'] = 'failed'
+                action_log['error'] = str(e)
+                self._log_action(action_log)
+
+                return {
+                    'success': False,
+                    'server': server,
+                    'tool': tool,
+                    'error': str(e)
+                }
+
+        # For other platforms (Twitter etc.): simulated for now
         else:
             logger.info(f"[EXECUTE] Simulating: {server}.{tool} (real integration pending)")
             print(f"     Status: Simulated success (real MCP integration pending for {server})")

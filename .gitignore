@@ -63,6 +63,22 @@ Logs/gmail_checkpoint.json
 # Gold Tier - MCP snapshots and checkpoints
 Logs/mcp_tools_snapshot_*.json
 Logs/*_watcher_checkpoint.json
+Logs/*_checkpoint.json
+Logs/*.pid
+Logs/wa_auto_reply_checkpoint.json
+
+# Gold Tier - nested skills runtime artifacts
+src/personal_ai_employee/skills/gold/Logs/
+**/ralph_loop.log
+
+# Next.js build artifacts
+apps/web/.next/
+apps/web/tsconfig.tsbuildinfo
+apps/web/tsconfig*.tsbuildinfo
+
+# Node modules
+node_modules/
+apps/web/node_modules/
 
 # Gold Tier - Social intake wrappers (privacy)
 Social/Inbox/*
@@ -116,3 +132,8 @@ Daily_Summaries/*.md
 # Completed/failed plans (user-specific)
 Plans/completed/
 Plans/failed/
+
+# WhatsApp Web session data (contains auth cookies — never commit)
+.secrets/whatsapp_session/
+.secrets/whatsapp_session_meta.json
+~/.personal_ai_employee/whatsapp_session/

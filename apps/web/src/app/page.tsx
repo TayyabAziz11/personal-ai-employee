@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import {
   Eye,
   Brain,
@@ -12,6 +14,7 @@ import {
   Briefcase,
   MessageSquare,
   Twitter,
+  LayoutDashboard,
 } from 'lucide-react'
 
 const steps = [
@@ -72,7 +75,11 @@ const principles = [
   { title: 'Complete Audit', body: 'Every decision, plan, and action is logged with timestamps in UTC.' },
 ]
 
-export default function MarketingPage() {
+export default async function MarketingPage() {
+  const session = await getServerSession(authOptions)
+  const isLoggedIn = !!session?.user
+  const userName = session?.user?.name ?? session?.user?.email ?? null
+
   return (
     <div className="min-h-screen bg-[#07070f] bg-grid text-zinc-100">
       {/* Nav */}
@@ -84,13 +91,35 @@ export default function MarketingPage() {
             </div>
             <span className="text-sm font-semibold text-zinc-100">Personal AI Employee</span>
           </div>
-          <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-sm text-zinc-300 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
-          >
-            <Github className="h-3.5 w-3.5" />
-            Sign in
-          </Link>
+          <div className="flex items-center gap-2">
+            {isLoggedIn ? (
+              <Link
+                href="/app"
+                className="flex items-center gap-2 rounded-xl bg-teal-500 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-teal-400"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                Go to Dashboard
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login?mode=email"
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-sm text-zinc-300 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Email
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-sm text-zinc-300 transition-all hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+                >
+                  <Github className="h-3.5 w-3.5" />
+                  GitHub
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -116,16 +145,49 @@ export default function MarketingPage() {
             complete audit trail and safety-first design.
           </p>
 
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/login"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.3)] transition-all hover:bg-teal-400 hover:shadow-[0_0_32px_rgba(20,184,166,0.5)] sm:w-auto"
-            >
-              <Github className="h-4 w-4" />
-              Sign in with GitHub
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          {/* CTAs — change based on auth state */}
+          {isLoggedIn ? (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              {/* Welcome back banner */}
+              <div className="mb-2 flex items-center gap-2 rounded-xl border border-teal-500/20 bg-teal-500/5 px-5 py-2.5 text-sm text-teal-300">
+                <span className="h-2 w-2 rounded-full bg-teal-400 animate-pulse" />
+                {userName ? `Welcome back, ${userName.split(' ')[0]}!` : 'Welcome back!'} You&apos;re signed in.
+              </div>
+              <Link
+                href="/app"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-8 py-3.5 text-base font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.35)] transition-all hover:bg-teal-400 hover:shadow-[0_0_36px_rgba(20,184,166,0.5)] sm:w-auto"
+              >
+                <LayoutDashboard className="h-5 w-5" />
+                Go to Dashboard
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+              <p className="text-xs text-zinc-600">Your session is active — no need to sign in again.</p>
+            </div>
+          ) : (
+            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/login"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.3)] transition-all hover:bg-teal-400 hover:shadow-[0_0_32px_rgba(20,184,166,0.5)] sm:w-auto"
+              >
+                <Github className="h-4 w-4" />
+                Continue with GitHub
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/login?mode=email"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-zinc-200 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:w-auto"
+              >
+                <Mail className="h-4 w-4" />
+                Continue with Email
+              </Link>
+            </div>
+          )}
+
+          {!isLoggedIn && (
+            <p className="mt-4 text-xs text-zinc-600">
+              Secure authentication · No data shared with third parties
+            </p>
+          )}
         </div>
       </section>
 
@@ -196,20 +258,46 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA bottom */}
       <section className="py-24 text-center">
         <div className="mx-auto max-w-lg px-6">
-          <h2 className="text-2xl font-bold text-white">Ready to command your AI employee?</h2>
+          <h2 className="text-2xl font-bold text-white">
+            {isLoggedIn ? 'Your dashboard is ready.' : 'Ready to command your AI employee?'}
+          </h2>
           <p className="mt-3 text-sm text-zinc-500">
-            Sign in with GitHub to access your personal command center.
+            {isLoggedIn
+              ? 'Head back to your command center and take control.'
+              : 'Sign in to access your personal command center.'}
           </p>
-          <Link
-            href="/login"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-500 px-8 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.3)] transition-all hover:bg-teal-400"
-          >
-            <Github className="h-4 w-4" />
-            Open Command Center
-          </Link>
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            {isLoggedIn ? (
+              <Link
+                href="/app"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-8 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.3)] transition-all hover:bg-teal-400"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Go to Dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-8 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(20,184,166,0.3)] transition-all hover:bg-teal-400"
+                >
+                  <Github className="h-4 w-4" />
+                  Sign in with GitHub
+                </Link>
+                <Link
+                  href="/login?mode=email"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-8 py-3 text-sm font-semibold text-zinc-200 transition-all hover:border-white/20 hover:bg-white/[0.08]"
+                >
+                  <Mail className="h-4 w-4" />
+                  Sign in with Email
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </section>
 

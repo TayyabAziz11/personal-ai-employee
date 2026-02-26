@@ -27,6 +27,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 
+# Ensure the repo src/ directory is on sys.path so that
+# `personal_ai_employee` is importable regardless of how this script is invoked.
+_SKILLS_DIR = Path(__file__).parent.resolve()        # .../skills/gold
+_SRC_DIR    = _SKILLS_DIR.parent.parent.parent       # .../src
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
 # Import PII redaction helper
 try:
     from personal_ai_employee.core.mcp_helpers import redact_pii, get_repo_root
@@ -283,43 +290,68 @@ pii_redacted: true
 
     def _fetch_messages_real(self) -> List[Dict]:
         """
-        Fetch messages from real WhatsApp MCP using QUERY tools only.
+        Fetch unread messages via WhatsApp Web (Playwright).
 
-        IMPORTANT: This ONLY calls QUERY tools (list_messages, get_message).
-        NEVER calls ACTION tools (send_message, reply_message).
+        PERCEPTION-ONLY: uses WhatsAppWebClient read methods only.
+        Never calls send_message or any action tools.
 
         Returns:
-            List of message dicts in standard format
+            List of message dicts in standard intake format
         """
         try:
-            # TODO: Real MCP client integration (G-M4)
-            # For now, check if MCP credentials exist
-            secrets_path = Path(__file__).parent / '.secrets' / 'whatsapp_credentials.json'
+            from personal_ai_employee.core.whatsapp_web_helper import WhatsAppWebClient
 
-            if not secrets_path.exists():
-                logger.warning("WhatsApp MCP credentials not found at .secrets/whatsapp_credentials.json")
+            client = WhatsAppWebClient(headless=True)
+            client.start()
+
+            if not client.is_logged_in():
+                logger.warning("WhatsApp Web not logged in — run: python3 scripts/wa_setup.py")
                 self._create_remediation_task(
-                    "WhatsApp MCP credentials missing",
-                    "MCP mode requested but credentials not configured. See Docs/mcp_whatsapp_setup.md"
+                    "WhatsApp Web not logged in",
+                    "Session not found or expired.\n"
+                    "Run: python3 scripts/wa_setup.py to pair your device.\n"
+                    "Requires Playwright: pip install playwright && playwright install chromium"
                 )
+                client.stop()
                 return []
 
-            # TODO: When MCP client is integrated:
-            # 1. Load credentials from secrets_path
-            # 2. Initialize MCP client
-            # 3. Call whatsapp.list_messages (QUERY tool, no side effects)
-            # 4. Transform to standard message format
-            # 5. Return messages
+            limit = self.config.get('max_results', 10)
+            raw = client.get_unread_messages(limit=limit)
+            client.stop()
 
-            logger.info("WhatsApp MCP query tools integration pending (G-M4)")
-            logger.info("Use --mode mock for testing until MCP servers are configured")
-            return []
+            messages = []
+            for m in raw:
+                chat_id = m.get('chat_id', '')
+                msg_id = m.get('id') or chat_id or f"wa_{len(messages)}"
+                messages.append({
+                    'id': msg_id,
+                    'sender': chat_id,
+                    'sender_name': m.get('from_name', 'Unknown'),
+                    'body': m.get('text', ''),
+                    'timestamp': m.get('timestamp', datetime.now(timezone.utc).isoformat()),
+                    'thread_id': chat_id,
+                    'type': 'incoming',
+                    'urgent': False,
+                })
 
-        except Exception as e:
-            logger.error(f"Failed to fetch from WhatsApp MCP: {e}")
+            logger.info(f"Fetched {len(messages)} unread messages via WhatsApp Web")
+            return messages
+
+        except ImportError as e:
+            logger.error(f"WhatsAppWebClient not available: {e}")
             self._create_remediation_task(
-                "WhatsApp MCP query failed",
-                f"Error: {e}\nCheck MCP server status and credentials."
+                "WhatsApp Web helper not importable",
+                f"ImportError: {e}\n"
+                "Ensure Playwright is installed: pip install playwright && playwright install chromium"
+            )
+            return []
+        except Exception as e:
+            logger.error(f"Failed to fetch from WhatsApp Web: {e}")
+            self._create_remediation_task(
+                "WhatsApp Web fetch failed",
+                f"Error: {e}\n"
+                "Ensure session is paired: python3 scripts/wa_setup.py\n"
+                "Check Playwright: pip install playwright && playwright install chromium"
             )
             return []
 
@@ -413,8 +445,8 @@ def main():
                         help='Run once and exit (default)')
     parser.add_argument('--dry-run', action='store_true',
                         help='Simulate run without creating files')
-    parser.add_argument('--mode', type=str, choices=['mock', 'mcp'], default='mock',
-                        help='Data source mode: mock (default, uses templates/mock_whatsapp.json) or mcp (uses WhatsApp MCP QUERY tools)')
+    parser.add_argument('--mode', type=str, choices=['mock', 'real', 'mcp'], default='mock',
+                        help='Data source mode: mock (default, uses templates/mock_whatsapp.json) or real/mcp (uses WhatsApp Web via Playwright)')
     parser.add_argument('--max-results', type=int, default=10,
                         help='Maximum messages to process (default: 10)')
     parser.add_argument('--reset-checkpoint', action='store_true',
